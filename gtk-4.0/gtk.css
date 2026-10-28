@@ -1,0 +1,46 @@
+@define-color window_bg_color rgba(0, 0, 0, 0.8);
+@define-color view_bg_color transparent;
+@define-color headerbar_bg_color transparent;
+@define-color sidebar_bg_color transparent;
+@define-color secondary_sidebar_bg_color transparent;
+@define-color card_bg_color rgba(255, 255, 255, 0.06);
+@define-color dialog_bg_color rgba(0, 0, 0, 0.7);
+@define-color popover_bg_color rgba(10, 10, 10, 0.9);
+
+@define-color window_fg_color #ffffff;
+@define-color view_fg_color #ffffff;
+@define-color headerbar_fg_color #ffffff;
+@define-color sidebar_fg_color #ffffff;
+@define-color accent_bg_color #ffffff;
+@define-color accent_fg_color #000000;
+@define-color accent_color #ffffff;
+
+/* Die EINE Ebene, die tönt (Deckkraft hier einstellen) */
+window.background {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+/* Alles darüber durchsichtig */
+headerbar,
+headerbar:backdrop,
+.top-bar,
+.sidebar-pane,
+.content-pane,
+.navigation-sidebar,
+toolbarview,
+toolbarview > *,
+scrolledwindow,
+.view,
+.nautilus-grid-view,
+.nautilus-list-view,
+searchbar,
+actionbar,
+.toolbar {
+  background: transparent;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+separator {
+  background-color: rgba(255, 255, 255, 0.08);
+}

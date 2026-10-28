@@ -1,0 +1,21 @@
+# Colors (0xAARRGGBB), same palette as swaync
+background = 0xFF1F1F1F
+base = 0xFF000000
+alternate_base = 0xFF555555
+text = 0xFFFFFFFF
+bright_text = 0xFFFFFFFF
+accent = 0xFFFFFFFF
+accent_secondary = 0xFF555555
+
+# Font, same as waybar and swaync
+font_family = JetBrainsMono Nerd Font
+font_family_monospace = JetBrainsMono Nerd Font
+font_size = 14
+small_font_size = 12
+h1_size = 16
+h2_size = 15
+h3_size = 14
+
+# Rounded corners
+rounding_large = 5
+rounding_small = 5

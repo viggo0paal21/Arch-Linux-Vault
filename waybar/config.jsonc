@@ -1,0 +1,136 @@
+// ~/.config/waybar/config.jsonc
+// Links: Arch-Logo, Workspaces, CPU, RAM, Wetter. Rechts: der Rest + Uhr.
+// Icons brauchen eine Nerd Font (z. B. ttf-jetbrains-mono-nerd).
+{
+  "layer": "top",
+  "position": "top",
+  "height": 36,
+  "spacing": 0,
+  "exclusive": true,
+  "reload_style_on_change": true,
+
+  "modules-left": [
+    "custom/arch",
+    "hyprland/workspaces",
+    "cpu",
+    "custom/memory",
+    "custom/weather",
+    "hyprland/window"
+  ],
+  "modules-center": [],
+  "modules-right": [
+    "pulseaudio",
+    "network",
+    "bluetooth",
+    "battery",
+    "tray",
+    "custom/clock"
+  ],
+
+  // Unsichtbar – liefert nur die Klasse .solo (schwarz bei genau einem Fenster)
+  "hyprland/window": {
+    "format": "",
+    "separate-outputs": true
+  },
+
+  // ---------- links ----------
+  "custom/arch": {
+    "format": "",
+    "tooltip": false,
+    "on-click": "hyprlauncher"
+  },
+
+  "hyprland/workspaces": {
+    "format": "{icon}",
+    "format-icons": { "default": "" },
+    "persistent-workspaces": { "*": 5 },
+    "sort-by-number": true,
+    "on-scroll-up": "hyprctl dispatch workspace e-1",
+    "on-scroll-down": "hyprctl dispatch workspace e+1"
+  },
+
+  "cpu": {
+    "interval": 2,
+    "align": 0,
+    "format": " {usage}%",
+    "tooltip-format": "CPU: {usage}%  ·  {avg_frequency} GHz"
+  },
+
+  // Speicher mit zwei Nachkommastellen (z. B. "42.19%")
+  "custom/memory": {
+    "interval": 3,
+    "format": " {}",
+    "exec": "awk '/MemTotal/{t=$2} /MemAvailable/{a=$2} END{printf \"%.2f%%\", (t-a)/t*100}' /proc/meminfo",
+    "tooltip": false
+  },
+
+  // Wetter: liest nur, was clock.sh sowieso alle 15 Min holt (kein eigenes Skript nötig).
+  // Taucht auf, sobald das erste Wetter geladen ist.
+  "custom/weather": {
+    "interval": 60,
+    "return-type": "json",
+    "exec-if": "test -s \"${XDG_RUNTIME_DIR:-/tmp}/waybar-clock-weather.txt\"",
+    "exec": "jq -Rc 'split(\"  \") | {text: (.[0] + \" \" + .[1]), tooltip: .[3]}' \"${XDG_RUNTIME_DIR:-/tmp}/waybar-clock-weather.txt\""
+  },
+
+  // ---------- rechts ----------
+  "pulseaudio": {
+    "format": "{icon} {volume}%",
+    "format-bluetooth": "{icon} {volume}%",
+    "format-muted": " Mute",
+    "format-icons": { "default": ["", "", ""] },
+    "scroll-step": 5,
+    "on-click": "pavucontrol",
+    "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+    "tooltip-format": "{desc}"
+  },
+
+  "network": {
+    "interval": 5,
+    "format-wifi": " {essid}",
+    "format-ethernet": "󰈀 Wired",
+    "format-linked": "󰈀 No IP",
+    "format-disconnected": "󰖪 Offline",
+    "tooltip-format-wifi": "{essid} ({signalStrength}%)\n{ipaddr}",
+    "tooltip-format-ethernet": "{ifname}\n{ipaddr}",
+    "on-click": "kitty -e nmtui"
+  },
+
+  "bluetooth": {
+    "format": " On",
+    "format-off": " Off",
+    "format-disabled": " Off",
+    "format-connected": " {device_alias}",
+    "format-no-controller": "",
+    "on-click": "blueman-manager",
+    "tooltip-format-connected": "{device_enumerate}",
+    "tooltip-format-enumerate-connected": "{device_alias}"
+  },
+
+  // Auf einem Desktop ohne Akku blendet sich das Modul selbst aus
+  "battery": {
+    "interval": 30,
+    "states": { "warning": 25, "critical": 12 },
+    "format": "{icon} {capacity}%",
+    "format-charging": " {capacity}%",
+    "format-plugged": " {capacity}%",
+    "format-full": " {capacity}%",
+    "format-icons": ["", "", "", "", ""],
+    "tooltip-format": "{timeTo}"
+  },
+
+  "tray": {
+    "icon-size": 16,
+    "spacing": 10,
+    "show-passive-items": true
+  },
+
+  // Nur Uhrzeit – Datum + Wetter kommen beim Hovern als Tooltip
+  "custom/clock": {
+    "exec": "~/.config/waybar/scripts/clock.sh",
+    "return-type": "json",
+    "restart-interval": 2,
+    "align": 1,
+    "escape": true
+  }
+}

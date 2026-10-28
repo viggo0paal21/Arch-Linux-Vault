@@ -1,0 +1,124 @@
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": {
+      //"source": "/home/viggo/.config/fastfetch/lambda.txt",
+      //"type": "file", 
+      "source": "/home/viggo/.config/fastfetch/archlogo.txt",
+      "type": "file",
+      "color": {
+        "1": "white",
+        "2": "white"
+      },
+      "padding": {
+        "top": 2,
+        "left": 4
+      }
+    },
+  "display": {
+    "key": {
+      "width": 15
+    },
+    "color": "white",
+    "separator": "~>" 
+  },
+  "modules": [
+    "break",
+    {
+      "type": "title",
+      "format": "{6} | {8}"
+    },
+    "separator",
+    {
+      "type": "os",
+      "key": "OS ",
+      "keyColor": "white",
+      "format": "{4}{?6} ({6}){?} v{9}"
+    },
+    {
+      "type": "kernel",
+      "key": "Kernel ",
+      "keyColor": "white",
+      "format": "{1} {2}"
+    },
+    {
+      "type": "users",
+      "key": "User ",
+      "keyColor": "white",
+      "format": "{1} - {5}"
+    },
+    "break",
+    {
+      "type": "uptime",
+      "key": "Uptime ",
+      "keyColor": "white"
+    },
+    {
+      "type": "board",
+      "key": "Board ",
+      "keyColor": "white",
+      "format": "{1}"
+    },
+    {
+      "type": "bios",
+      "key": "Bios ",
+      "keyColor": "white",
+      "format": "{4} - {1}"
+    },
+    {
+      "type": "cpu",
+      "key": "CPU ",
+      "temp": true,
+      "showPeCoreCount": true,
+      "keyColor": "white",
+      "format": "{1} ({4}) {8}"
+    },
+    {
+      "type": "gpu",
+      "key": "GPU ",
+      "temp": true,
+      "showPeCoreCount": true,
+      "keyColor": "white",
+      "format": "{1} {2} {4}"
+    },
+    {
+      "type": "memory",
+      "key": "RAM ",
+      "temp": true,
+      "showPeCoreCount": true,
+      "keyColor": "white",
+      "format": "{1} / {2} {3}"
+    },
+    "break",
+    {
+      "type": "disk",
+      "key": "Disk ",
+      "keyColor": "white",
+      "format": "{1} / {2} {3} "
+    },
+    "break",
+    {
+      "type": "sound",
+      "key": "Sound ",
+      "keyColor": "white",
+      "format": "{2} {3}"
+    },
+    //{
+    //  "type": "media",
+    //  "key": "Media ",
+    //  "keyColor": "white",
+    //  "format": "{5}: {1} {?3}by {3}{?}"
+    //},
+    {
+      "type": "dateTime",
+      "key": "Date ",
+      "keyColor": "white",
+      "format": "{23}-{4}-{1} | {14}:{18}:{20}"
+    },
+   // {
+   //   "type": "weather",
+   //   "key": "Weather ",
+   //   "keyColor": "white",
+   //   "format": "{1}"
+   // }
+  ]
+}

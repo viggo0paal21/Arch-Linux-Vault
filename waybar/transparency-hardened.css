@@ -1,0 +1,15 @@
+/* MODE: on – hardened dynamic transparency (managed by toggle-hardened.sh) */
+
+/* Default + one tiled window: black */
+window#waybar,
+window#waybar.solo {
+  background-color: @bg;
+  transition: background-color 0.2s ease-in-out;
+}
+
+/* No windows, or only floating windows: transparent */
+window#waybar.empty,
+window#waybar.floating {
+  background-color: rgba(0, 0, 0, 0);
+  transition: background-color 0.25s ease-out;
+}

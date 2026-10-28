@@ -1,0 +1,237 @@
+/* ~/.config/waybar/style.css  (Auto-Variante)
+ * Schwarz bei genau einem Fenster, sonst durchsichtig – mit Fade.
+ * Braucht "hyprland/window" in der config.jsonc.
+ * Links: Arch, Workspaces, CPU, RAM, Wetter. Rechts: der Rest + Uhr.
+ */
+
+@define-color bg         #000000;
+@define-color fg         #d9d9d9;
+@define-color fg-hover   #ffffff;
+@define-color dim        #7a7a7a;
+@define-color dot        #666666;
+@define-color dot-empty  #222222;
+@define-color pill       #dcdcdc;
+
+/* ---------- Grundlage ---------- */
+* {
+  font-family: "Inter", "JetBrainsMono Nerd Font Propo", "Symbols Nerd Font", sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  font-style: normal;
+  min-height: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  text-shadow: none;
+}
+
+/* Standard: durchsichtig (0 Fenster oder 2+ Fenster) */
+window#waybar {
+  background-color: rgba(0, 0, 0, 0);
+  color: @fg;
+  /* → durchsichtig: startet sehr schnell, läuft weich aus */
+  transition: background-color 0.25s ease-out;
+}
+
+/* Genau ein (gekacheltes) Fenster auf dem Workspace: schwarz */
+window#waybar.solo {
+  background-color: @bg;
+  /* → schwarz: bleibt wie bisher */
+  transition: background-color 0.2s ease-in-out;
+}
+
+/* Sanftes Einblenden beim Start / nach Style-Reload */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modules-left,
+.modules-right {
+  animation: fade-in 0.6s ease-out;
+}
+
+.modules-left  { margin-left: 14px; }
+.modules-right { margin-right: 14px; }
+
+/* ---------- Alle Text-Module ---------- */
+#custom-arch,
+#cpu,
+#custom-memory,
+#custom-weather,
+#pulseaudio,
+#network,
+#bluetooth,
+#battery,
+#tray,
+#custom-clock {
+  padding: 0 13px;
+  color: @fg;
+  background-color: transparent;
+  transition: color 0.25s ease, opacity 0.25s ease;
+}
+
+#custom-arch:hover,
+#cpu:hover,
+#custom-memory:hover,
+#custom-weather:hover,
+#pulseaudio:hover,
+#network:hover,
+#bluetooth:hover,
+#battery:hover,
+#custom-clock:hover {
+  color: @fg-hover;
+}
+
+/* Ziffern gleich breit → nichts rutscht, wenn sich Zahlen ändern */
+#cpu,
+#custom-memory,
+#custom-weather,
+#pulseaudio,
+#battery,
+#custom-clock {
+  font-feature-settings: "tnum";
+}
+
+/* ---------- Links neben den Workspaces: CPU / RAM / Wetter ----------
+ * Die Workspaces sind fest breit (siehe unten), deshalb schiebt die
+ * Pill-Animation hier nichts mehr. Damit auch wechselnde Zahlen nichts
+ * verschieben, hat CPU eine feste Mindestbreite (1% und 99% gleich breit).
+ * RAM ist durch "tnum" + immer 2 Nachkommastellen von selbst gleich breit.
+ * Wetter steht ganz rechts in der Gruppe – dahinter kann nichts rutschen.
+ */
+#cpu {
+  min-width: 58px;           /* Text linksbündig ("align": 0 in der config) */
+  padding: 0 10px 0 13px;
+}
+
+/* ---------- Arch-Logo ---------- */
+#custom-arch {
+  font-size: 18px;
+  font-style: normal;
+  padding: 0 12px 0 10px;
+}
+
+/* ---------- Workspaces: Punkte + animierte Pill ----------
+ * Jeder Workspace hat einen FESTEN Platz (26px). Der Punkt/die Pill wächst
+ * nur innerhalb dieses Platzes – dadurch kann sich daneben nie etwas bewegen,
+ * egal wie Waybar die Animation timt.
+ */
+#workspaces {
+  margin: 0 10px 0 4px;
+}
+
+/* Der Button ist nur der unsichtbare, feste Platzhalter */
+#workspaces button,
+#workspaces button:hover,
+#workspaces button.active,
+#workspaces button.active:hover {
+  min-width: 26px;           /* = Breite der Pill */
+  min-height: 10px;
+  margin: 13px 0;            /* (36px Höhe - 10px Punkt) / 2 = mittig */
+  padding: 0;
+  border: none;
+  outline: none;
+  background-color: transparent;
+  background-image: none;
+  box-shadow: none;
+  color: transparent;
+  transition: none;
+}
+
+/* Das Label ist der sichtbare Punkt / die Pill */
+#workspaces button label {
+  font-size: 1px;
+  min-width: 9.5px;          /* Punkt (wird als 10px gezeichnet) */
+  min-height: 10px;
+  padding: 0;
+  margin: 0 7.5px;           /* 7.5 + 9.5 + 7.5 = 24.5 → passt mit Rundung sicher in 26 */
+  border-radius: 10px;
+  background-color: @dot;
+  transition: min-width 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+              margin 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+              background-color 0.15s ease;
+}
+
+#workspaces button.empty label {
+  background-color: @dot-empty;
+}
+
+#workspaces button:hover label {
+  background-color: @dim;
+}
+
+#workspaces button.active label,
+#workspaces button.active:hover label {
+  min-width: 22.5px;         /* Pill (wird als 23px gezeichnet) */
+  margin: 0 1px;             /* 1 + 22.5 + 1 = 24.5 → passt sicher in 26 */
+  background-color: @pill;
+}
+
+@keyframes urgent-pulse {
+  from { background-color: @dot; }
+  to   { background-color: #ffffff; }
+}
+
+#workspaces button.urgent label {
+  animation: urgent-pulse 0.8s ease-in-out infinite alternate;
+}
+
+/* ---------- Rechts ---------- */
+/* Die Uhr steht ganz rechts – ihre feste Breite (unten) sorgt dafür,
+   dass die Sekunden links davon nichts verschieben. */
+#pulseaudio.muted,
+#network.disconnected,
+#network.linked,
+#bluetooth.off,
+#bluetooth.disabled {
+  color: @dim;
+}
+
+@keyframes blink {
+  to { color: @bg; background-color: @fg; }
+}
+
+#battery.critical:not(.charging):not(.plugged) {
+  animation: blink 0.8s ease-in-out infinite alternate;
+}
+
+#tray > .passive {
+  -gtk-icon-effect: dim;
+}
+
+#tray > .needs-attention {
+  -gtk-icon-effect: highlight;
+}
+
+/* Uhr mit fester Breite: die Sekunden verschieben nichts links davon.
+   Bewegt sich links noch was → Wert erhöhen; Lücke zu groß → verringern */
+#custom-clock {
+  font-weight: 500;
+  min-width: 100px;
+  padding: 0 14px 0 10px;
+}
+
+/* ---------- Tooltips ---------- */
+tooltip {
+  background-color: #0a0a0a;
+  border: 1px solid #2a2a2a;
+}
+
+tooltip label {
+  color: @fg;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 13px;
+  padding: 4px 6px;
+}
+
+/* ---------- Umschalter: dynamische Transparenz an/aus ----------
+ * Wird von scripts/toggle-transparency.sh (Tastenkombi) umgeschrieben.
+ * Muss GANZ UNTEN stehen, damit es die Regeln oben überschreiben kann.
+ * Die Datei transparency.css muss existieren, sonst lädt Waybar den Style nicht.
+ */
+@import url("transparency.css");
+
+/* Hardened-Modus (SUPER + Bild runter) – muss GANZ UNTEN stehen, nach transparency.css */
+@import url("transparency-hardened.css");

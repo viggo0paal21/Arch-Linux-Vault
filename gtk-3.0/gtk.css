@@ -1,0 +1,183 @@
+/* ============================================================
+   True pitch-black (#000000) force for GTK-3 / Thunar
+   ============================================================ */
+
+/* Override Adwaita color definitions */
+@define-color theme_bg_color #000000;
+@define-color theme_fg_color #ffffff;
+@define-color theme_base_color #000000;
+@define-color theme_text_color #ffffff;
+@define-color theme_selected_bg_color #1a1a1a;
+@define-color theme_selected_fg_color #ffffff;
+@define-color theme_tooltip_bg_color #000000;
+@define-color theme_tooltip_fg_color #ffffff;
+
+@define-color borders #1a1a1a;
+@define-color unfocused_borders #111111;
+
+@define-color content_view_bg #000000;
+@define-color text_view_bg #000000;
+
+/* Window & main backgrounds */
+window,
+.background,
+.view,
+.viewport,
+GtkWindow,
+GtkViewport {
+    background-color: #000000;
+    color: #ffffff;
+}
+
+/* Thunar-specific */
+.thunar,
+.thunar .view,
+.thunar .standard-view,
+.thunar .standard-view .view,
+.thunar treeview,
+.thunar treeview.view,
+.thunar .sidebar,
+.thunar .sidebar .view,
+.thunar notebook,
+.thunar notebook > stack,
+.thunar .path-bar,
+.thunar toolbar,
+.thunar headerbar,
+.thunar .header-bar {
+    background-color: #000000;
+    color: #ffffff;
+    border-color: #1a1a1a;
+}
+
+/* Side pane / tree */
+.thunar .sidebar treeview,
+.thunar .sidebar .view {
+    background-color: #000000;
+    color: #e0e0e0;
+}
+
+/* Selected / hover */
+.view:selected,
+.view:selected:focus,
+treeview.view:selected,
+treeview.view:selected:focus,
+.thunar .view:selected,
+.thunar treeview.view:selected {
+    background-color: #1a1a1a;
+    color: #ffffff;
+}
+
+.view:hover,
+treeview.view:hover {
+    background-color: #0d0d0d;
+}
+
+/* Headerbar / titlebar */
+headerbar,
+.titlebar,
+.header-bar {
+    background-color: #000000;
+    background-image: none;
+    color: #ffffff;
+    border-bottom: 1px solid #1a1a1a;
+    box-shadow: none;
+}
+
+headerbar:backdrop,
+.titlebar:backdrop {
+    background-color: #000000;
+    color: #cccccc;
+}
+
+/* Toolbars, pathbars, location bars */
+toolbar,
+.path-bar,
+.location-bar,
+.entry {
+    background-color: #000000;
+    color: #ffffff;
+    border-color: #1a1a1a;
+    box-shadow: none;
+}
+
+/* Menus & popovers */
+menu,
+.menu,
+.context-menu,
+popover,
+.popover {
+    background-color: #000000;
+    color: #ffffff;
+    border: 1px solid #1a1a1a;
+}
+
+menuitem:hover,
+.menuitem:hover {
+    background-color: #1a1a1a;
+}
+
+/* Scrollbars (minimal, dark) */
+scrollbar,
+scrollbar slider {
+    background-color: #111111;
+    border-color: #000000;
+}
+scrollbar slider:hover {
+    background-color: #222222;
+}
+
+/* Buttons */
+button {
+    background-color: #0a0a0a;
+    color: #ffffff;
+    border-color: #1a1a1a;
+    box-shadow: none;
+}
+button:hover {
+    background-color: #1a1a1a;
+}
+button:active,
+button:checked {
+    background-color: #222222;
+}
+
+/* Notebook / tabs (if any) */
+notebook,
+notebook > header,
+notebook > header tab {
+    background-color: #000000;
+    color: #ffffff;
+    border-color: #1a1a1a;
+}
+notebook > header tab:checked {
+    background-color: #111111;
+}
+
+/* Statusbar / info bar */
+statusbar,
+infobar {
+    background-color: #000000;
+    color: #ffffff;
+}
+
+/* Tooltips */
+.tooltip,
+tooltip {
+    background-color: #000000;
+    color: #ffffff;
+    border: 1px solid #1a1a1a;
+}
+
+/* Remove CSD shadows / frames that can look grey */
+.window-frame,
+.window-frame:backdrop {
+    box-shadow: none;
+    border: none;
+    margin: 0;
+    border-radius: 0;
+}
+
+/* Extra safety for any remaining white/grey */
+* {
+    -gtk-secondary-caret-color: #ffffff;
+}
