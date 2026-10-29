@@ -1,4 +1,3 @@
-[README.md](https://github.com/user-attachments/files/34146371/README.md)
 # Arch-Vault
 
 Everything I need to keep my Arch Linux system running and to rebuild it from scratch:
