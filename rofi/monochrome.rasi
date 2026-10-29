@@ -1,0 +1,86 @@
+* {
+    bg:        #000000cc;
+    fg:        #d0d0d0;
+    fg-bright: #ffffff;
+    muted:     #6e6e6e;
+    prompt-c:  #8c8c8c;
+    sel:       #4a4a4acc;
+    line:      #5a5a5a;
+
+    font:             "JetBrainsMono Nerd Font 14";
+    background-color: transparent;
+    text-color:       @fg;
+    margin:  0;
+    padding: 0;
+    spacing: 0;
+}
+
+window {
+    location:         center;
+    width:            640px;
+    background-color: @bg;
+    border:           1px;
+    border-color:     @line;
+    border-radius:    6px;
+}
+
+mainbox {
+    padding:  18px 20px;
+    spacing:  14px;
+    children: [ inputbar, listview ];
+}
+
+inputbar {
+    spacing:  10px;
+    padding:  6px 8px;
+    children: [ prompt, entry ];
+}
+
+prompt { text-color: @prompt-c; }
+
+entry {
+    text-color:        @fg-bright;
+    placeholder:       "Search…";
+    placeholder-color: @muted;
+    cursor:            text;
+}
+
+listview {
+    lines:        10;
+    columns:      1;
+    spacing:      4px;
+    fixed-height: true;
+    cycle:        false;
+    scrollbar:    false;
+}
+
+element {
+    padding:       8px 10px;
+    spacing:       12px;
+    border-radius: 4px;
+    cursor:        pointer;
+}
+
+element normal.normal, element alternate.normal,
+element normal.active, element alternate.active,
+element normal.urgent, element alternate.urgent {
+    background-color: transparent;
+    text-color:       @fg;
+}
+
+element selected.normal, element selected.active, element selected.urgent {
+    background-color: @sel;
+    text-color:       @fg-bright;
+}
+
+element-icon {
+    size:   1.3em;
+    cursor: inherit;
+}
+
+element-text {
+    text-color:     inherit;
+    vertical-align: 0.5;
+    highlight:      bold;
+    cursor:         inherit;
+}

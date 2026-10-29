@@ -1,0 +1,12 @@
+configuration {
+    modi:                "drun";
+    show-icons:          true;
+    display-drun:        "❯";
+    drun-display-format: "{name}";
+    terminal:            "kitty";
+    scroll-method:       1;
+    hover-select:        false;
+    me-select-entry:     "";
+    me-accept-entry:     "MousePrimary";
+}
+@theme "monochrome"
