@@ -1,3 +1,4 @@
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- HYPRLAND CONFIG (Lua)                                 --
 -- Doku: https://wiki.hypr.land/Configuring/Start/       --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -42,6 +43,7 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("swww-daemon &")
     hl.exec_cmd("waypaper --restore &")
     hl.exec_cmd("sleep 3 && arch-update --tray")
+    hl.exec_cmd("systemctl --user start hyprpolkitagent")
 end)
 
 
@@ -183,6 +185,13 @@ hl.window_rule({
 hl.layer_rule({
     match = { namespace = "swaync-notification-window" },
     animation = "slide right",
+})
+
+hl.layer_rule({
+  match = { namespace = "launcher" },
+  name = "fuzzel-blur",
+  blur = true,
+  ignore_alpha = 0,
 })
 
 hl.window_rule({
@@ -457,8 +466,6 @@ end
 hl.on("window.close", function(w) schon_gefloatet[w.address] = nil end)
 
 hl.bind("SUPER + V", toggle_float_16_9)
-
-
 
 
 
