@@ -26,7 +26,7 @@ hl.monitor({
 -- Set programs that you use
 local terminal    = "kitty"
 local fileManager = "nautilus"
-local menu        = "fuzzel"
+local menu        = "pkill rofi || rofi -show drun"
 
 
 -------------------
@@ -188,8 +188,8 @@ hl.layer_rule({
 })
 
 hl.layer_rule({
-  match = { namespace = "launcher" },
-  name = "fuzzel-blur",
+  match = { namespace = "rofi" },
+  name = "rofi-blur",
   blur = true,
   ignore_alpha = 0,
 })
@@ -466,6 +466,5 @@ end
 hl.on("window.close", function(w) schon_gefloatet[w.address] = nil end)
 
 hl.bind("SUPER + V", toggle_float_16_9)
-
 
 
