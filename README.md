@@ -11,6 +11,7 @@ my personal `~/.config` files (Hyprland rice), my zsh setup, a maintenance guide
 |---|---|
 | Config folders (`hypr`, `waybar`, `kitty`, …) | My configs from `~/.config` |
 | `starship.toml` | Starship prompt config (`~/.config/starship.toml`) |
+| `rofi/` | App launcher: `config.rasi` (settings) + `monochrome.rasi` (theme) |
 | `home/.zshrc` | Zsh config (plugins, aliases, history settings) → `~/.zshrc` |
 | `shell-packages.txt` | Packages for the shell setup (zsh, plugins, Starship, eza, bat, fd, ripgrep, lazygit) |
 | [`Arch Linux System Maintenance Guide.md`](Arch%20Linux%20System%20Maintenance%20Guide.md) | Safe updates, recovery playbook, all commands |
@@ -35,6 +36,46 @@ chsh -s /usr/bin/zsh
 ```
 
 Then log out and back in.
+
+## Launcher: rofi
+
+- **Look:** monochrome, same background color and 80 % opacity as Kitty, slightly rounded, JetBrains Mono
+- **Behavior:** the shortcut opens rofi and closes it when pressed again, one click launches an app, the mouse wheel scrolls line by line
+- **Files:** `rofi/config.rasi` (settings) and `rofi/monochrome.rasi` (colors, size, spacing)
+
+Restore:
+
+```bash
+sudo pacman -S --needed rofi
+cp -r rofi ~/.config/
+```
+
+Then in `~/.config/hypr/hyprland.lua`, use this as the command of your launcher shortcut:
+
+```lua
+hl.dsp.exec_cmd("pkill rofi || rofi -show drun")
+```
+
+And add blur + open/close animation at the end of `hyprland.lua`:
+
+```lua
+hl.layer_rule({
+  match = { namespace = "rofi" },
+  name = "rofi-blur",
+  blur = true,
+  ignore_alpha = 0,
+  animation = "popin 90%",
+})
+
+-- smooth curve for all overlays (rofi, notifications)
+hl.curve("launcherEase", { type = "bezier", points = { {0.23, 1}, {0.32, 1} } })
+hl.animation({ leaf = "layersIn",      enabled = true, speed = 2.5, curve = "launcherEase" })
+hl.animation({ leaf = "layersOut",     enabled = true, speed = 1.5, curve = "launcherEase" })
+hl.animation({ leaf = "fadeLayersIn",  enabled = true, speed = 2.5, curve = "launcherEase" })
+hl.animation({ leaf = "fadeLayersOut", enabled = true, speed = 1.5, curve = "launcherEase" })
+```
+
+Blur must also be enabled globally in `hyprland.lua` (`blur = { enabled = true }` under `decoration`).
 
 ## System tweaks (outside `~/.config`)
 
@@ -98,7 +139,7 @@ _Generated on 28.10.2026: official packages via pacman, everything else via yay 
 | fontconfig | Font settings | `fontconfig`, `ttf-jetbrains-mono-nerd` |
 | gtk-3.0 | GTK 3 theme | `gtk3` |
 | gtk-4.0 | GTK 4 theme | `gtk4` |
-| hypr | Hyprland + Hypr tools | `hyprland`, `hyprlauncher`, `hyprlock`, `hyprsunset`, `hyprpicker` |
+| hypr | Hyprland + Hypr tools | `hyprland`, `hyprlock`, `hyprsunset`, `hyprpicker` |
 | hyprpanel | HyprPanel (bar) | `ags-hyprpanel-git` (AUR) |
 | kitty | Terminal | `kitty` |
 | Kvantum | Qt theme engine | `kvantum`, `kvantum-qt5` |
@@ -106,6 +147,7 @@ _Generated on 28.10.2026: official packages via pacman, everything else via yay 
 | nautilus | File manager | `nautilus` |
 | nwg-look | GTK settings tool | `nwg-look` |
 | qt6ct | Qt 6 theme settings | `qt6ct` |
+| rofi | App launcher | `rofi` |
 | swaync | Notifications | `swaync` |
 | vibrantLinux | Per-app color saturation | `vibrantlinux` (AUR) |
 | waybar | Status bar | `waybar`, `blueman`, `pavucontrol` |
@@ -118,7 +160,7 @@ _Generated on 28.10.2026: official packages via pacman, everything else via yay 
 **1. Official packages (pacman):**
 
 ```bash
-sudo pacman -Syu --needed fastfetch fontconfig ttf-jetbrains-mono-nerd gtk3 gtk4 hyprland hyprlauncher hyprlock hyprsunset hyprpicker kitty kvantum kvantum-qt5 mangohud lib32-mangohud nautilus nwg-look qt6ct swaync waybar blueman pavucontrol swaybg xdg-desktop-portal xdg-desktop-portal-hyprland xdg-desktop-portal-gtk
+sudo pacman -Syu --needed fastfetch fontconfig ttf-jetbrains-mono-nerd gtk3 gtk4 hyprland hyprlock hyprsunset hyprpicker kitty kvantum kvantum-qt5 mangohud lib32-mangohud nautilus nwg-look qt6ct rofi swaync waybar blueman pavucontrol swaybg xdg-desktop-portal xdg-desktop-portal-hyprland xdg-desktop-portal-gtk
 sudo pacman -S --needed - < shell-packages.txt
 ```
 
