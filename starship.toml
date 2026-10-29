@@ -1,11 +1,15 @@
-add_newline = true
-format = "  [╭─](fg:#ffffff) $directory\n$character"
+format = "$os$directory"
+
+[os]
+disabled = false
+style = "bold white"
+format = "  [$symbol ]($style)"
+
+[os.symbols]
+Arch = "\uf303"
 
 [directory]
-home_symbol = "\uF015 "
-truncation_length = 3
-format = "[$path](fg:#aaaaaa)"
-
-[character]
-success_symbol = "  [╰─▶](fg:#ffffff) "
-error_symbol = "  [╰─▶](fg:#ffffff) "
+style = "bold white"
+read_only_style = "bold white"
+home_symbol = "\uf015 ~"
+format = "[$path]($style)[$read_only]($read_only_style) "
