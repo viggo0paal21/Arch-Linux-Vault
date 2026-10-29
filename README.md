@@ -151,14 +151,12 @@ cd ~/config-backup
 # restore a single folder, e.g. MangoHud:
 cp -r MangoHud ~/.config/
 
-# or all config folders at once (home/ is not a ~/.config folder, so it is skipped):
-for d in */; do [ "$d" = "home/" ] || cp -r "$d" ~/.config/; done
+# or all config folders at once (home/ and etc/ are not ~/.config folders, so they are skipped):
+for d in */; do case "$d" in home/|etc/) ;; *) cp -r "$d" ~/.config/ ;; esac; done
 
 # Starship prompt and zsh: see "Shell: zsh" above
 ```
 
 The local folder is called `~/config-backup` on purpose: my backup scripts expect that name.
-
-<!-- INSTALL-END -->
 
 <!-- INSTALL-END -->
