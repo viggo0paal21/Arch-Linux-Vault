@@ -1,7 +1,10 @@
+[README.md](https://github.com/user-attachments/files/34146371/README.md)
 # Arch-Vault
 
 Everything I need to keep my Arch Linux system running and to rebuild it from scratch:
 my personal `~/.config` files (Hyprland rice), a maintenance guide and helper scripts.
+
+> 📖 **[Arch Linux System Maintenance Guide](Arch%20Linux%20System%20Maintenance%20Guide.md)**: safe updates, recovery playbook and all commands.
 
 ## Contents
 
@@ -9,7 +12,7 @@ my personal `~/.config` files (Hyprland rice), a maintenance guide and helper sc
 |---|---|
 | Config folders (`hypr`, `waybar`, `kitty`, …) | My configs from `~/.config` |
 | `starship.toml` | Starship prompt config (`~/.config/starship.toml`) |
-| `Arch Linux System Maintenance Guide.txt` | Safe updates, recovery playbook, all commands |
+| [`Arch Linux System Maintenance Guide.md`](Arch%20Linux%20System%20Maintenance%20Guide.md) | Safe updates, recovery playbook, all commands |
 | `nvidia-maxperf-setup.sh` | Locks an NVIDIA GPU to max clocks (persists across boot and suspend). Edit the clock values for your card first. |
 | `amdgpu-maxperf-setup.sh` | Same for AMD GPUs (sets the performance level to `high`) |
 
