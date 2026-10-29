@@ -1,4 +1,3 @@
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- HYPRLAND CONFIG (Lua)                                 --
 -- Doku: https://wiki.hypr.land/Configuring/Start/       --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -309,7 +308,7 @@ local closeWindowBind = hl.bind(mainMod .. " + C", hl.dsp.window.close())
 -- closeWindowBind:set_enabled(false)
 hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'"))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
-hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
+--siehe zeile 428 --hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + R", hl.dsp.exec_cmd(menu))
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
 hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))    -- dwindle only
@@ -424,6 +423,42 @@ hl.window_rule({
     match = { float = true },
     border_size = 1,
 })
+
+-- ── Floating-Fenster in 16:9 ──────────────────────
+local FLOAT_ANTEIL   = 0.6    -- Breite = 60 % der Monitorbreite
+local NUR_ERSTES_MAL = false  -- true = danach merkt sich Hyprland deine eigene Größe
+
+local schon_gefloatet = {}
+
+local function toggle_float_16_9()
+  local w = hl.get_active_window()
+  if not w then return end
+
+  -- schon floating → zurück ins Tiling
+  if w.floating then
+    hl.dispatch(hl.dsp.window.float({ action = "unset" }))
+    return
+  end
+
+  hl.dispatch(hl.dsp.window.float({ action = "set" }))
+
+  if NUR_ERSTES_MAL and schon_gefloatet[w.address] then return end
+  schon_gefloatet[w.address] = true
+
+  local m      = w.monitor
+  local breite = math.floor(m.width / m.scale * FLOAT_ANTEIL)
+  local hoehe  = math.floor(breite * 9 / 16)
+
+  hl.dispatch(hl.dsp.window.resize({ x = breite, y = hoehe, relative = false }))
+  hl.dispatch(hl.dsp.window.center())
+end
+
+-- Speicher aufräumen, wenn Fenster zugehen
+hl.on("window.close", function(w) schon_gefloatet[w.address] = nil end)
+
+hl.bind("SUPER + V", toggle_float_16_9)
+
+
 
 
 
