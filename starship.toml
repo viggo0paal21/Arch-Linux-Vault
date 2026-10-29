@@ -1,0 +1,11 @@
+add_newline = true
+format = "  [╭─](fg:#ffffff) $directory\n$character"
+
+[directory]
+home_symbol = "\uF015 "
+truncation_length = 3
+format = "[$path](fg:#aaaaaa)"
+
+[character]
+success_symbol = "  [╰─▶](fg:#ffffff) "
+error_symbol = "  [╰─▶](fg:#ffffff) "
