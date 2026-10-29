@@ -1,0 +1,10 @@
+zsh
+zsh-completions
+zsh-autosuggestions
+zsh-syntax-highlighting
+starship
+eza
+bat
+fd
+ripgrep
+lazygit
