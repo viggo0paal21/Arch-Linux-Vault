@@ -1,7 +1,7 @@
 # Arch-Vault
 
 Everything I need to keep my Arch Linux system running and to rebuild it from scratch:
-my personal `~/.config` files (Hyprland rice), a maintenance guide and helper scripts.
+my personal `~/.config` files (Hyprland rice), my zsh setup, a maintenance guide and helper scripts.
 
 > 📖 **[Arch Linux System Maintenance Guide](Arch%20Linux%20System%20Maintenance%20Guide.md)**: safe updates, recovery playbook and all commands.
 
@@ -11,9 +11,59 @@ my personal `~/.config` files (Hyprland rice), a maintenance guide and helper sc
 |---|---|
 | Config folders (`hypr`, `waybar`, `kitty`, …) | My configs from `~/.config` |
 | `starship.toml` | Starship prompt config (`~/.config/starship.toml`) |
+| `home/.zshrc` | Zsh config (plugins, aliases, history settings) → `~/.zshrc` |
+| `shell-packages.txt` | Packages for the shell setup (zsh, plugins, Starship, eza, bat, fd, ripgrep, lazygit) |
 | [`Arch Linux System Maintenance Guide.md`](Arch%20Linux%20System%20Maintenance%20Guide.md) | Safe updates, recovery playbook, all commands |
 | `nvidia-maxperf-setup.sh` | Locks an NVIDIA GPU to max clocks (persists across boot and suspend). Edit the clock values for your card first. |
 | `amdgpu-maxperf-setup.sh` | Same for AMD GPUs (sets the performance level to `high`) |
+
+## Shell: zsh
+
+- **Prompt:** Starship (same look as before, config in `starship.toml`)
+- **Plugins:** zsh-autosuggestions (gray suggestions from history, accept with →), zsh-syntax-highlighting (green = valid command, red = unknown)
+- **Modern commands:** `ls` / `ll` / `tree` use eza, plus bat, fd, ripgrep (`rg`) and lazygit
+- **History:** only valid commands are saved, typos and keyboard mashing are not
+- **Safety:** `rm` is aliased to `rm --preserve-root=all`
+
+Restore:
+
+```bash
+sudo pacman -S --needed - < shell-packages.txt
+cp home/.zshrc ~/
+cp starship.toml ~/.config/
+chsh -s /usr/bin/zsh
+```
+
+Then log out and back in.
+
+## System tweaks (outside `~/.config`)
+
+These live in system files, so they are documented here instead of being copied.
+
+| What | Why | Setup |
+|---|---|---|
+| **earlyoom** | Kills the biggest Firefox tab before the RAM runs full, instead of the whole system freezing | below |
+| **hyprpolkitagent** | Password pop-up for apps that need root (Timeshift, GSmartControl). Without it they silently don't start on Hyprland | `sudo pacman -S hyprpolkitagent`, then in `hyprland.lua`: `hl.exec_cmd("systemctl --user start hyprpolkitagent")` |
+| **Arch-Update weekly check** | Looks for updates every Monday at 17:00 instead of every 6 hours | below |
+| **LTS emergency kernel** | Boot fallback if the main kernel breaks after an update | Maintenance Guide, section 4.7 |
+
+**earlyoom:**
+
+```bash
+sudo pacman -S earlyoom
+sudo tee /etc/default/earlyoom > /dev/null << 'EOF'
+EARLYOOM_ARGS="-m 5 -s 100 -r 0 --prefer 'Isolated.Web.Co|Web.Content' --avoid 'Hyprland|Xwayland|cs2|pipewire|wireplumber|vesktop|steam'"
+EOF
+sudo systemctl enable --now earlyoom
+```
+
+**Arch-Update weekly check:**
+
+```bash
+mkdir -p ~/.config/systemd/user/arch-update.timer.d
+printf '[Timer]\nOnStartupSec=\nOnUnitActiveSec=\nOnCalendar=Mon 17:00\nPersistent=true\n' > ~/.config/systemd/user/arch-update.timer.d/weekly.conf
+systemctl --user daemon-reload && systemctl --user restart arch-update.timer
+```
 
 ## Global MangoHud (system-wide)
 
@@ -61,14 +111,15 @@ _Generated on 28.10.2026: official packages via pacman, everything else via yay 
 | waybar | Status bar | `waybar`, `blueman`, `pavucontrol` |
 | waypaper | Wallpaper picker | `waypaper` (AUR), `swww` (AUR), `swaybg` |
 | xdg-desktop-portal | Portals (screen sharing, file picker) | `xdg-desktop-portal`, `xdg-desktop-portal-hyprland`, `xdg-desktop-portal-gtk` |
-| zshrc.d | Zsh shell | `zsh`, `starship` |
+| home/.zshrc | Zsh shell | see `shell-packages.txt` |
 
 ### Install everything at once
 
 **1. Official packages (pacman):**
 
 ```bash
-sudo pacman -Syu --needed fastfetch fontconfig ttf-jetbrains-mono-nerd gtk3 gtk4 hyprland hyprlauncher hyprlock hyprsunset hyprpicker kitty kvantum kvantum-qt5 mangohud lib32-mangohud nautilus nwg-look qt6ct swaync waybar blueman pavucontrol swaybg xdg-desktop-portal xdg-desktop-portal-hyprland xdg-desktop-portal-gtk zsh starship
+sudo pacman -Syu --needed fastfetch fontconfig ttf-jetbrains-mono-nerd gtk3 gtk4 hyprland hyprlauncher hyprlock hyprsunset hyprpicker kitty kvantum kvantum-qt5 mangohud lib32-mangohud nautilus nwg-look qt6ct swaync waybar blueman pavucontrol swaybg xdg-desktop-portal xdg-desktop-portal-hyprland xdg-desktop-portal-gtk
+sudo pacman -S --needed - < shell-packages.txt
 ```
 
 > `lib32-…` packages need the **multilib** repository. If pacman can't find them,
@@ -100,13 +151,14 @@ cd ~/config-backup
 # restore a single folder, e.g. MangoHud:
 cp -r MangoHud ~/.config/
 
-# or all folders at once:
-for d in */; do cp -r "$d" ~/.config/; done
+# or all config folders at once (home/ is not a ~/.config folder, so it is skipped):
+for d in */; do [ "$d" = "home/" ] || cp -r "$d" ~/.config/; done
 
-# Starship prompt:
-cp starship.toml ~/.config/
+# Starship prompt and zsh: see "Shell: zsh" above
 ```
 
 The local folder is called `~/config-backup` on purpose: my backup scripts expect that name.
+
+<!-- INSTALL-END -->
 
 <!-- INSTALL-END -->
