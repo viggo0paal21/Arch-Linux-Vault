@@ -426,7 +426,7 @@ hl.window_rule({
 
 -- ── Floating-Fenster in 16:9 ──────────────────────
 local FLOAT_ANTEIL   = 0.6    -- Breite = 60 % der Monitorbreite
-local NUR_ERSTES_MAL = false  -- true = danach merkt sich Hyprland deine eigene Größe
+local NUR_ERSTES_MAL = true  -- true = danach merkt sich Hyprland deine eigene Größe
 
 local schon_gefloatet = {}
 
