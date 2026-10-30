@@ -10,7 +10,7 @@ Short reference for my setup: RTX 3060 Ti, 170 Hz G-Sync monitor, Hyprland, game
 |---|---|
 | `hyprland.lua` | `misc.vrr = 2` (G-Sync in fullscreen) |
 | `hyprland.lua` | **no** catch-all `immediate` rule |
-| `hyprland.lua` | `general.allow_tearing = true` only if a game should tear (section 2), otherwise `false` |
+| `hyprland.lua` | `general.allow_tearing = false` (or `true` if you use section 2) |
 | `~/.config/MangoHud/MangoHud.conf` | `fps_limit=162`, `fps_limit_method=late`, `vsync=3`, `gl_vsync=1` |
 | In every game | V-Sync off, frame limiter off (MangoHud does both) |
 
@@ -20,27 +20,45 @@ If a game can't hold 162 and the GPU sits at ~99 %, give that game a lower cap i
 
 ---
 
-## 2. Lowest latency with tearing (competitive)
+## 2. Alternative: `tearing-all` + exceptions
 
-Needs `general.allow_tearing = true`. Then, per game:
+Every fullscreen game gets Hyprland's direct path (each frame is flipped the moment it arrives), and the 162 cap + G-Sync keeps the tearing out of sight. It felt the same as section 1 for me. Section 1 is the safer default.
+
+Needs `general.allow_tearing = true`. In `hyprland.lua`:
 
 ```lua
+-- 1. Every fullscreen window may tear
 hl.window_rule({
-    name  = "tearing-games",
-    match = { class = "cs2" },   -- more games: "cs2|otherclass"
+    name  = "tearing-all",
+    match = { class = ".*" },
     immediate = true,
+})
+
+-- 2. Exceptions: MUST come below tearing-all (the lower rule wins)
+
+-- Video apps: no tearing AND no VRR (VRR makes them flicker)
+hl.window_rule({
+    name  = "no-tearing-video",
+    match = { class = "crunchyroll|firefox" },   -- add more apps with |
+    no_vrr = true,
+    immediate = false,
+})
+
+-- Apps that should never tear but can keep VRR (replace someclass)
+hl.window_rule({
+    name  = "no-tearing",
+    match = { class = "someclass" },
+    immediate = false,
 })
 ```
 
-MangoHud profile: `~/.config/MangoHud/<exe>.conf` (native game) or `wine-<exe>.conf` (Proton game, exe name without `.exe`):
+Keep in mind:
 
-```ini
-fps_limit=0
-fps_limit_method=late
-vsync=1
-```
-
-**Why:** far above 170 FPS every frame is fresher, and Hyprland puts each one on screen immediately instead of waiting. That's the lowest latency, with visible tearing. With a cap of 162 instead of 0, G-Sync hides almost all of the tearing again.
+- **The FPS cap is the only protection.** With the rule, MangoHud's `vsync` holds nothing back, so every game must stay at 162 (global `fps_limit=162`).
+- **Games without MangoHud** (e.g. Flatpak games, check with Shift_R+F12) run uncapped and tear. Set 162 in the game itself or add it as an exception.
+- **Anything with `no_vrr` must also get `immediate = false`**, otherwise it tears all the time (that was the Crunchyroll bug).
+- **Find a class:** `hyprctl clients | rg -i class`
+- **Want one game to really tear** for competitive play? Give it its own MangoHud profile with `fps_limit=0` (`<exe>.conf` for native, `wine-<exe>.conf` for Proton games).
 
 ---
 
@@ -66,7 +84,7 @@ Game ──(present mode = MangoHud vsync)──▶ Hyprland ──(page flip)�
 | `allow_tearing` | Catch-all rule (`class = ".*"`, `immediate = true`) | Result |
 |---|---|---|
 | `true` | no **(my setup)** | Only windows with a rule can tear. MangoHud's vsync can't change that. |
-| `true` | yes | Every fullscreen window can tear, MangoHud's vsync can't stop it. At 162 + G-Sync almost never visible. Video apps need an exception rule. |
+| `true` | yes (section 2) | Every fullscreen window can tear, MangoHud's vsync can't stop it. At 162 + G-Sync almost never visible. Video apps need an exception rule. |
 | `false` | doesn't matter | Nothing can tear, not even with a rule. |
 
 ### The other settings
@@ -78,16 +96,7 @@ Game ──(present mode = MangoHud vsync)──▶ Hyprland ──(page flip)�
 | `render.direct_scanout` | The fullscreen game image goes straight to the screen, one copy less. Doesn't change *when* frames are flipped. |
 | Rule order | Top to bottom, the lower rule wins. Exceptions go **below** the rule they override. |
 
-My video rule:
-
-```lua
-hl.window_rule({
-    name  = "no-tearing-video",
-    match = { class = "crunchyroll|firefox" },
-    no_vrr = true,
-    immediate = false,
-})
-```
+Exception rules for tearing and VRR: see section 2.
 
 ### MangoHud values
 
