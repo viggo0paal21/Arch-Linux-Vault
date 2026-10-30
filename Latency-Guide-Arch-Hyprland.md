@@ -2,7 +2,7 @@
 
 A personal reference for this machine. It explains how a frame gets from a game to the screen, why tearing happens (or doesn't), and how **MangoHud** and **Hyprland window rules** control it.
 
-Read section 1 once to understand the ideas. After that, the [TL;DR](#tldr-the-setup-i-use), the [cheat sheet](#3-behavior-cheat-sheet) and the [recipes](#8-recipes) are what you need day to day.
+Read section 1 once to understand the ideas. After that, the [TL;DR](#tldr-the-setup-i-use), the [tearing behavior summary](#tearing-behavior-summary-nvidia-xwayland-games-hyprland), the [cheat sheet](#3-behavior-cheat-sheet) and the [recipes](#8-recipes) are what you need day to day.
 
 ---
 
@@ -53,6 +53,29 @@ Read section 1 once to understand the ideas. After that, the [TL;DR](#tldr-the-s
 - Every normal game: **no tearing**, and practically the same latency as V-Sync off.
 - CS2: tears, lowest possible latency.
 - Desktop, terminals, browsers, waybar: **never tear**.
+
+---
+
+## Tearing behavior summary (NVIDIA, Xwayland games, Hyprland)
+
+**1) `allow_tearing = true`, no `tearing-all` rule (my setup)**
+
+- Nothing tears unless the window has an `immediate = true` rule in hyprland.lua. MangoHud's vsync setting can't change that for Xwayland games on NVIDIA.
+- Exception: native Wayland apps with vsync off can request tearing themselves. The global MangoHud `vsync=3` prevents that.
+- Lowest latency without tearing: FPS cap 8 below refresh (162 @ 170 Hz) + VRR on (`misc.vrr = 2`).
+- Lowest latency overall: `immediate` rule + MangoHud `vsync=1` + cap above refresh or uncapped (CS2).
+
+**2) `allow_tearing = true` + `tearing-all` rule (forced tearing)**
+
+- Every fullscreen window can tear. MangoHud's vsync can't stop it (even `vsync=3` runs above refresh). Only an exception rule with `immediate = false` below `tearing-all` can.
+- Lowest latency: uncapped FPS (with tearing).
+- Cap 8 below refresh + VRR removes most tearing, but small tears at the bottom can still appear on frametime spikes, and latency is no better than in setup 1.
+- Apps with VRR off (videos) tear constantly, so they need an exception rule.
+
+**3) `allow_tearing = false`**
+
+- Nothing can tear, not even with an `immediate` rule.
+- Lowest latency (without tearing): cap 8 below refresh + VRR on. Same result as setup 1 for every game without a rule, but no option for CS2 to tear.
 
 ---
 
