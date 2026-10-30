@@ -187,11 +187,11 @@ hl.layer_rule({
   ignore_alpha = 0,
 })
 
-hl.window_rule({
-    name  = "tearing-games",
-    match = { class = "cs2" },
-    immediate = true,
-})
+--hl.window_rule({
+    --name  = "tearing-games",
+    --match = { class = "cs2" },
+    --immediate = true,
+--})
 
 -- Ausnahmen: müssen UNTER tearing-all stehen
 hl.window_rule({
@@ -199,6 +199,12 @@ hl.window_rule({
     match = { class = "crunchyroll|firefox" },
     no_vrr = true,
     immediate = false,
+})
+
+hl.window_rule({
+    name  = "doom-fullscreen",
+    match = { class = "steam_app_379720" },
+    fullscreen_state = "2 2",
 })
 
 -- Ref https://wiki.hypr.land/Configuring/Basics/Workspace-Rules/
@@ -468,6 +474,8 @@ end
 hl.on("window.close", function(w) schon_gefloatet[w.address] = nil end)
 
 hl.bind("SUPER + V", toggle_float_16_9)
+
+
 
 
 
