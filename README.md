@@ -4,7 +4,7 @@ Everything I need to keep my Arch Linux system running and to rebuild it from sc
 my personal `~/.config` files (Hyprland rice), my zsh setup, a maintenance guide and helper scripts.
 
 > 📖 **[Arch Linux System Maintenance Guide](Arch%20Linux%20System%20Maintenance%20Guide.md)**: safe updates, recovery playbook and all commands.
-
+> 🎮 **[Low Latency Gaming](Low%20Latency%20Gaming.md)**: best setup with and without tearing, and how tearing works on Hyprland.
 ## Contents
 
 | File / folder | What it is |
