@@ -173,14 +173,7 @@ hl.animation({ leaf = "workspaces",    enabled = true, speed = 4,   bezier = "me
 -- hl.animation({ leaf = "workspaces", enabled = true, speed = 7,   bezier = "menu_decel", style = "slidefade 15%" })
 -- hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 3, bezier = "md3_decel", style = "slidefadevert 15%" })
 hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 3, bezier = "md3_decel", style = "slidevert" })
-
-hl.window_rule({
-    name = "no-vrr-crunchyroll",
-    match = {
-        class = "^(crunchyroll)$",
-    },
-    no_vrr = true,
-})
+ 
 
 hl.layer_rule({
     match = { namespace = "swaync-notification-window" },
@@ -195,10 +188,19 @@ hl.layer_rule({
 })
 
 hl.window_rule({
-    name  = "tearing-all",
-    match = { class = ".*" },
+    name  = "tearing-games",
+    match = { class = "cs2" },
     immediate = true,
 })
+
+-- Ausnahmen: müssen UNTER tearing-all stehen
+hl.window_rule({
+    name  = "no-tearing-video",
+    match = { class = "crunchyroll|firefox" },
+    no_vrr = true,
+    immediate = false,
+})
+
 -- Ref https://wiki.hypr.land/Configuring/Basics/Workspace-Rules/
 -- "Smart gaps" / "No gaps when only"
 
@@ -466,5 +468,6 @@ end
 hl.on("window.close", function(w) schon_gefloatet[w.address] = nil end)
 
 hl.bind("SUPER + V", toggle_float_16_9)
+
 
 
