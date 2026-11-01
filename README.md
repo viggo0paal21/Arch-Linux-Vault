@@ -1,23 +1,68 @@
 # Arch-Vault
 
 Everything I need to keep my Arch Linux system running and to rebuild it from scratch:
-my personal `~/.config` files (Hyprland rice), my zsh setup, a maintenance guide and helper scripts.
+my personal `~/.config` files (Hyprland rice), my zsh setup, maintenance and performance guides, and helper scripts.
 
 > 📖 **[Arch Linux System Maintenance Guide](Arch%20Linux%20System%20Maintenance%20Guide.md)**: safe updates, recovery playbook and all commands.
 
+> ⚡ **[Performance Optimization](Performance%20Optimization.md)**: system tweaks for gaming performance and latency: NTSync, split lock, CPU and GPU max performance (incl. the NVIDIA/AMD scripts), shader cache, gaming scheduler.
+
 > 🎮 **[Low Latency Gaming](Low%20Latency%20Gaming.md)**: best setup with and without tearing, and how tearing works on Hyprland.
+
 ## Contents
 
-| File / folder | What it is |
+### Guides
+
+| File | What it is |
 |---|---|
-| Config folders (`hypr`, `waybar`, `kitty`, …) | My configs from `~/.config` |
-| `starship.toml` | Starship prompt config (`~/.config/starship.toml`) |
-| `rofi/` | App launcher: `config.rasi` (settings) + `monochrome.rasi` (theme) |
-| `home/.zshrc` | Zsh config (plugins, aliases, history settings) → `~/.zshrc` |
-| `shell-packages.txt` | Packages for the shell setup (zsh, plugins, Starship, eza, bat, fd, ripgrep, lazygit) |
 | [`Arch Linux System Maintenance Guide.md`](Arch%20Linux%20System%20Maintenance%20Guide.md) | Safe updates, recovery playbook, all commands |
-| `nvidia-maxperf-setup.sh` | Locks an NVIDIA GPU to max clocks (persists across boot and suspend). Edit the clock values for your card first. |
-| `amdgpu-maxperf-setup.sh` | Same for AMD GPUs (sets the performance level to `high`) |
+| [`Performance Optimization.md`](Performance%20Optimization.md) | System tweaks for gaming performance and latency, incl. how to use the GPU scripts below |
+| [`Low Latency Gaming.md`](Low%20Latency%20Gaming.md) | Best display setup with and without tearing, how tearing works on Hyprland |
+
+### Scripts
+
+| File | What it is |
+|---|---|
+| [`nvidia-maxperf-setup.sh`](nvidia-maxperf-setup.sh) | Locks an NVIDIA GPU to max clocks (persists across boot and suspend). Edit the clock values for your card first. See [Performance Optimization, section 4](Performance%20Optimization.md#4-gpu-max-performance-clocks). |
+| [`amdgpu-maxperf-setup.sh`](amdgpu-maxperf-setup.sh) | Same for AMD GPUs (sets the performance level to `high`) |
+
+### Shell
+
+| File | What it is |
+|---|---|
+| [`home/.zshrc`](home/.zshrc) | Zsh config (plugins, aliases, history settings) → `~/.zshrc` |
+| [`starship.toml`](starship.toml) | Starship prompt config → `~/.config/starship.toml` |
+| [`shell-packages.txt`](shell-packages.txt) | Packages for the shell setup (zsh, plugins, Starship, eza, bat, fd, ripgrep, lazygit) |
+
+### Config folders (→ `~/.config`)
+
+| Folder | What it is |
+|---|---|
+| [`autostart/`](autostart) | Programs that start automatically at login |
+| [`fastfetch/`](fastfetch) | System info in the terminal |
+| [`fontconfig/`](fontconfig) | Font settings |
+| [`gtk-3.0/`](gtk-3.0) | GTK 3 theme |
+| [`gtk-4.0/`](gtk-4.0) | GTK 4 theme |
+| [`hypr/`](hypr) | Hyprland (`hyprland.lua`) and Hypr tools |
+| [`hyprpanel/`](hyprpanel) | HyprPanel (bar) |
+| [`kitty/`](kitty) | Terminal |
+| [`Kvantum/`](Kvantum) | Qt theme engine |
+| [`MangoHud/`](MangoHud) | FPS / performance overlay for games |
+| [`nautilus/`](nautilus) | File manager |
+| [`nwg-look/`](nwg-look) | GTK settings tool |
+| [`qt6ct/`](qt6ct) | Qt 6 theme settings |
+| [`rofi/`](rofi) | App launcher: `config.rasi` (settings) + `monochrome.rasi` (theme) |
+| [`swaync/`](swaync) | Notifications |
+| [`vibrantLinux/`](vibrantLinux) | Per-app color saturation |
+| [`waybar/`](waybar) | Status bar |
+| [`waypaper/`](waypaper) | Wallpaper picker |
+| [`xdg-desktop-portal/`](xdg-desktop-portal) | Portals (screen sharing, file picker) |
+
+### Other
+
+| Folder | What it is |
+|---|---|
+| [`etc/`](etc) | Files from outside `~/.config` (skipped by the restore loop in [Restore the configs](#restore-the-configs)) |
 
 ## Shell: zsh
 
@@ -88,6 +133,7 @@ These live in system files, so they are documented here instead of being copied.
 | **hyprpolkitagent** | Password pop-up for apps that need root (Timeshift, GSmartControl). Without it they silently don't start on Hyprland | `sudo pacman -S hyprpolkitagent`, then in `hyprland.lua`: `hl.exec_cmd("systemctl --user start hyprpolkitagent")` |
 | **Arch-Update weekly check** | Looks for updates every Monday at 17:00 instead of every 6 hours | below |
 | **LTS emergency kernel** | Boot fallback if the main kernel breaks after an update | Maintenance Guide, section 4.7 |
+| **Gaming performance tweaks** | NTSync, split lock, CPU/GPU max performance, shader cache, scheduler | [Performance Optimization](Performance%20Optimization.md) |
 
 **earlyoom:**
 
