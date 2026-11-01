@@ -44,7 +44,7 @@ my personal `~/.config` files (Hyprland rice), my zsh setup, maintenance and per
 | [`gtk-3.0/`](gtk-3.0) | GTK 3 theme |
 | [`gtk-4.0/`](gtk-4.0) | GTK 4 theme |
 | [`hypr/`](hypr) | Hyprland (`hyprland.lua`) and Hypr tools |
-| [`hyprpanel/`](hyprpanel) | HyprPanel (bar) |
+| [`hyprpanel/`](hyprpanel) | HyprPanel (bar) OUTDATED NOT IN USE, USE WAYBAR|
 | [`kitty/`](kitty) | Terminal |
 | [`Kvantum/`](Kvantum) | Qt theme engine |
 | [`MangoHud/`](MangoHud) | FPS / performance overlay for games |
