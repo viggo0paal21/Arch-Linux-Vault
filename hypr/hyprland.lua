@@ -173,7 +173,8 @@ hl.animation({ leaf = "workspaces",    enabled = true, speed = 4,   bezier = "me
 -- hl.animation({ leaf = "workspaces", enabled = true, speed = 7,   bezier = "menu_decel", style = "slidefade 15%" })
 -- hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 3, bezier = "md3_decel", style = "slidefadevert 15%" })
 hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 3, bezier = "md3_decel", style = "slidevert" })
- 
+
+hl.layer_rule({ match = { namespace = "qs-.*" }, no_anim = true }) 
 
 hl.layer_rule({
     match = { namespace = "swaync-notification-window" },
@@ -186,6 +187,12 @@ hl.layer_rule({
   blur = true,
   ignore_alpha = 0,
 })
+
+--hl.window_rule({
+    --name  = "tearing-all",
+    --match = { class = ".*" },
+    --immediate = true,
+--})
 
 --hl.window_rule({
     --name  = "tearing-games",
