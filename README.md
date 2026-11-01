@@ -47,7 +47,7 @@ my personal `~/.config` files (Hyprland rice), my zsh setup, maintenance and per
 | [`hyprpanel/`](hyprpanel) | HyprPanel (bar) OUTDATED NOT IN USE, USE WAYBAR|
 | [`kitty/`](kitty) | Terminal |
 | [`Kvantum/`](Kvantum) | Qt theme engine |
-| [`MangoHud/`](MangoHud) | FPS / performance overlay for games |
+| [`MangoHud/`](MangoHud) | Stable FPS limiter and performance overlay for games |
 | [`nautilus/`](nautilus) | File manager |
 | [`nwg-look/`](nwg-look) | GTK settings tool |
 | [`qt6ct/`](qt6ct) | Qt 6 theme settings |
