@@ -320,6 +320,22 @@ OverlayPanel {
 
                         SettingRow {
                             width: parent.width
+                            visible: Config.opts.transparency !== "off"
+                            label: "Opacity"
+                            description: "How solid translucent surfaces are, 100 % = black"
+
+                            RangeControl {
+                                from: 25
+                                to: 100
+                                stepSize: 5
+                                value: Config.opts.glassOpacity
+                                suffix: " %"
+                                onEdited: v => Config.opts.glassOpacity = v
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
                             visible: Config.opts.transparency === "popups"
                             label: "Solid popups with windows"
                             description: "Popups turn black as soon as 1 or more windows are open (floating ones don't count)"

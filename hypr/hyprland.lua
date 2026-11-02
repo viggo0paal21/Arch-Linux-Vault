@@ -141,6 +141,7 @@ hl.config({
     },
 })
 
+
 -- Kurven
 hl.curve("linear",        { type = "bezier", points = { {0, 0},       {1, 1}       } })
 hl.curve("md3_standard",  { type = "bezier", points = { {0.2, 0},     {0, 1}       } })
@@ -176,7 +177,7 @@ hl.animation({ leaf = "workspaces",    enabled = true, speed = 4,   bezier = "me
 -- hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 3, bezier = "md3_decel", style = "slidefadevert 15%" })
 hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 3, bezier = "md3_decel", style = "slidevert" })
 
-hl.layer_rule({ match = { namespace = "qs-.*" }, no_anim = true }) 
+hl.layer_rule({ match = { namespace = "qs-.*" }, no_anim = true, blur = true, ignore_alpha = 0.5 }) 
 
 hl.layer_rule({
     match = { namespace = "swaync-notification-window" },

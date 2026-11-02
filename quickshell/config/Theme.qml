@@ -12,7 +12,8 @@ Singleton {
     readonly property color layer1: "#000000"
     // Transparenz (Settings > Appearance): "off" | "popups" | "everywhere"
     readonly property bool glassy: Config.opts.transparency === "popups" || Config.opts.transparency === "everywhere"
-    readonly property real glassAlpha: 0.8
+    // Deckkraft der durchsichtigen Flaechen (Settings > Appearance > Opacity), 100 = schwarz
+    readonly property real glassAlpha: Math.max(0, Math.min(100, Config.opts.glassOpacity)) / 100
 
     // Auf Schwarz sehen die Toenungen exakt aus wie die festen Grautoene,
     // auf durchsichtigen Flaechen lassen sie den Blur durchscheinen.

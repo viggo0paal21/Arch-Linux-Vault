@@ -18,11 +18,11 @@ smooth animations at the full **170 Hz** on an NVIDIA card. It replaces Waybar, 
 | File | Goes to | What it is |
 |---|---|---|
 | [`quickshell/`](quickshell) | `~/.config/quickshell/` | The shell itself (bar, launcher, control center, dashboard, notifications, OSD, power menu, settings) |
-| [`home/.local/bin/qs-start`](home/.local/bin/qs-start) | `~/.local/bin/` | Start script used by Hyprland's autostart: Vulkan, without MangoHud / lsfg-vk / vkBasalt |
+| [`home/.local/bin/qs-start`](home/.local/bin/qs-start) | `~/.local/bin/` | Start script used by Hyprland's autostart: Vulkan, wall-clock animations, without MangoHud / lsfg-vk / vkBasalt |
 | [`home/.local/bin/qs`](home/.local/bin/qs), [`quickshell`](home/.local/bin/quickshell) | `~/.local/bin/` | Wrappers: same fix for **every** `qs` / `quickshell` call, any config |
 | [`home/.local/share/dbus-1/services/org.freedesktop.Notifications.service`](home/.local/share/dbus-1/services/org.freedesktop.Notifications.service) | `~/.local/share/dbus-1/services/` | Stops swaync / dunst / mako from being auto-started by D-Bus and taking the notification server away from Quickshell (see section 7) |
-| [`home/.local/state/quickshell/by-shell/oled-bw/settings.json`](home/.local/state/quickshell/by-shell/oled-bw/settings.json) | `~/.local/state/quickshell/by-shell/oled-bw/` | My saved shell settings (radius, bar, font, animation speed, FPS counter, ...) |
-| [`hypr/hyprland.lua`](hypr/hyprland.lua) | `~/.config/hypr/` | Autostart runs `qs-start` (Waybar and swaync are commented out), `Super + R` opens the Quickshell launcher |
+| [`home/.local/state/quickshell/by-shell/oled-bw/settings.json`](home/.local/state/quickshell/by-shell/oled-bw/settings.json) | `~/.local/state/quickshell/by-shell/oled-bw/` | My saved shell settings (radius, bar, font, animation speed, transparency, FPS counter, ...) |
+| [`hypr/hyprland.lua`](hypr/hyprland.lua) | `~/.config/hypr/` | Autostart runs `qs-start` (Waybar and swaync are commented out), `Super + R` opens the Quickshell launcher, blur for the Quickshell layers |
 | [`quickshell/hyprland-quickshell.lua`](quickshell/hyprland-quickshell.lua) | (template) | Keybind and layer-rule snippets for `hyprland.lua` |
 
 Changes made for smooth 170 Hz (all inside `quickshell/`):
@@ -40,8 +40,10 @@ Changes made for smooth 170 Hz (all inside `quickshell/`):
 | Mode | What it does |
 |---|---|
 | **Off** | Everything solid black |
-| **Popups** | Panels, menus, notifications and the OSD are 80 % black with Hyprland blur. Extra switch **Solid popups with windows**: popups turn black as soon as 1 or more windows are open on the workspace |
+| **Popups** | Panels, menus, notifications and the OSD are translucent black with Hyprland blur. Extra switch **Solid popups with windows**: popups turn black as soon as 1 or more windows are open on the workspace |
 | **Everywhere** | Same, plus the bar. Extra switch **Solid bar with windows**: the bar turns black as soon as 1 or more windows are open |
+
+**Opacity** (shown when transparency is on) sets how solid the translucent surfaces are: 25–100 %, default 80 %, 100 % = black.
 
 Floating windows don't count for the two switches. **Transparent when empty** (Bar tab) still works on top: with no windows at all the bar stays fully see-through.
 
@@ -49,9 +51,12 @@ The blur itself comes from Hyprland, so `hyprland.lua` needs it for the Quickshe
 
 ```lua
 -- replaces the old qs-.* rule: no Hyprland animation, blur behind translucent parts
--- (ignore_alpha 0.5: fully transparent areas and the 45 % dim behind settings/power menu stay unblurred)
 hl.layer_rule({ match = { namespace = "qs-.*" }, no_anim = true, blur = true, ignore_alpha = 0.5 })
 ```
+
+`ignore_alpha` must stay **below** the Opacity slider: Hyprland only blurs pixels that are more opaque than this value.
+With `0.5`, fully transparent areas and the 45 % dim behind the settings / power menu stay unblurred, but Opacity
+must be above 50 %. For lower values use `ignore_alpha = 0.2` (then the dim backdrop gets blurred too, which looks fine).
 
 The tray menu is a popup window, not a layer. For blur there too, add `popups = true` to `decoration.blur`.
 
@@ -100,12 +105,19 @@ Three problems stacked on top of each other:
    which drives animations with a fixed ~16 ms timer (~60 Hz). Forcing `QSG_RENDER_LOOP=threaded` gave exactly 85 fps
    (half of 170: every frame waited for two refreshes). Details: [omarchy issue #7268](https://github.com/omacom/omarchy/issues/7268).
 3. **Panels were recreated on every open** (new Wayland surface + swapchain), which blocked the shell for ~90 ms.
+4. **Uneven animation steps on Vulkan.** In the threaded render loop Qt advances every animation by exactly one
+   refresh interval (1/170 s) per rendered frame, assuming each frame reaches the screen exactly one refresh later.
+   On NVIDIA + Wayland that isn't always true, so motion sped up and slowed down from frame to frame. It looked like
+   frame generation (Lossless Scaling 30 → 120): wobbly, jagged edges, most visible with slow animations.
+   The FPS counter still showed a steady 170, because it counts frames sent, not when they are shown.
 
 Fix:
 
 - `QSG_RHI_BACKEND=vulkan`: on Vulkan the threaded render loop is Qt's default and the driver does vsync like in games → stable 170 fps.
 - `MANGOHUD=0`, `unset LD_PRELOAD`, `DISABLE_LSFGVK=1`, `DISABLE_VKBASALT=1`: keeps the game layers out of the shell. Games are unchanged.
 - Panels stay mapped (see the table in section 1).
+- `QSG_USE_SIMPLE_ANIMATION_DRIVER=1`: animations follow the real clock instead of fixed per-frame steps, so motion
+  stays even when single frames arrive a bit early or late.
 
 Result: constant **170 fps**, longest gap between two frames **~7 ms**, also while opening panels.
 
@@ -284,6 +296,8 @@ NVIDIA-only parts to change after switching to AMD: Settings → *GPU monitor (n
 | Problem | Fix |
 |---|---|
 | Shell frozen | `pkill -9 -x 'qs\|quickshell'`, then `setsid -f ~/.local/bin/qs-start >/dev/null 2>&1`. Make sure only one instance runs: `pgrep -ax 'qs\|quickshell'` |
+| Animations look like frame generation (wobbly, jagged edges, uneven motion) | `QSG_USE_SIMPLE_ANIMATION_DRIVER=1` missing: check `tr '\0' '\n' < /proc/$(pgrep -xo 'qs\|quickshell')/environ \| grep SIMPLE`. It has to be in `qs-start` and both wrappers |
+| No blur behind transparent surfaces | The `qs-.*` layer rule needs `blur = true`, and `ignore_alpha` must be below the Opacity value (section 1) |
 | Problems with Vulkan | Remove the `QSG_RHI_BACKEND=vulkan` line from `qs-start` and the wrappers (OpenGL, ~60 Hz animations, but stable) |
 | `qt.qpa.wayland.textinput: ... disableSurface ... but 0x0 is focused` when opening or closing a panel | Harmless: panels take the keyboard while open (Esc, typing in the launcher). When they release it, Qt's text-input bookkeeping (for input methods) has already moved on and warns. Typing still works. Hidden by the start script and wrappers with `qt.qpa.wayland.textinput.warning=false` |
 | No notifications / `Could not register notification server` | Another daemon owns the notification server. Find it with `busctl --user status org.freedesktop.Notifications \| grep -E '^(PID\|Comm)='`, kill it, restart Quickshell. To stop D-Bus from auto-starting swaync / dunst / mako again (e.g. when an app sends a notification while Quickshell is down), install the override file from section 1 and reload D-Bus: `busctl --user call org.freedesktop.DBus /org/freedesktop/DBus org.freedesktop.DBus ReloadConfig` |

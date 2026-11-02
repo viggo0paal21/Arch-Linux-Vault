@@ -30,6 +30,7 @@ Singleton {
         uiFontWeight: 700,
         animations: true,
         transparency: "off",
+        glassOpacity: 80,
         popupsSolidWithWindows: false,
         barSolidWithWindows: false,
         animScale: 1.0,
@@ -87,6 +88,7 @@ Singleton {
             property int uiFontWeight: root.defaults.uiFontWeight
             property bool animations: root.defaults.animations
             property string transparency: root.defaults.transparency
+            property int glassOpacity: root.defaults.glassOpacity
             property bool popupsSolidWithWindows: root.defaults.popupsSolidWithWindows
             property bool barSolidWithWindows: root.defaults.barSolidWithWindows
             property real animScale: root.defaults.animScale
