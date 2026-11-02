@@ -3,7 +3,9 @@ export MANGOHUD=0
 export DISABLE_LSFGVK=1
 export DISABLE_VKBASALT=1
 unset LD_PRELOAD
-# Harmlose Qt-Warnungen ueber kaputte SVG-Icons (leere Masken, fehlerhafte Pfade), fluten sonst das Log
-export QT_LOGGING_RULES="${QT_LOGGING_RULES:+$QT_LOGGING_RULES;}qt.svg*.warning=false"
+# Harmlose Qt-Warnungen ausblenden, die sonst das Log fluten:
+#  qt.svg*: kaputte SVG-Icons (leere Masken, fehlerhafte Pfade)
+#  qt.qpa.wayland.textinput: Fokuswechsel beim Oeffnen/Schliessen von Panels
+export QT_LOGGING_RULES="${QT_LOGGING_RULES:+$QT_LOGGING_RULES;}qt.svg*.warning=false;qt.qpa.wayland.textinput.warning=false"
 export QSG_RHI_BACKEND=vulkan
 exec quickshell "$@"
