@@ -56,9 +56,28 @@ With exactly 1 tiled window the bar docks to the top edge (no gap, square corner
 again. Floating windows never count. This matches a smart-gaps rule like `hl.workspace_rule({ workspace = "w[tv1]", gaps_out = 0 })`.
 
 The change takes 300 ms with the `md3_decel` curve, the same as the `windows` animation in `hyprland.lua`
-(`speed = 3` = 300 ms). The reserved space switches instantly, so Hyprland moves the windows with its own animation
-while the bar slides, and both arrive together. If you change the `windows` speed, change `duration: ... 300` in
-`modules/bar/Bar.qml` to match (speed × 100 ms).
+(`speed = 3` = 300 ms). If you change the `windows` speed, change `duration: ... 300` in `modules/bar/Bar.qml`
+to match (speed × 100 ms).
+
+With Dynamic on, the bar always reserves only its own height at the top. The 8 px gap under the floating bar comes
+from Hyprland's outer gap instead, so `hyprland.lua` needs the top gap raised by 8:
+
+```lua
+general = {
+    gaps_out = { top = 18, right = 10, bottom = 10, left = 10 },  -- 10 + 8 for the floating bar
+},
+hl.workspace_rule({ workspace = "w[tv1]", gaps_out = 0, gaps_in = 0 })  -- smart gaps: one window = no gaps
+```
+
+Why: if the shell switched the reserved space, Quickshell would move the bar and Hyprland the windows, and Hyprland
+always starts a few milliseconds later. With `md3_decel` that is 1-2 px, enough for a flickering line between bar and
+window. This way only Hyprland moves windows (in one go) and the bar slides over them. Turning Dynamic off: set
+`top` back to 10.
+
+Smoothness details in `Bar.qml`: left/right edges and corners slide with sub-pixel precision; top/bottom edges and the
+contents move in whole pixels (sharp text, constant bar height), rounded toward the target so the last pixel step
+happens during the motion. Set `border_size = 0` for a single window in only one rule; two rules setting it made the
+windows jitter when the smart gaps switched.
 
 The blur itself comes from Hyprland, so `hyprland.lua` needs it for the Quickshell layers (blur must also be enabled under `decoration`):
 
@@ -74,9 +93,16 @@ pixels from a few dozen pixels around. A dark translucent window directly under 
 gradient along the bar's bottom edge (it looks like a shadow, but turning off `decoration.shadow` doesn't change it).
 With `xray` the bar blurs only the wallpaper, like tiled windows already do. Popups keep blurring the windows behind them.
 
-`ignore_alpha` must stay **below** the Opacity slider: Hyprland only blurs pixels that are more opaque than this value.
-With `0.5`, fully transparent areas and the 45 % dim behind the settings / power menu stay unblurred, but Opacity
-must be above 50 %. For lower values use `ignore_alpha = 0.2` (then the dim backdrop gets blurred too, which looks fine).
+`ignore_alpha`: Hyprland only blurs pixels that are more opaque than this value. With `0.5`, fully transparent areas
+and the dim behind the launcher / settings / power menu stay unblurred, but surfaces need Opacity above 50 % for blur.
+The cards in dimmed panels sit on the dim, so together they are always above 0.5. For the other popups add:
+
+```lua
+-- popups without a dim behind them: blur down to the slider minimum (25 %)
+hl.layer_rule({ match = { namespace = "qs-(dashboard|control|notifications|osd)" }, ignore_alpha = 0.2 })
+```
+
+The bar stays at 0.5 (blur only from 55 % Opacity up).
 
 The tray menu is a popup window, not a layer. For blur there too, add `popups = true` to `decoration.blur`.
 

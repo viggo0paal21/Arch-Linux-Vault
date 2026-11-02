@@ -59,9 +59,13 @@ PanelWindow {
     screen: modelData
     color: "transparent"
     // Das Fenster selbst bleibt fest, nur die sichtbare Leiste (frame) gleitet darin.
-    // Der reservierte Platz springt sofort, Hyprland schiebt die Fenster mit seiner eigenen Animation nach.
     implicitHeight: Theme.barHeight + (bar.floating ? Theme.gap : 0)
-    exclusiveZone: Theme.barHeight + (bar.floatingNow ? Theme.gap : 0)
+    // Reservierter Platz oben. Mit "Dynamic" bleibt er immer bei der Leistenhoehe: Den Abstand unter der
+    // schwebenden Leiste macht Hyprland (gaps_out oben 10 + 8 = 18, bei einem Fenster 0 per Smart Gaps).
+    // So bewegt beim Wechsel nur Hyprland die Fenster, in einem Zug, und die Leiste gleitet einfach
+    // darueber. Wuerde Quickshell den Platz umschalten, starten Fenster und Leiste nie exakt gleichzeitig
+    // und dazwischen blitzt kurz eine Linie auf.
+    exclusiveZone: Theme.barHeight + (bar.floating && !bar.dynamic ? Theme.gap : 0)
 
     anchors {
         top: true
@@ -111,10 +115,13 @@ PanelWindow {
             }
         }
 
-        // Hintergrund auf Sub-Pixel genau (mit Kantenglaettung), damit die Form fluessig gleitet
+        // Hintergrund: links/rechts auf Sub-Pixel genau (mit Kantenglaettung), damit die Form fluessig gleitet.
+        // Oben/unten auf ganzen Pixeln im Takt des Inhalts: So ist die Leiste in jedem Frame exakt gleich dick
+        // (vorher kroch die Oberkante am Ende noch den letzten Pixel nach und die Leiste wurde sichtbar duenner),
+        // und unten gibt es keine halb bedeckte Pixelreihe ueber dem Fenster.
         Rectangle {
             x: bar.edgeExact - bar.edge
-            y: bar.edgeExact - bar.edge
+            y: 0
             width: bar.width - 2 * bar.edgeExact
             height: Theme.barHeight
             antialiasing: true

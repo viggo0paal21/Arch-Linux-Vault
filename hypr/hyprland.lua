@@ -101,7 +101,9 @@ hl.env("GTK_USE_PORTAL", "1")
 hl.config({
     general = {
         gaps_in  = 5,
-        gaps_out  = 10,
+        -- oben 10 + 8 fuer die schwebende Quickshell-Leiste ("Dynamic" reserviert nur die Leistenhoehe,
+        -- den Abstand darunter macht Hyprland). Ergibt dieselben 54 px wie vorher 44 + 10.
+        gaps_out = { top = 18, right = 10, bottom = 10, left = 10 },
         --gaps_out = { top = 0, right = 15, bottom = 15, left = 15 },
         border_size = 1,
 
@@ -126,7 +128,7 @@ hl.config({
 
         -- Schatten deaktivieren für einen flachen, minimalistischen Look
         shadow = {
-            enabled = true,
+            enabled = false,
         },
 
         blur = {
@@ -178,6 +180,11 @@ hl.animation({ leaf = "workspaces",    enabled = true, speed = 4,   bezier = "me
 hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 3, bezier = "md3_decel", style = "slidevert" })
 
 hl.layer_rule({ match = { namespace = "qs-.*" }, no_anim = true, blur = true, ignore_alpha = 0.5 }) 
+-- Popups ohne Abdunklung dahinter (Dashboard, Control Center, Benachrichtigungen, OSD):
+-- Blur auch unter 50 % Opacity (der Regler geht bis 25 %). Settings, Launcher und Power-Menue bleiben bei 0.5,
+-- sonst wuerde auch ihre Abdunklung verwischt. Ihre Karten liegen auf der Abdunklung und sind dadurch immer ueber 0.5.
+-- Die Leiste bleibt bei 0.5: Mit 0.2 flackert beim Andocken eine Linie zwischen Leiste und Fenster.
+hl.layer_rule({ match = { namespace = "qs-(dashboard|control|notifications|osd)" }, ignore_alpha = 0.2 })
 
 hl.layer_rule({
     match = { namespace = "swaync-notification-window" },
