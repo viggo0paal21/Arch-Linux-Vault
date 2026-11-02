@@ -72,7 +72,7 @@ PanelWindow {
         width: parent.width
         height: 48
         radius: height / 2
-        color: Theme.bg
+        color: Glass.popupBg
         border.width: 1
         border.color: Theme.borderStrong
         opacity: t

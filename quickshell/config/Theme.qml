@@ -10,10 +10,16 @@ Singleton {
     // Farben: echtes Schwarz als Basis, Graustufen nur fuer Tiefe und Hover
     readonly property color bg: "#000000"
     readonly property color layer1: "#000000"
-    readonly property color layer2: "#0d0d0d"
-    readonly property color layer3: "#171717"
-    readonly property color hover: "#141414"
-    readonly property color pressed: "#222222"
+    // Transparenz (Settings > Appearance): "off" | "popups" | "everywhere"
+    readonly property bool glassy: Config.opts.transparency === "popups" || Config.opts.transparency === "everywhere"
+    readonly property real glassAlpha: 0.8
+
+    // Auf Schwarz sehen die Toenungen exakt aus wie die festen Grautoene,
+    // auf durchsichtigen Flaechen lassen sie den Blur durchscheinen.
+    readonly property color layer2: glassy ? Qt.rgba(1, 1, 1, 0.05) : "#0d0d0d"
+    readonly property color layer3: glassy ? Qt.rgba(1, 1, 1, 0.09) : "#171717"
+    readonly property color hover: glassy ? Qt.rgba(1, 1, 1, 0.08) : "#141414"
+    readonly property color pressed: glassy ? Qt.rgba(1, 1, 1, 0.13) : "#222222"
     readonly property color border: "#1c1c1c"
     readonly property color borderStrong: "#2e2e2e"
     readonly property color fg: "#ffffff"

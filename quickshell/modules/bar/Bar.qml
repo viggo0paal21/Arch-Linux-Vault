@@ -23,6 +23,16 @@ PanelWindow {
         return ws ? ws.toplevels.values.length : 0;
     }
     readonly property bool solid: !Config.opts.barAutoTransparent || bar.windowCount > 0
+    // Fenster ohne schwebende (floating), fuer "Solid bar with windows"
+    readonly property int tiledCount: Hypr.tiledCount(bar.hyprMonitor)
+    // 0 = durchsichtig (leere Arbeitsflaeche), Glas = Transparency "Everywhere", sonst schwarz
+    readonly property real bgOpacity: {
+        if (!bar.solid)
+            return 0;
+        if (Config.opts.transparency === "everywhere" && !(Config.opts.barSolidWithWindows && bar.tiledCount > 0))
+            return Theme.glassAlpha;
+        return 1;
+    }
 
     // Rechte Kante des Uhr-/System-Kaestchens auf dem Bildschirm. Das Dashboard klappt darunter auf.
     readonly property real infoChipRight: bar.edge + rightRow.x + infoChip.x + infoChip.width
@@ -57,7 +67,7 @@ PanelWindow {
     Rectangle {
         anchors.fill: parent
         color: Theme.bg
-        opacity: bar.solid ? 1 : 0
+        opacity: bar.bgOpacity
         radius: bar.floating ? Theme.radiusLg : 0
         border.width: bar.floating && Config.opts.barBorder ? 1 : 0
         border.color: Theme.border

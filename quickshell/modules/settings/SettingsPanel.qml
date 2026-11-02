@@ -14,7 +14,7 @@ OverlayPanel {
     readonly property var tabs: [
         {
             name: "Appearance",
-            hint: "Corners, fonts, icons, wallpaper",
+            hint: "Transparency, corners, fonts, icons",
             icon: Icons.palette
         },
         {
@@ -290,6 +290,57 @@ OverlayPanel {
                         width: parent.width
                         spacing: 10
                         visible: panel.tab === 0
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Transparency"
+                            description: "Translucent black with Hyprland blur"
+                            controlWidth: 330
+
+                            Segmented {
+                                width: parent.width
+                                options: [
+                                    {
+                                        value: "off",
+                                        label: "Off"
+                                    },
+                                    {
+                                        value: "popups",
+                                        label: "Popups"
+                                    },
+                                    {
+                                        value: "everywhere",
+                                        label: "Everywhere"
+                                    }
+                                ]
+                                value: Config.opts.transparency
+                                onPicked: v => Config.opts.transparency = v
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            visible: Config.opts.transparency === "popups"
+                            label: "Solid popups with windows"
+                            description: "Popups turn black as soon as 1 or more windows are open (floating ones don't count)"
+
+                            SwitchCtl {
+                                checked: Config.opts.popupsSolidWithWindows
+                                onToggled: Config.opts.popupsSolidWithWindows = !Config.opts.popupsSolidWithWindows
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            visible: Config.opts.transparency === "everywhere"
+                            label: "Solid bar with windows"
+                            description: "The bar turns black as soon as 1 or more windows are open (floating ones don't count)"
+
+                            SwitchCtl {
+                                checked: Config.opts.barSolidWithWindows
+                                onToggled: Config.opts.barSolidWithWindows = !Config.opts.barSolidWithWindows
+                            }
+                        }
 
                         SettingRow {
                             width: parent.width

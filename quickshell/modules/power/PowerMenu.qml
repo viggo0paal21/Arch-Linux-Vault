@@ -130,7 +130,7 @@ OverlayPanel {
                     width: 124
                     height: 124
                     radius: Theme.radiusLg
-                    color: isArmed ? Theme.accent : (selected ? Theme.layer3 : Theme.layer1)
+                    color: isArmed ? Theme.accent : (selected ? Qt.tint(Glass.popupBg, Theme.layer3) : Glass.popupBg)
                     border.width: 1
                     border.color: selected ? Theme.fg : Theme.border
 

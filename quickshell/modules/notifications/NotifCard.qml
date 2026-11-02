@@ -33,7 +33,7 @@ Rectangle {
 
     implicitHeight: content.implicitHeight + 28
     radius: Theme.radiusLg
-    color: root.popup ? Theme.layer1 : Theme.layer2
+    color: root.popup ? Glass.popupBg : Theme.layer2
     border.width: 1
     border.color: root.critical ? Theme.fg : (hover.hovered ? Theme.borderStrong : Theme.border)
     clip: true

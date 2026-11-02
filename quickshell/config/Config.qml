@@ -29,6 +29,9 @@ Singleton {
         uiFontSize: 15,
         uiFontWeight: 700,
         animations: true,
+        transparency: "off",
+        popupsSolidWithWindows: false,
+        barSolidWithWindows: false,
         animScale: 1.0,
         monochromeIcons: true,
         dnd: false,
@@ -83,6 +86,9 @@ Singleton {
             property int uiFontSize: root.defaults.uiFontSize
             property int uiFontWeight: root.defaults.uiFontWeight
             property bool animations: root.defaults.animations
+            property string transparency: root.defaults.transparency
+            property bool popupsSolidWithWindows: root.defaults.popupsSolidWithWindows
+            property bool barSolidWithWindows: root.defaults.barSolidWithWindows
             property real animScale: root.defaults.animScale
             property bool monochromeIcons: root.defaults.monochromeIcons
             property bool dnd: root.defaults.dnd

@@ -33,6 +33,27 @@ Changes made for smooth 170 Hz (all inside `quickshell/`):
 | `components/DropdownSlot.qml` | Dashboard and control center slide down from under the bar |
 | `modules/dashboard/Dashboard.qml` | The dashboard clock only ticks while the dashboard is open |
 | `FpsOverlay.qml`, `config/Config.qml`, `modules/settings/SettingsPanel.qml` | FPS counter, switchable in Settings → Behavior → **FPS counter** |
+| `services/Glass.qml`, `components/Segmented.qml`, `config/Theme.qml`, `services/Hypr.qml` | Transparency with blur, see below |
+
+### Transparency (Settings → Appearance → Transparency)
+
+| Mode | What it does |
+|---|---|
+| **Off** | Everything solid black |
+| **Popups** | Panels, menus, notifications and the OSD are 80 % black with Hyprland blur. Extra switch **Solid popups with windows**: popups turn black as soon as 1 or more windows are open on the workspace |
+| **Everywhere** | Same, plus the bar. Extra switch **Solid bar with windows**: the bar turns black as soon as 1 or more windows are open |
+
+Floating windows don't count for the two switches. **Transparent when empty** (Bar tab) still works on top: with no windows at all the bar stays fully see-through.
+
+The blur itself comes from Hyprland, so `hyprland.lua` needs it for the Quickshell layers (blur must also be enabled under `decoration`):
+
+```lua
+-- replaces the old qs-.* rule: no Hyprland animation, blur behind translucent parts
+-- (ignore_alpha 0.5: fully transparent areas and the 45 % dim behind settings/power menu stay unblurred)
+hl.layer_rule({ match = { namespace = "qs-.*" }, no_anim = true, blur = true, ignore_alpha = 0.5 })
+```
+
+The tray menu is a popup window, not a layer. For blur there too, add `popups = true` to `decoration.blur`.
 
 ## 2. Install / restore
 
