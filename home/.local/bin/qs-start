@@ -3,5 +3,7 @@ export MANGOHUD=0
 export DISABLE_LSFGVK=1
 export DISABLE_VKBASALT=1
 unset LD_PRELOAD
+# Harmlose Qt-Warnung bei manchen SVG-Icons (leere Masken), flutet sonst das Log
+export QT_LOGGING_RULES="${QT_LOGGING_RULES:+$QT_LOGGING_RULES;}qt.svg.draw.warning=false"
 export QSG_RHI_BACKEND=vulkan
 exec quickshell "$@"

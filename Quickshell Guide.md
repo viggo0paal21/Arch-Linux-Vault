@@ -263,6 +263,7 @@ NVIDIA-only parts to change after switching to AMD: Settings → *GPU monitor (n
 | Problems with Vulkan | Remove the `QSG_RHI_BACKEND=vulkan` line from `qs-start` and the wrappers (OpenGL, ~60 Hz animations, but stable) |
 | No notifications | `swaync` / `dunst` / `mako` still running → stop it and remove it from the autostart |
 | Logs | `qs log` |
+| Log full of `qt.svg.draw: The requested buffer size is too big, ignoring` | Harmless: some SVG icons contain masks with an empty area, and Qt warns because it can't allocate a 0-pixel buffer. Nothing visible is lost. The start script and wrappers hide it with `QT_LOGGING_RULES=qt.svg.draw.warning=false` |
 | Back to Waybar + swaync + rofi | In `hyprland.lua`: comment out the `qs-start` line, remove the `--` in front of `waybar &` and `swaync &`, set `Super + R` back to `hl.dsp.exec_cmd(menu)` |
 | Remove the wrappers | `rm ~/.local/bin/qs ~/.local/bin/quickshell` (the real commands are in `/usr/bin`) |
 
