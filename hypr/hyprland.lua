@@ -37,8 +37,10 @@ local menu        = "pkill rofi || rofi -show drun"
 
 hl.on("hyprland.start", function ()
     hl.exec_cmd("dbus-update-activation-environment --systemd GDK_WAYLAND_DISABLE")
-    hl.exec_cmd("waybar &")
-    hl.exec_cmd("swaync &")
+    --hl.exec_cmd("waybar &")   -- ersetzt durch Quickshell
+    --hl.exec_cmd("swaync &")   -- Quickshell hat eigene Benachrichtigungen
+    -- Quickshell ohne MangoHud, per Vulkan mit stabilen 170 fps
+    hl.exec_cmd(os.getenv("HOME") .. "/.local/bin/qs-start")
     --hl.exec_cmd("swaybg -m fill -i /home/viggo/Wallpapers/wallpaperflare.com_wallpaper.jpg &")
     hl.exec_cmd("swww-daemon &")
     hl.exec_cmd("waypaper --restore &")
