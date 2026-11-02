@@ -12,7 +12,13 @@ PanelWindow {
 
     required property var modelData
     readonly property bool floating: Config.opts.barFloating
-    readonly property int edge: floating ? Theme.gap : 0
+    // "Dynamic": genau 1 gekacheltes Fenster = angedockt, sonst schwebend (floating Fenster zaehlen nie)
+    readonly property bool dynamic: bar.floating && Config.opts.barFloatingDynamic
+    readonly property bool floatingNow: bar.floating && !(bar.dynamic && bar.tiledCount === 1)
+    // Abstand zum Rand, gleitet mit frame.progress zwischen 0 (angedockt) und Theme.gap (schwebend)
+    readonly property int edge: Math.round(Theme.gap * frame.progress)
+    // Unterkante der sichtbaren Leiste (fuer das Tray-Menue)
+    readonly property int visualBottom: frame.y + frame.height
     readonly property var hyprMonitor: Hyprland.monitorFor(bar.modelData)
     readonly property int itemHeight: Theme.barHeight - 8
 
@@ -25,24 +31,31 @@ PanelWindow {
     readonly property bool solid: !Config.opts.barAutoTransparent || bar.windowCount > 0
     // Fenster ohne schwebende (floating), fuer "Solid bar with windows"
     readonly property int tiledCount: Hypr.tiledCount(bar.hyprMonitor)
+    // Dasselbe fuer die Farbe der Leiste, auf Wunsch ohne kitty (Exclude kitty terminal)
+    readonly property int glassCount: Config.opts.barExcludeKitty ? Hypr.tiledCount(bar.hyprMonitor, true) : bar.tiledCount
+    // "Solid bar with windows": schwarz ab 1 Fenster, mit "Only 1" nur bei genau 1 Fenster
+    readonly property bool solidByWindows: Config.opts.barSolidWithWindows && (Config.opts.barSolidOnlySingle ? bar.glassCount === 1 : bar.glassCount > 0)
     // 0 = durchsichtig (leere Arbeitsflaeche), Glas = Transparency "Everywhere", sonst schwarz
     readonly property real bgOpacity: {
         if (!bar.solid)
             return 0;
-        if (Config.opts.transparency === "everywhere" && !(Config.opts.barSolidWithWindows && bar.tiledCount > 0))
+        if (Config.opts.transparency === "everywhere" && !bar.solidByWindows)
             return Theme.glassAlpha;
         return 1;
     }
 
     // Rechte Kante des Uhr-/System-Kaestchens auf dem Bildschirm. Das Dashboard klappt darunter auf.
-    readonly property real infoChipRight: bar.edge + rightRow.x + infoChip.x + infoChip.width
+    readonly property real infoChipRight: frame.x + rightRow.x + infoChip.x + infoChip.width
 
     onInfoChipRightChanged: Ui.setInfoChipRight(bar.modelData.name, bar.infoChipRight)
     Component.onCompleted: Ui.setInfoChipRight(bar.modelData.name, bar.infoChipRight)
 
     screen: modelData
     color: "transparent"
-    implicitHeight: Theme.barHeight
+    // Das Fenster selbst bleibt fest, nur die sichtbare Leiste (frame) gleitet darin.
+    // Der reservierte Platz springt sofort, Hyprland schiebt die Fenster mit seiner eigenen Animation nach.
+    implicitHeight: Theme.barHeight + (bar.floating ? Theme.gap : 0)
+    exclusiveZone: Theme.barHeight + (bar.floatingNow ? Theme.gap : 0)
 
     anchors {
         top: true
@@ -50,10 +63,9 @@ PanelWindow {
         right: true
     }
 
-    margins {
-        top: bar.edge
-        left: bar.edge
-        right: bar.edge
+    // Klicks nur auf der sichtbaren Leiste, der freie Streifen darunter ist durchlaessig
+    mask: Region {
+        item: frame
     }
 
     WlrLayershell.namespace: "qs-bar"
@@ -64,132 +76,162 @@ PanelWindow {
         window: bar
     }
 
-    Rectangle {
-        anchors.fill: parent
-        color: Theme.bg
-        opacity: bar.bgOpacity
-        radius: bar.floating ? Theme.radiusLg : 0
-        border.width: bar.floating && Config.opts.barBorder ? 1 : 0
-        border.color: Theme.border
+    onFloatingNowChanged: Ui.barFloatTarget = bar.floatingNow
+
+    // Sichtbare Leiste. Wechselt zwischen angedockt und schwebend genauso schnell wie Hyprlands
+    // Fenster-Animation in hyprland.lua (windows: speed 3 = 300 ms, Kurve md3_decel), damit
+    // Leiste und Fenster gleichzeitig ankommen.
+    Item {
+        id: frame
+
+        property real progress: bar.floatingNow ? 1 : 0
+
+        x: bar.edge
+        y: bar.edge
+        width: bar.width - 2 * bar.edge
+        height: Theme.barHeight
+
+        onProgressChanged: Ui.barFloat = frame.progress
+        Component.onCompleted: {
+            Ui.barFloat = frame.progress;
+            Ui.barFloatTarget = bar.floatingNow;
+        }
+
+        Behavior on progress {
+            NumberAnimation {
+                duration: Config.opts.animations ? 300 : 0
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: [0.05, 0.7, 0.1, 1.0, 1.0, 1.0]
+            }
+        }
 
         Rectangle {
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.bottom: parent.bottom
-            height: 1
-            visible: !bar.floating && Config.opts.barBorder
-            color: Theme.border
-        }
-
-        Behavior on opacity {
-            Anim {
-                duration: Theme.durSlow
-            }
-        }
-    }
-
-    // Links: Launcher, Arbeitsflaechen, Fenstertitel
-    Row {
-        id: leftRow
-
-        anchors.left: parent.left
-        anchors.leftMargin: 6
-        anchors.verticalCenter: parent.verticalCenter
-        spacing: 6
-
-        IconButton {
-            anchors.verticalCenter: parent.verticalCenter
-            size: bar.itemHeight
-            icon: Icons.arch
-            iconSize: Theme.barIconSize + 2
-            active: Ui.panel === "launcher"
-            onClicked: Ui.toggle("launcher", bar.screen)
-        }
-
-        Workspaces {
-            anchors.verticalCenter: parent.verticalCenter
-            height: bar.itemHeight
-            monitor: bar.hyprMonitor
-        }
-    }
-
-    Txt {
-        id: windowTitle
-
-        readonly property var toplevel: Hyprland.activeToplevel
-        readonly property string value: (toplevel && toplevel.monitor === bar.hyprMonitor) ? (toplevel.title || "") : ""
-
-        anchors.left: leftRow.right
-        anchors.leftMargin: 12
-        anchors.verticalCenter: parent.verticalCenter
-        width: Math.max(0, Math.min(implicitWidth, rightRow.x - x - 24))
-        visible: Config.opts.barShowTitle && value !== "" && width > 30
-        text: value
-        color: Theme.fgDim
-    }
-
-    // Rechts: Tray, Systemmonitor + Uhr, Status, Power
-    Row {
-        id: rightRow
-
-        anchors.right: parent.right
-        anchors.rightMargin: 6
-        anchors.verticalCenter: parent.verticalCenter
-        spacing: 4
-
-        Tray {
-            anchors.verticalCenter: parent.verticalCenter
-            barWindow: bar
-            itemSize: bar.itemHeight
-        }
-
-        // Ein Kaestchen fuer CPU/RAM/Temperatur und Uhr, oeffnet das Dashboard
-        BarChip {
-            id: infoChip
-
-            anchors.verticalCenter: parent.verticalCenter
-            height: bar.itemHeight
-            spacing: 12
-            active: Ui.panel === "dashboard"
-            onClicked: Ui.toggle("dashboard", bar.screen)
-
-            SysMini {
-                anchors.verticalCenter: parent.verticalCenter
-                visible: Config.opts.barShowSysmon
-                fg: infoChip.fg
-                fgDim: infoChip.fgDim
-            }
+            anchors.fill: parent
+            color: Theme.bg
+            opacity: bar.bgOpacity
+            radius: Math.round(Theme.radiusLg * frame.progress)
+            border.width: frame.progress > 0.5 && Config.opts.barBorder ? 1 : 0
+            border.color: Theme.border
 
             Rectangle {
-                anchors.verticalCenter: parent.verticalCenter
-                visible: Config.opts.barShowSysmon
-                width: 1
-                height: 14
-                color: infoChip.fgDim
-                opacity: 0.4
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                height: 1
+                visible: frame.progress <= 0.5 && Config.opts.barBorder
+                color: Theme.border
             }
 
-            BarClock {
-                anchors.verticalCenter: parent.verticalCenter
-                fg: infoChip.fg
-                fgDim: infoChip.fgDim
+            Behavior on opacity {
+                Anim {
+                    duration: Theme.durSlow
+                }
             }
         }
 
-        StatusCluster {
+        // Links: Launcher, Arbeitsflaechen, Fenstertitel
+        Row {
+            id: leftRow
+
+            anchors.left: parent.left
+            anchors.leftMargin: 6
             anchors.verticalCenter: parent.verticalCenter
-            height: bar.itemHeight
-            active: Ui.panel === "control"
-            onClicked: Ui.toggle("control", bar.screen)
+            spacing: 6
+
+            IconButton {
+                anchors.verticalCenter: parent.verticalCenter
+                size: bar.itemHeight
+                icon: Icons.arch
+                iconSize: Theme.barIconSize + 2
+                active: Ui.panel === "launcher"
+                onClicked: Ui.toggle("launcher", bar.screen)
+            }
+
+            Workspaces {
+                anchors.verticalCenter: parent.verticalCenter
+                height: bar.itemHeight
+                monitor: bar.hyprMonitor
+            }
         }
 
-        IconButton {
+        Txt {
+            id: windowTitle
+
+            readonly property var toplevel: Hyprland.activeToplevel
+            readonly property string value: (toplevel && toplevel.monitor === bar.hyprMonitor) ? (toplevel.title || "") : ""
+
+            anchors.left: leftRow.right
+            anchors.leftMargin: 12
             anchors.verticalCenter: parent.verticalCenter
-            size: bar.itemHeight
-            icon: Icons.power
-            iconSize: Theme.barIconSize
-            active: Ui.panel === "power"
-            onClicked: Ui.toggle("power", bar.screen)
+            width: Math.max(0, Math.min(implicitWidth, rightRow.x - x - 24))
+            visible: Config.opts.barShowTitle && value !== "" && width > 30
+            text: value
+            color: Theme.fgDim
+        }
+
+        // Rechts: Tray, Systemmonitor + Uhr, Status, Power
+        Row {
+            id: rightRow
+
+            anchors.right: parent.right
+            anchors.rightMargin: 6
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 4
+
+            Tray {
+                anchors.verticalCenter: parent.verticalCenter
+                barWindow: bar
+                itemSize: bar.itemHeight
+            }
+
+            // Ein Kaestchen fuer CPU/RAM/Temperatur und Uhr, oeffnet das Dashboard
+            BarChip {
+                id: infoChip
+
+                anchors.verticalCenter: parent.verticalCenter
+                height: bar.itemHeight
+                spacing: 12
+                active: Ui.panel === "dashboard"
+                onClicked: Ui.toggle("dashboard", bar.screen)
+
+                SysMini {
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: Config.opts.barShowSysmon
+                    fg: infoChip.fg
+                    fgDim: infoChip.fgDim
+                }
+
+                Rectangle {
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: Config.opts.barShowSysmon
+                    width: 1
+                    height: 14
+                    color: infoChip.fgDim
+                    opacity: 0.4
+                }
+
+                BarClock {
+                    anchors.verticalCenter: parent.verticalCenter
+                    fg: infoChip.fg
+                    fgDim: infoChip.fgDim
+                }
+            }
+
+            StatusCluster {
+                anchors.verticalCenter: parent.verticalCenter
+                height: bar.itemHeight
+                active: Ui.panel === "control"
+                onClicked: Ui.toggle("control", bar.screen)
+            }
+
+            IconButton {
+                anchors.verticalCenter: parent.verticalCenter
+                size: bar.itemHeight
+                icon: Icons.power
+                iconSize: Theme.barIconSize
+                active: Ui.panel === "power"
+                onClicked: Ui.toggle("power", bar.screen)
+            }
         }
     }
 }

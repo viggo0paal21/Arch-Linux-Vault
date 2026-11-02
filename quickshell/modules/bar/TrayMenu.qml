@@ -33,7 +33,7 @@ PopupWindow {
 
     anchor.window: root.barWindow
     anchor.rect.x: Math.round(root.anchorX - root.width / 2)
-    anchor.rect.y: root.barWindow ? root.barWindow.height + 6 : 0
+    anchor.rect.y: root.barWindow ? (root.barWindow.visualBottom !== undefined ? root.barWindow.visualBottom : root.barWindow.height) + 6 : 0
     grabFocus: true
     color: "transparent"
     implicitWidth: 260

@@ -16,6 +16,7 @@ Singleton {
         radius: 8,
         barHeight: 36,
         barFloating: false,
+        barFloatingDynamic: false,
         barBorder: true,
         barShowTitle: false,
         barAutoTransparent: true,
@@ -33,6 +34,8 @@ Singleton {
         glassOpacity: 80,
         popupsSolidWithWindows: false,
         barSolidWithWindows: false,
+        barSolidOnlySingle: false,
+        barExcludeKitty: false,
         animScale: 1.0,
         monochromeIcons: true,
         dnd: false,
@@ -74,6 +77,7 @@ Singleton {
             property int radius: root.defaults.radius
             property int barHeight: root.defaults.barHeight
             property bool barFloating: root.defaults.barFloating
+            property bool barFloatingDynamic: root.defaults.barFloatingDynamic
             property bool barBorder: root.defaults.barBorder
             property bool barShowTitle: root.defaults.barShowTitle
             property bool barAutoTransparent: root.defaults.barAutoTransparent
@@ -91,6 +95,8 @@ Singleton {
             property int glassOpacity: root.defaults.glassOpacity
             property bool popupsSolidWithWindows: root.defaults.popupsSolidWithWindows
             property bool barSolidWithWindows: root.defaults.barSolidWithWindows
+            property bool barSolidOnlySingle: root.defaults.barSolidOnlySingle
+            property bool barExcludeKitty: root.defaults.barExcludeKitty
             property real animScale: root.defaults.animScale
             property bool monochromeIcons: root.defaults.monochromeIcons
             property bool dnd: root.defaults.dnd

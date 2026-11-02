@@ -320,6 +320,18 @@ OverlayPanel {
 
                         SettingRow {
                             width: parent.width
+                            visible: Config.opts.transparency === "everywhere"
+                            label: "Exclude kitty terminal"
+                            description: "Kitty windows don't count for the bar, so it stays translucent while only kitty is open"
+
+                            SwitchCtl {
+                                checked: Config.opts.barExcludeKitty
+                                onToggled: Config.opts.barExcludeKitty = !Config.opts.barExcludeKitty
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
                             visible: Config.opts.transparency !== "off"
                             label: "Opacity"
                             description: "How solid translucent surfaces are, 100 % = black"
@@ -350,11 +362,41 @@ OverlayPanel {
                             width: parent.width
                             visible: Config.opts.transparency === "everywhere"
                             label: "Solid bar with windows"
-                            description: "The bar turns black as soon as 1 or more windows are open (floating ones don't count)"
+                            description: Config.opts.barSolidOnlySingle ? "The bar is black with exactly 1 window, translucent with none or 2 and more (floating ones don't count)" : "The bar turns black as soon as 1 or more windows are open (floating ones don't count)"
 
-                            SwitchCtl {
-                                checked: Config.opts.barSolidWithWindows
-                                onToggled: Config.opts.barSolidWithWindows = !Config.opts.barSolidWithWindows
+                            Row {
+                                anchors.right: parent.right
+                                spacing: 10
+
+                                // "Only 1": schwarz nur bei genau 1 Fenster
+                                Txt {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: "Only 1"
+                                    color: Theme.fgMuted
+                                    font.pixelSize: Theme.fontSm
+                                    opacity: Config.opts.barSolidWithWindows ? 1 : 0.4
+                                }
+
+                                Toggle {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 30
+                                    height: 18
+                                    enabled: Config.opts.barSolidWithWindows
+                                    opacity: Config.opts.barSolidWithWindows ? 1 : 0.4
+                                    checked: Config.opts.barSolidOnlySingle
+                                    onToggled: Config.opts.barSolidOnlySingle = !Config.opts.barSolidOnlySingle
+                                }
+
+                                Item {
+                                    width: 8
+                                    height: 1
+                                }
+
+                                Toggle {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    checked: Config.opts.barSolidWithWindows
+                                    onToggled: Config.opts.barSolidWithWindows = !Config.opts.barSolidWithWindows
+                                }
                             }
                         }
 
@@ -501,6 +543,18 @@ OverlayPanel {
                             SwitchCtl {
                                 checked: Config.opts.barFloating
                                 onToggled: Config.opts.barFloating = !Config.opts.barFloating
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            visible: Config.opts.barFloating
+                            label: "Dynamic"
+                            description: "Docks with exactly 1 tiled window, floats with none or 2 and more (floating windows never count)"
+
+                            SwitchCtl {
+                                checked: Config.opts.barFloatingDynamic
+                                onToggled: Config.opts.barFloatingDynamic = !Config.opts.barFloatingDynamic
                             }
                         }
 

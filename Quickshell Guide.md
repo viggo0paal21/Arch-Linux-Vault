@@ -34,6 +34,7 @@ Changes made for smooth 170 Hz (all inside `quickshell/`):
 | `modules/dashboard/Dashboard.qml` | The dashboard clock only ticks while the dashboard is open |
 | `FpsOverlay.qml`, `config/Config.qml`, `modules/settings/SettingsPanel.qml` | FPS counter, switchable in Settings → Behavior → **FPS counter** |
 | `services/Glass.qml`, `components/Segmented.qml`, `config/Theme.qml`, `services/Hypr.qml` | Transparency with blur, see below |
+| `modules/bar/Bar.qml`, `services/Ui.qml`, `modules/bar/TrayMenu.qml` + the panels | Dynamic floating bar, see below |
 
 ### Transparency (Settings → Appearance → Transparency)
 
@@ -41,11 +42,23 @@ Changes made for smooth 170 Hz (all inside `quickshell/`):
 |---|---|
 | **Off** | Everything solid black |
 | **Popups** | Panels, menus, notifications and the OSD are translucent black with Hyprland blur. Extra switch **Solid popups with windows**: popups turn black as soon as 1 or more windows are open on the workspace |
-| **Everywhere** | Same, plus the bar. Extra switch **Solid bar with windows**: the bar turns black as soon as 1 or more windows are open |
+| **Everywhere** | Same, plus the bar. Extra switch **Solid bar with windows**: the bar turns black as soon as 1 or more windows are open. The small **Only 1** switch next to it makes it black only with exactly 1 window (translucent again with 2 or more) |
 
 **Opacity** (shown when transparency is on) sets how solid the translucent surfaces are: 25–100 %, default 80 %, 100 % = black.
 
+**Exclude kitty terminal** (shown in Everywhere, right under the three modes): kitty windows don't count for the bar, so it stays translucent while only kitty is open.
+
 Floating windows don't count for the two switches. **Transparent when empty** (Bar tab) still works on top: with no windows at all the bar stays fully see-through.
+
+### Dynamic floating bar (Settings → Bar → Floating bar → Dynamic)
+
+With exactly 1 tiled window the bar docks to the top edge (no gap, square corners), with none or 2 and more it floats
+again. Floating windows never count. This matches a smart-gaps rule like `hl.workspace_rule({ workspace = "w[tv1]", gaps_out = 0 })`.
+
+The change takes 300 ms with the `md3_decel` curve, the same as the `windows` animation in `hyprland.lua`
+(`speed = 3` = 300 ms). The reserved space switches instantly, so Hyprland moves the windows with its own animation
+while the bar slides, and both arrive together. If you change the `windows` speed, change `duration: ... 300` in
+`modules/bar/Bar.qml` to match (speed × 100 ms).
 
 The blur itself comes from Hyprland, so `hyprland.lua` needs it for the Quickshell layers (blur must also be enabled under `decoration`):
 

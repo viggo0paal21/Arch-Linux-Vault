@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import qs.config
+import qs.services
 
 // Debug: echte Frame-Rate dieses Fensters. Gezaehlt werden tatsaechlich
 // gezeichnete und abgeschickte Frames (frameSwapped), gegen die echte Uhr.
@@ -30,7 +31,7 @@ PanelWindow {
     }
 
     margins {
-        top: Theme.barBottom + Theme.gap
+        top: Ui.barBottomTarget + Theme.gap
         right: Theme.gap
     }
 

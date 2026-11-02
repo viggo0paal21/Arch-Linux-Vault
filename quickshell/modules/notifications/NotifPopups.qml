@@ -9,7 +9,7 @@ import qs.services
 PanelWindow {
     id: win
 
-    readonly property int topOffset: (Config.opts.barFloating ? Theme.gap : 0) + Theme.barHeight + Theme.gap
+    readonly property int topOffset: Ui.barBottomTarget + Theme.gap
     readonly property bool hasPopups: Notifs.popups.length > 0
     property bool mapped: false
 

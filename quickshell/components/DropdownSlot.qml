@@ -1,5 +1,6 @@
 import QtQuick
 import qs.config
+import qs.services
 
 // Bereich direkt unter der Leiste. Beim Oeffnen faehrt das ganze Panel unter der
 // Leiste hervor nach unten, beim Schliessen wieder hoch. Der Bereich schneidet an der
@@ -13,7 +14,7 @@ Item {
 
     readonly property real fullHeight: root.contentHeight + Theme.gap + 2
 
-    y: Theme.barBottom
+    y: Ui.barBottom
     height: root.fullHeight
     clip: true
 

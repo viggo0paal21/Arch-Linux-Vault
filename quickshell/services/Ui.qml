@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
+import qs.config
 
 // Welches Panel offen ist und auf welchem Bildschirm. Immer nur eins gleichzeitig.
 // Namen: launcher, control, dashboard, power, settings
@@ -12,6 +13,14 @@ Singleton {
     property string panel: ""
     property var panelScreen: null
     property bool caffeine: false
+
+    // Form der Leiste, gesetzt von der Leiste selbst: 0 = angedockt, 1 = schwebend.
+    // barFloat laeuft mit der Animation mit, barFloatTarget ist der Zielzustand.
+    property real barFloat: Config.opts.barFloating ? 1 : 0
+    property bool barFloatTarget: Config.opts.barFloating
+    // Unterkante der Leiste (Panels klappen darunter auf)
+    readonly property int barBottom: Math.round(Theme.barHeight + Theme.gap * root.barFloat)
+    readonly property int barBottomTarget: Theme.barHeight + (root.barFloatTarget ? Theme.gap : 0)
 
     // Rechte Kante des Uhr-/System-Kaestchens in der Leiste, je Bildschirm (Bildschirm-Name -> x).
     // Das Dashboard klappt genau darunter auf.

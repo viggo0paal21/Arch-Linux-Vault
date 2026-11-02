@@ -8,7 +8,7 @@ import qs.services
 OverlayPanel {
     id: panel
 
-    readonly property int topOffset: (Config.opts.barFloating ? Theme.gap : 0) + Theme.barHeight + Theme.gap
+    readonly property int topOffset: Ui.barBottomTarget + Theme.gap
     readonly property var enLocale: Qt.locale("en_US")
 
     open: Ui.panel === "dashboard"

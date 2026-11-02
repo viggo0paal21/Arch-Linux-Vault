@@ -13,15 +13,18 @@ Singleton {
     // Fenster auf der aktiven Arbeitsflaeche des fokussierten Monitors, ohne schwebende (floating)
     readonly property int focusedTiledCount: root.tiledCount(Hyprland.focusedMonitor)
 
-    // Fenster auf der aktiven Arbeitsflaeche eines Monitors, schwebende (floating) nicht mitgezaehlt
-    function tiledCount(monitor) {
+    // Fenster auf der aktiven Arbeitsflaeche eines Monitors, schwebende (floating) nicht mitgezaehlt.
+    // skipKitty: kitty-Terminals zaehlen auch nicht (Settings > Appearance > Exclude kitty terminal)
+    function tiledCount(monitor, skipKitty) {
         const ws = monitor ? monitor.activeWorkspace : null;
         if (!ws)
             return 0;
         let n = 0;
         for (const t of ws.toplevels.values) {
             const o = t.lastIpcObject;
-            if (!(o && o.floating))
+            // Erst zaehlen, wenn Hyprland gemeldet hat, dass es nicht schwebt. Sonst zaehlt ein
+            // neu geoeffnetes floating Fenster kurz als gekachelt und die Leiste zuckt.
+            if (o && o.floating === false && !(skipKitty && (o.class === "kitty" || o.initialClass === "kitty")))
                 n++;
         }
         return n;
