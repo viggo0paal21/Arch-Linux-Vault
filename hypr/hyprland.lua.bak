@@ -26,7 +26,7 @@ hl.monitor({
 -- Set programs that you use
 local terminal    = "kitty"
 local fileManager = "nautilus"
-local menu        = "hyprlauncher"
+local menu        = "fuzzel"
 
 
 -------------------
@@ -36,11 +36,14 @@ local menu        = "hyprlauncher"
 -- See https://wiki.hypr.land/Configuring/Basics/Autostart/
 
 hl.on("hyprland.start", function ()
+    hl.exec_cmd("dbus-update-activation-environment --systemd GDK_WAYLAND_DISABLE")
     hl.exec_cmd("waybar &")
     hl.exec_cmd("swaync &")
     --hl.exec_cmd("swaybg -m fill -i /home/viggo/Wallpapers/wallpaperflare.com_wallpaper.jpg &")
     hl.exec_cmd("swww-daemon &")
     hl.exec_cmd("waypaper --restore &")
+    hl.exec_cmd("sleep 3 && arch-update --tray")
+    hl.exec_cmd("systemctl --user start hyprpolkitagent")
 end)
 
 
@@ -53,6 +56,7 @@ end)
 
 hl.env("XCURSOR_SIZE", "24")
 hl.env("HYPRCURSOR_SIZE", "24")
+hl.env("GDK_WAYLAND_DISABLE", "ext_background_effect_manager_v1")
 --hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")
 --hl.env("QT_STYLE_OVERRIDE", "kvantum")
 hl.env("GTK_THEME", "Adwaita:dark")
@@ -61,6 +65,8 @@ hl.env("ADW_DISABLE_PORTAL", "1")
 hl.env("GDK_WAYLAND_DISABLE", "ext_background_effect_manager_v1")
 -- MangoHud als globale Vulkan-Schicht. Das FPS-Limit steht in ~/.config/MangoHud/MangoHud.conf
 hl.env("MANGOHUD", "1")
+
+hl.env("GTK_USE_PORTAL", "1")
 
 -- Optional (Low Latency für OpenGL): erst aktivieren, wenn alles andere läuft.
 -- hl.env("__GL_MaxFramesAllowed", "1")
@@ -92,25 +98,26 @@ hl.env("MANGOHUD", "1")
 -- Refer to https://wiki.hypr.land/Configuring/Basics/Variables/
 hl.config({
     general = {
-        gaps_in  = 10,
-        gaps_out = 20,
+        gaps_in  = 5,
+        gaps_out  = 10,
+        --gaps_out = { top = 0, right = 15, bottom = 15, left = 15 },
         border_size = 1,
 
         -- Dezentes Grau für das aktive Fenster, inaktive Fenster ohne sichtbaren Rahmen
         col = {
-            active_border   = "rgba(ffffffff)",
+            active_border = "rgba(a8a8a8ff)",
             inactive_border = "rgba(00000000)",
             
         },
 
         resize_on_border = true,
-        allow_tearing    = false,
+        allow_tearing    = true,
         layout           = "dwindle",
     },
 
     decoration = {
         -- Komplett eckig
-        rounding = 10,
+        rounding = 5,
 
         active_opacity   = 1.0,
         inactive_opacity = 1.0,
@@ -175,6 +182,23 @@ hl.window_rule({
     no_vrr = true,
 })
 
+hl.layer_rule({
+    match = { namespace = "swaync-notification-window" },
+    animation = "slide right",
+})
+
+hl.layer_rule({
+  match = { namespace = "launcher" },
+  name = "fuzzel-blur",
+  blur = true,
+  ignore_alpha = 0,
+})
+
+hl.window_rule({
+    name  = "tearing-all",
+    match = { class = ".*" },
+    immediate = true,
+})
 -- Ref https://wiki.hypr.land/Configuring/Basics/Workspace-Rules/
 -- "Smart gaps" / "No gaps when only"
 
@@ -213,6 +237,12 @@ hl.config({
 hl.config({
     scrolling = {
         fullscreen_on_one_column = true,
+    },
+})
+
+hl.config({
+    render = {
+        cm_auto_hdr = 0,
     },
 })
 
@@ -287,13 +317,14 @@ local closeWindowBind = hl.bind(mainMod .. " + C", hl.dsp.window.close())
 -- closeWindowBind:set_enabled(false)
 hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'"))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
-hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
+--siehe zeile 428 --hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + R", hl.dsp.exec_cmd(menu))
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
 hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))    -- dwindle only
+hl.bind("SUPER + Page_Up", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/waybar/scripts/toggle-transparency.sh"))
 
 hl.bind("SUPER + Home", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.local/bin/check-direct-scanout"))
-
+hl.bind("SUPER + Page_Down", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/waybar/scripts/toggle-hardened.sh"))
 -- Move focus with mainMod + arrow keys
 hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }))
 hl.bind(mainMod .. " + right", hl.dsp.focus({ direction = "right" }))
@@ -402,5 +433,38 @@ hl.window_rule({
     border_size = 1,
 })
 
+-- ── Floating-Fenster in 16:9 ──────────────────────
+local FLOAT_ANTEIL   = 0.6    -- Breite = 60 % der Monitorbreite
+local NUR_ERSTES_MAL = true  -- true = danach merkt sich Hyprland deine eigene Größe
+
+local schon_gefloatet = {}
+
+local function toggle_float_16_9()
+  local w = hl.get_active_window()
+  if not w then return end
+
+  -- schon floating → zurück ins Tiling
+  if w.floating then
+    hl.dispatch(hl.dsp.window.float({ action = "unset" }))
+    return
+  end
+
+  hl.dispatch(hl.dsp.window.float({ action = "set" }))
+
+  if NUR_ERSTES_MAL and schon_gefloatet[w.address] then return end
+  schon_gefloatet[w.address] = true
+
+  local m      = w.monitor
+  local breite = math.floor(m.width / m.scale * FLOAT_ANTEIL)
+  local hoehe  = math.floor(breite * 9 / 16)
+
+  hl.dispatch(hl.dsp.window.resize({ x = breite, y = hoehe, relative = false }))
+  hl.dispatch(hl.dsp.window.center())
+end
+
+-- Speicher aufräumen, wenn Fenster zugehen
+hl.on("window.close", function(w) schon_gefloatet[w.address] = nil end)
+
+hl.bind("SUPER + V", toggle_float_16_9)
 
 
