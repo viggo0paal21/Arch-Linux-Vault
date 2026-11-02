@@ -75,7 +75,7 @@ Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
 | Folder | What it is |
 |---|---|
 | [`etc/`](etc) | Files from outside `~/.config` (skipped by the restore loop in [Restore the configs](#restore-the-configs)) |
-| [`home/`](home) | Files that belong directly in `~` (`.zshrc`, `.local/bin` scripts, Quickshell settings in `.local/state`). Also skipped by the restore loop |
+| [`home/`](home) | Files that belong directly in `~` (`.zshrc`, `.local/bin` scripts, Quickshell settings in `.local/state`, D-Bus override in `.local/share`). Also skipped by the restore loop |
 
 ## Shell: zsh
 
@@ -271,6 +271,10 @@ chmod +x ~/.local/bin/{qs-start,qs,quickshell,check-direct-scanout}
 # Quickshell settings:
 mkdir -p ~/.local/state/quickshell/by-shell/oled-bw
 cp home/.local/state/quickshell/by-shell/oled-bw/settings.json ~/.local/state/quickshell/by-shell/oled-bw/
+
+# keep swaync/dunst/mako from taking Quickshell's notification server (D-Bus override):
+mkdir -p ~/.local/share/dbus-1/services
+cp home/.local/share/dbus-1/services/org.freedesktop.Notifications.service ~/.local/share/dbus-1/services/
 ```
 
 Quickshell details and checks after restoring: [Quickshell Guide, section 2](Quickshell%20Guide.md#2-install--restore).

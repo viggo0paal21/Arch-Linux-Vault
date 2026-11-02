@@ -20,6 +20,7 @@ smooth animations at the full **170 Hz** on an NVIDIA card. It replaces Waybar, 
 | [`quickshell/`](quickshell) | `~/.config/quickshell/` | The shell itself (bar, launcher, control center, dashboard, notifications, OSD, power menu, settings) |
 | [`home/.local/bin/qs-start`](home/.local/bin/qs-start) | `~/.local/bin/` | Start script used by Hyprland's autostart: Vulkan, without MangoHud / lsfg-vk / vkBasalt |
 | [`home/.local/bin/qs`](home/.local/bin/qs), [`quickshell`](home/.local/bin/quickshell) | `~/.local/bin/` | Wrappers: same fix for **every** `qs` / `quickshell` call, any config |
+| [`home/.local/share/dbus-1/services/org.freedesktop.Notifications.service`](home/.local/share/dbus-1/services/org.freedesktop.Notifications.service) | `~/.local/share/dbus-1/services/` | Stops swaync / dunst / mako from being auto-started by D-Bus and taking the notification server away from Quickshell (see section 7) |
 | [`home/.local/state/quickshell/by-shell/oled-bw/settings.json`](home/.local/state/quickshell/by-shell/oled-bw/settings.json) | `~/.local/state/quickshell/by-shell/oled-bw/` | My saved shell settings (radius, bar, font, animation speed, FPS counter, ...) |
 | [`hypr/hyprland.lua`](hypr/hyprland.lua) | `~/.config/hypr/` | Autostart runs `qs-start` (Waybar and swaync are commented out), `Super + R` opens the Quickshell launcher |
 | [`quickshell/hyprland-quickshell.lua`](quickshell/hyprland-quickshell.lua) | (template) | Keybind and layer-rule snippets for `hyprland.lua` |
@@ -46,6 +47,8 @@ mkdir -p ~/.local/bin ~/.local/state/quickshell/by-shell/oled-bw
 cp home/.local/bin/qs-start home/.local/bin/qs home/.local/bin/quickshell ~/.local/bin/
 chmod +x ~/.local/bin/qs-start ~/.local/bin/qs ~/.local/bin/quickshell
 cp home/.local/state/quickshell/by-shell/oled-bw/settings.json ~/.local/state/quickshell/by-shell/oled-bw/
+mkdir -p ~/.local/share/dbus-1/services
+cp home/.local/share/dbus-1/services/org.freedesktop.Notifications.service ~/.local/share/dbus-1/services/
 ```
 
 Log out and back in. Then check:
@@ -261,10 +264,10 @@ NVIDIA-only parts to change after switching to AMD: Settings → *GPU monitor (n
 |---|---|
 | Shell frozen | `pkill -9 -x 'qs\|quickshell'`, then `setsid -f ~/.local/bin/qs-start >/dev/null 2>&1`. Make sure only one instance runs: `pgrep -ax 'qs\|quickshell'` |
 | Problems with Vulkan | Remove the `QSG_RHI_BACKEND=vulkan` line from `qs-start` and the wrappers (OpenGL, ~60 Hz animations, but stable) |
-| No notifications | `swaync` / `dunst` / `mako` still running → stop it and remove it from the autostart |
+| No notifications / `Could not register notification server` | Another daemon owns the notification server. Find it with `busctl --user status org.freedesktop.Notifications \| grep -E '^(PID\|Comm)='`, kill it, restart Quickshell. To stop D-Bus from auto-starting swaync / dunst / mako again (e.g. when an app sends a notification while Quickshell is down), install the override file from section 1 and reload D-Bus: `busctl --user call org.freedesktop.DBus /org/freedesktop/DBus org.freedesktop.DBus ReloadConfig` |
 | Logs | `qs log` |
-| Log full of `qt.svg.draw: The requested buffer size is too big, ignoring` | Harmless: some SVG icons contain masks with an empty area, and Qt warns because it can't allocate a 0-pixel buffer. Nothing visible is lost. The start script and wrappers hide it with `QT_LOGGING_RULES=qt.svg.draw.warning=false` |
-| Back to Waybar + swaync + rofi | In `hyprland.lua`: comment out the `qs-start` line, remove the `--` in front of `waybar &` and `swaync &`, set `Super + R` back to `hl.dsp.exec_cmd(menu)` |
+| Log full of `qt.svg.draw: The requested buffer size is too big, ignoring` or `qt.svg: Invalid path data` | Harmless warnings about broken SVG icons: masks with an empty area (Qt can't allocate a 0-pixel buffer) or invalid path data (drawn up to the broken part). The start script and wrappers hide them with `QT_LOGGING_RULES=qt.svg*.warning=false` |
+| Back to Waybar + swaync + rofi | In `hyprland.lua`: comment out the `qs-start` line, remove the `--` in front of `waybar &` and `swaync &`, set `Super + R` back to `hl.dsp.exec_cmd(menu)`. Also `rm ~/.local/share/dbus-1/services/org.freedesktop.Notifications.service` |
 | Remove the wrappers | `rm ~/.local/bin/qs ~/.local/bin/quickshell` (the real commands are in `/usr/bin`) |
 
 Kill all instances and start fresh with a pause in between, otherwise `qs ipc` may still reach the old instance:
