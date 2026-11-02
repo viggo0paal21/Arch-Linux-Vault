@@ -33,7 +33,8 @@ alias ls='ls --color=auto'
 alias grep='grep --color=auto'
 export MOZ_ENABLE_WAYLAND=0
 export MANGOHUD=1
-export PATH="$PATH:/home/viggo/.local/bin"
+# ~/.local/bin first, so the qs/quickshell wrappers win over /usr/bin
+export PATH="$HOME/.local/bin:$PATH"
 
 # --- Starship-Prompt ---
 eval "$(starship init zsh)"
