@@ -13,6 +13,18 @@ Singleton {
     property var panelScreen: null
     property bool caffeine: false
 
+    // Rechte Kante des Uhr-/System-Kaestchens in der Leiste, je Bildschirm (Bildschirm-Name -> x).
+    // Das Dashboard klappt genau darunter auf.
+    property var infoChipRight: ({})
+
+    function setInfoChipRight(screenName, x) {
+        if (root.infoChipRight[screenName] === x)
+            return;
+        const next = Object.assign({}, root.infoChipRight);
+        next[screenName] = x;
+        root.infoChipRight = next;
+    }
+
     function focusedScreen() {
         const name = Hyprland.focusedMonitor ? Hyprland.focusedMonitor.name : "";
         const screens = Quickshell.screens;

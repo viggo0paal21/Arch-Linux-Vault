@@ -3,9 +3,13 @@ import Quickshell
 import qs.config
 import qs.components
 
-BarChip {
+// Uhrzeit (optional mit Datum). Sitzt zusammen mit CPU/RAM/Temperatur in einem Kaestchen
+// der Leiste, "fg"/"fgDim" kommen von dort.
+Row {
     id: root
 
+    property color fg: Theme.fg
+    property color fgDim: Theme.fgDim
     readonly property string timeFormat: Config.opts.clock24h ? (Config.opts.clockSeconds ? "HH:mm:ss" : "HH:mm") : (Config.opts.clockSeconds ? "h:mm:ss AP" : "h:mm AP")
 
     spacing: 10

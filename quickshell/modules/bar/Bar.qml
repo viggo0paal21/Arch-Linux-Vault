@@ -24,6 +24,12 @@ PanelWindow {
     }
     readonly property bool solid: !Config.opts.barAutoTransparent || bar.windowCount > 0
 
+    // Rechte Kante des Uhr-/System-Kaestchens auf dem Bildschirm. Das Dashboard klappt darunter auf.
+    readonly property real infoChipRight: bar.edge + rightRow.x + infoChip.x + infoChip.width
+
+    onInfoChipRightChanged: Ui.setInfoChipRight(bar.modelData.name, bar.infoChipRight)
+    Component.onCompleted: Ui.setInfoChipRight(bar.modelData.name, bar.infoChipRight)
+
     screen: modelData
     color: "transparent"
     implicitHeight: Theme.barHeight
@@ -106,23 +112,13 @@ PanelWindow {
         anchors.left: leftRow.right
         anchors.leftMargin: 12
         anchors.verticalCenter: parent.verticalCenter
-        width: Math.max(0, Math.min(implicitWidth, clock.x - x - 24))
+        width: Math.max(0, Math.min(implicitWidth, rightRow.x - x - 24))
         visible: Config.opts.barShowTitle && value !== "" && width > 30
         text: value
         color: Theme.fgDim
     }
 
-    // Mitte: Uhr
-    BarClock {
-        id: clock
-
-        anchors.centerIn: parent
-        height: bar.itemHeight
-        active: Ui.panel === "dashboard"
-        onClicked: Ui.toggle("dashboard", bar.screen)
-    }
-
-    // Rechts: Tray, Systemmonitor, Status, Power
+    // Rechts: Tray, Systemmonitor + Uhr, Status, Power
     Row {
         id: rightRow
 
@@ -137,12 +133,37 @@ PanelWindow {
             itemSize: bar.itemHeight
         }
 
-        SysMini {
+        // Ein Kaestchen fuer CPU/RAM/Temperatur und Uhr, oeffnet das Dashboard
+        BarChip {
+            id: infoChip
+
             anchors.verticalCenter: parent.verticalCenter
             height: bar.itemHeight
-            visible: Config.opts.barShowSysmon
+            spacing: 12
             active: Ui.panel === "dashboard"
             onClicked: Ui.toggle("dashboard", bar.screen)
+
+            SysMini {
+                anchors.verticalCenter: parent.verticalCenter
+                visible: Config.opts.barShowSysmon
+                fg: infoChip.fg
+                fgDim: infoChip.fgDim
+            }
+
+            Rectangle {
+                anchors.verticalCenter: parent.verticalCenter
+                visible: Config.opts.barShowSysmon
+                width: 1
+                height: 14
+                color: infoChip.fgDim
+                opacity: 0.4
+            }
+
+            BarClock {
+                anchors.verticalCenter: parent.verticalCenter
+                fg: infoChip.fg
+                fgDim: infoChip.fgDim
+            }
         }
 
         StatusCluster {

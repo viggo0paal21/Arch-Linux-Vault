@@ -25,8 +25,8 @@ Singleton {
     readonly property string sleep: String.fromCodePoint(0xF04B2)
     readonly property string cog: String.fromCodePoint(0xF0493)
     readonly property string search: String.fromCodePoint(0xF0349)
-    readonly property string cpu: String.fromCodePoint(0xF0EE0)
-    readonly property string ram: String.fromCodePoint(0xF035B)
+    readonly property string cpu: String.fromCodePoint(0xF4BC) // oct-cpu
+    readonly property string ram: String.fromCodePoint(0xEFC5) // fa-memory
     readonly property string temp: String.fromCodePoint(0xF050F)
     readonly property string disk: String.fromCodePoint(0xF02CA)
     readonly property string gpu: String.fromCodePoint(0xF08AE)
@@ -80,4 +80,9 @@ Singleton {
     readonly property string pulse: String.fromCodePoint(0xF0430)
     readonly property string monitor: String.fromCodePoint(0xF0379)
     readonly property string fan: String.fromCodePoint(0xF0210)
+    // Settings-Tabs
+    readonly property string palette: String.fromCodePoint(0xF0E0C) // md-palette_outline
+    readonly property string dockTop: String.fromCodePoint(0xF1513) // md-dock_top
+    readonly property string cogOutline: String.fromCodePoint(0xF08BB) // md-cog_outline
+    readonly property string consoleLine: String.fromCodePoint(0xF07B7) // md-console_line
 }

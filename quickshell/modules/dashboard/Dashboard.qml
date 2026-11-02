@@ -4,7 +4,7 @@ import qs.config
 import qs.components
 import qs.services
 
-// Dashboard unter der Uhr: grosse Uhr, Kalender, Systemmonitor.
+// Dashboard unter dem Uhr-/System-Kaestchen der Leiste: grosse Uhr, Kalender, Systemmonitor.
 OverlayPanel {
     id: panel
 
@@ -28,9 +28,13 @@ OverlayPanel {
         enabled: panel.mapped
     }
 
-    // Gleitet von oben unter der Leiste hervor
+    // Gleitet unter der Leiste hervor, rechtsbuendig unter dem Uhr-/System-Kaestchen
     DropdownSlot {
-        anchors.horizontalCenter: parent.horizontalCenter
+        id: slot
+
+        readonly property var chipRight: Ui.infoChipRight[Ui.panelScreen ? Ui.panelScreen.name : ""]
+
+        x: slot.chipRight === undefined ? Math.round((panel.width - slot.width) / 2) : Math.max(Theme.gap, Math.min(panel.width - slot.width - Theme.gap, Math.round(slot.chipRight - slot.width)))
         width: Math.min(800, panel.width - 2 * Theme.gap)
         contentHeight: card.height
         progress: panel.progress

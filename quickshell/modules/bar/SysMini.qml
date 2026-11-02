@@ -3,9 +3,13 @@ import qs.config
 import qs.components
 import qs.services
 
-// CPU / RAM / Temperatur kompakt in der Leiste.
-BarChip {
+// CPU / RAM / Temperatur kompakt. Sitzt zusammen mit der Uhr in einem Kaestchen der Leiste,
+// "fg"/"fgDim" kommen von dort (weiss auf schwarz, schwarz auf weiss wenn aktiv).
+Row {
     id: root
+
+    property color fg: Theme.fg
+    property color fgDim: Theme.fgDim
 
     spacing: 12
 
