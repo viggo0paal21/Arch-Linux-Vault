@@ -65,7 +65,14 @@ The blur itself comes from Hyprland, so `hyprland.lua` needs it for the Quickshe
 ```lua
 -- replaces the old qs-.* rule: no Hyprland animation, blur behind translucent parts
 hl.layer_rule({ match = { namespace = "qs-.*" }, no_anim = true, blur = true, ignore_alpha = 0.5 })
+-- bar: blur only the wallpaper, not windows (otherwise a window right below the bar darkens its lower edge)
+hl.layer_rule({ match = { namespace = "qs-bar" }, xray = true })
 ```
+
+Why `xray` for the bar: by default a layer blurs everything rendered behind it, windows included, and the blur pulls in
+pixels from a few dozen pixels around. A dark translucent window directly under the docked bar then shows up as a dark
+gradient along the bar's bottom edge (it looks like a shadow, but turning off `decoration.shadow` doesn't change it).
+With `xray` the bar blurs only the wallpaper, like tiled windows already do. Popups keep blurring the windows behind them.
 
 `ignore_alpha` must stay **below** the Opacity slider: Hyprland only blurs pixels that are more opaque than this value.
 With `0.5`, fully transparent areas and the 45 % dim behind the settings / power menu stay unblurred, but Opacity

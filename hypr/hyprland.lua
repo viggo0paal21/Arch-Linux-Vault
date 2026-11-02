@@ -119,7 +119,7 @@ hl.config({
 
     decoration = {
         -- Komplett eckig
-        rounding = 5,
+        rounding = 8,
 
         active_opacity   = 1.0,
         inactive_opacity = 1.0,
@@ -190,6 +190,9 @@ hl.layer_rule({
   blur = true,
   ignore_alpha = 0,
 })
+
+-- Leiste: nur das Wallpaper verwischen, keine Fenster (sonst dunkler Rand unten durch das Fenster darunter)
+hl.layer_rule({ match = { namespace = "qs-bar" }, xray = true })
 
 --hl.window_rule({
     --name  = "tearing-all",

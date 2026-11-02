@@ -28,3 +28,9 @@ hl.bind("XF86AudioMicMute",     hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_S
 -- Quickshell animiert selbst: Hyprlands Ebenen-Animation für die Shell aus,
 -- sonst wird doppelt animiert und es ruckelt.
 hl.layer_rule({ match = { namespace = "qs-.*" }, no_anim = true })
+
+-- Mit Transparenz (Settings > Appearance > Transparency): Blur hinter der Shell.
+-- Ersetzt die Zeile darueber, Details im Quickshell Guide.
+-- hl.layer_rule({ match = { namespace = "qs-.*" }, no_anim = true, blur = true, ignore_alpha = 0.5 })
+-- Leiste: nur das Wallpaper verwischen, keine Fenster (sonst dunkler Rand unten durch das Fenster darunter)
+-- hl.layer_rule({ match = { namespace = "qs-bar" }, xray = true })
