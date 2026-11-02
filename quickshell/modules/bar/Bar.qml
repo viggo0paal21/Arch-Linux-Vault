@@ -19,7 +19,10 @@ PanelWindow {
     // edgeExact ist der genaue Wert fuer den Hintergrund: Bei nur 8 px Weg gaebe es auf ganze Pixel
     // gerundet nur ~7 sichtbare Schritte. Inhalt und Klickflaeche bleiben auf ganzen Pixeln (scharfe Schrift).
     readonly property real edgeExact: Theme.gap * frame.progress
-    readonly property int edge: Math.round(bar.edgeExact)
+    // Ganze Pixel fuer den Inhalt, in Richtung Ziel gerundet: Der letzte Pixelschritt kommt so noch waehrend
+    // die Leiste sichtbar gleitet (~95 ms) statt einzeln hinterher (~140 ms, wirkte wie "Einklicken").
+    // Der Inhalt ist dabei nie mehr als 1 px vor dem Hintergrund.
+    readonly property int edge: bar.floatingNow ? Math.ceil(bar.edgeExact - 0.001) : Math.floor(bar.edgeExact + 0.001)
     // Unterkante der sichtbaren Leiste (fuer das Tray-Menue)
     readonly property int visualBottom: frame.y + frame.height
     readonly property var hyprMonitor: Hyprland.monitorFor(bar.modelData)
