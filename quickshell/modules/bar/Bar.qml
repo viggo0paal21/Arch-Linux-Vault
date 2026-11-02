@@ -15,8 +15,11 @@ PanelWindow {
     // "Dynamic": genau 1 gekacheltes Fenster = angedockt, sonst schwebend (floating Fenster zaehlen nie)
     readonly property bool dynamic: bar.floating && Config.opts.barFloatingDynamic
     readonly property bool floatingNow: bar.floating && !(bar.dynamic && bar.tiledCount === 1)
-    // Abstand zum Rand, gleitet mit frame.progress zwischen 0 (angedockt) und Theme.gap (schwebend)
-    readonly property int edge: Math.round(Theme.gap * frame.progress)
+    // Abstand zum Rand, gleitet mit frame.progress zwischen 0 (angedockt) und Theme.gap (schwebend).
+    // edgeExact ist der genaue Wert fuer den Hintergrund: Bei nur 8 px Weg gaebe es auf ganze Pixel
+    // gerundet nur ~7 sichtbare Schritte. Inhalt und Klickflaeche bleiben auf ganzen Pixeln (scharfe Schrift).
+    readonly property real edgeExact: Theme.gap * frame.progress
+    readonly property int edge: Math.round(bar.edgeExact)
     // Unterkante der sichtbaren Leiste (fuer das Tray-Menue)
     readonly property int visualBottom: frame.y + frame.height
     readonly property var hyprMonitor: Hyprland.monitorFor(bar.modelData)
@@ -105,11 +108,16 @@ PanelWindow {
             }
         }
 
+        // Hintergrund auf Sub-Pixel genau (mit Kantenglaettung), damit die Form fluessig gleitet
         Rectangle {
-            anchors.fill: parent
+            x: bar.edgeExact - bar.edge
+            y: bar.edgeExact - bar.edge
+            width: bar.width - 2 * bar.edgeExact
+            height: Theme.barHeight
+            antialiasing: true
             color: Theme.bg
             opacity: bar.bgOpacity
-            radius: Math.round(Theme.radiusLg * frame.progress)
+            radius: Theme.radiusLg * frame.progress
             border.width: frame.progress > 0.5 && Config.opts.barBorder ? 1 : 0
             border.color: Theme.border
 
@@ -122,9 +130,13 @@ PanelWindow {
                 color: Theme.border
             }
 
+            // Mit "Dynamic" im selben Takt wie das Andocken (300 ms, md3_decel): Schwarzwerden und
+            // Andocken sind dann eine Bewegung statt schnellem Gleiten mit langsamem Nachblenden.
             Behavior on opacity {
-                Anim {
-                    duration: Theme.durSlow
+                NumberAnimation {
+                    duration: bar.dynamic ? (Config.opts.animations ? 300 : 0) : Theme.durSlow
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: bar.dynamic ? [0.05, 0.7, 0.1, 1.0, 1.0, 1.0] : Theme.curve
                 }
             }
         }
