@@ -58,13 +58,12 @@ OverlayPanel {
 
         readonly property int tabHeight: 56
 
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.verticalCenter: parent.verticalCenter
-        anchors.verticalCenterOffset: 12 * (1 - panel.progress)
+        // Nur Einblenden + kurzes Gleiten, immer auf ganze Pixel: Text bleibt in jedem Frame scharf
+        x: Math.round((parent.width - width) / 2)
+        y: Math.round((parent.height - height) / 2 + 12 * (1 - panel.progress))
         width: Math.min(940, parent.width - 80)
         height: Math.min(700, parent.height - 140)
         opacity: panel.progress
-        scale: 0.97 + 0.03 * panel.progress
         focus: true
 
         Keys.onTabPressed: panel.switchTab(1)
@@ -275,11 +274,13 @@ OverlayPanel {
                 Item {
                     id: pages
 
+                    property real shift: 0
+
                     width: flick.width
                     height: [pageAppearance, pageBar, pageBehavior, pageCommands][panel.tab].implicitHeight
 
                     transform: Translate {
-                        id: pagesShift
+                        y: Math.round(pages.shift)
                     }
 
                     // ----- Appearance -----
@@ -690,8 +691,8 @@ OverlayPanel {
             }
 
             NumberAnimation {
-                target: pagesShift
-                property: "y"
+                target: pages
+                property: "shift"
                 from: 10
                 to: 0
                 duration: Theme.durMed

@@ -38,6 +38,13 @@ Rectangle {
     border.color: root.critical ? Theme.fg : (hover.hovered ? Theme.borderStrong : Theme.border)
     clip: true
 
+    // Beim Rein-/Rausgleiten liegen x/y oft zwischen zwei Pixeln, dann flimmert der Text.
+    // Der Gegen-Versatz zeichnet die Karte immer auf ganzen Pixeln.
+    transform: Translate {
+        x: Math.round(root.x) - root.x
+        y: Math.round(root.y) - root.y
+    }
+
     Behavior on border.color {
         CAnim {}
     }

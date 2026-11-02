@@ -21,7 +21,8 @@ Item {
         id: inner
 
         // zu: komplett oberhalb (hinter der Leiste), offen: knapp unter der Leiste
-        y: Theme.gap - root.fullHeight * (1 - root.progress)
+        // auf ganze Pixel runden: Text bleibt beim Gleiten in jedem Frame scharf
+        y: Math.round(Theme.gap - root.fullHeight * (1 - root.progress))
         width: parent.width
         height: root.contentHeight
     }

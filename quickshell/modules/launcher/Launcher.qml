@@ -91,13 +91,12 @@ OverlayPanel {
         readonly property int rowHeight: 52
         readonly property int visibleRows: Math.min(8, Math.max(1, panel.results.length))
 
-        anchors.horizontalCenter: parent.horizontalCenter
-        y: Math.round(parent.height * 0.16) - 14 * (1 - panel.progress)
+        // Nur Einblenden + kurzes Gleiten, immer auf ganze Pixel: Text bleibt in jedem Frame scharf
+        x: Math.round((parent.width - width) / 2)
+        y: Math.round(parent.height * 0.16 - 14 * (1 - panel.progress))
         width: Math.min(620, parent.width - 40)
         height: header.height + list.height + 26
         opacity: panel.progress
-        scale: 0.97 + 0.03 * panel.progress
-        transformOrigin: Item.Top
 
         Behavior on height {
             Anim {
