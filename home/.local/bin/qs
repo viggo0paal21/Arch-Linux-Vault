@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+export MANGOHUD=0 DISABLE_LSFGVK=1 DISABLE_VKBASALT=1 QSG_RHI_BACKEND=vulkan
+unset LD_PRELOAD
+exec /usr/bin/qs "$@"

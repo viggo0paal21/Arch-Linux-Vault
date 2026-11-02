@@ -9,6 +9,8 @@ my personal `~/.config` files (Hyprland rice), my zsh setup, maintenance and per
 
 > 🎮 **[Low Latency Gaming](Low%20Latency%20Gaming.md)**: best setup with and without tearing, and how tearing works on Wayland/Hyprland.
 
+> 🖤 **[Quickshell Guide](Quickshell%20Guide.md)**: my black-and-white Quickshell shell, smooth 170 Hz on NVIDIA (Vulkan, no MangoHud), FPS counter, using the fix with other shells.
+
 ## Contents
 
 ### Guides
@@ -18,6 +20,7 @@ my personal `~/.config` files (Hyprland rice), my zsh setup, maintenance and per
 | [`Arch Linux System Maintenance Guide.md`](Arch%20Linux%20System%20Maintenance%20Guide.md) | Safe updates, recovery playbook, all commands |
 | [`Performance Optimization.md`](Performance%20Optimization.md) | System tweaks for gaming performance and latency, incl. how to use the GPU scripts below |
 | [`Low Latency Gaming.md`](Low%20Latency%20Gaming.md) | Best display setup with and without tearing, how tearing works on Hyprland |
+| [`Quickshell Guide.md`](Quickshell%20Guide.md) | My Quickshell shell: files, install, why the start script exists, FPS counter, other shells, rollback |
 
 ### Scripts
 
@@ -25,6 +28,14 @@ my personal `~/.config` files (Hyprland rice), my zsh setup, maintenance and per
 |---|---|
 | [`nvidia-maxperf-setup.sh`](nvidia-maxperf-setup.sh) | Locks an NVIDIA GPU to max clocks (persists across boot and suspend). Edit the clock values for your card first. See [Performance Optimization, section 4](Performance%20Optimization.md#4-gpu-max-performance-clocks). |
 | [`amdgpu-maxperf-setup.sh`](amdgpu-maxperf-setup.sh) | Same for AMD GPUs (sets the performance level to `high`) |
+
+Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
+
+| File | What it is |
+|---|---|
+| [`qs-start`](home/.local/bin/qs-start) | Starts Quickshell from the Hyprland autostart: Vulkan backend, without MangoHud / lsfg-vk / vkBasalt. See [Quickshell Guide](Quickshell%20Guide.md#3-why-the-start-script-exists-nvidia) |
+| [`qs`](home/.local/bin/qs), [`quickshell`](home/.local/bin/quickshell) | Wrappers around `/usr/bin/qs` and `/usr/bin/quickshell` with the same fix, so it applies to every Quickshell config |
+| [`check-direct-scanout`](home/.local/bin/check-direct-scanout) | Notification that shows whether Hyprland's direct scanout is active (`Super + Home`) |
 
 ### Shell
 
@@ -44,17 +55,18 @@ my personal `~/.config` files (Hyprland rice), my zsh setup, maintenance and per
 | [`gtk-3.0/`](gtk-3.0) | GTK 3 theme |
 | [`gtk-4.0/`](gtk-4.0) | GTK 4 theme |
 | [`hypr/`](hypr) | Hyprland (`hyprland.lua`) and Hypr tools |
-| [`hyprpanel/`](hyprpanel) | HyprPanel (bar) OUTDATED NOT IN USE, USE WAYBAR|
+| [`hyprpanel/`](hyprpanel) | HyprPanel (bar) OUTDATED NOT IN USE |
 | [`kitty/`](kitty) | Terminal |
 | [`Kvantum/`](Kvantum) | Qt theme engine |
 | [`MangoHud/`](MangoHud) | Stable FPS limiter and performance overlay for games |
 | [`nautilus/`](nautilus) | File manager |
 | [`nwg-look/`](nwg-look) | GTK settings tool |
 | [`qt6ct/`](qt6ct) | Qt 6 theme settings |
-| [`rofi/`](rofi) | App launcher: `config.rasi` (settings) + `monochrome.rasi` (theme) |
-| [`swaync/`](swaync) | Notifications |
+| [`quickshell/`](quickshell) | **My shell (in use):** bar, launcher, control center, dashboard, notifications, OSD, power menu. See [Quickshell Guide](Quickshell%20Guide.md) |
+| [`rofi/`](rofi) | App launcher: `config.rasi` (settings) + `monochrome.rasi` (theme). Replaced by the Quickshell launcher, kept as fallback |
+| [`swaync/`](swaync) | Notifications. Replaced by Quickshell, kept as fallback |
 | [`vibrantLinux/`](vibrantLinux) | Per-app color saturation |
-| [`waybar/`](waybar) | Status bar |
+| [`waybar/`](waybar) | Status bar. Replaced by Quickshell, kept as fallback |
 | [`waypaper/`](waypaper) | Wallpaper picker |
 | [`xdg-desktop-portal/`](xdg-desktop-portal) | Portals (screen sharing, file picker) |
 
@@ -63,6 +75,7 @@ my personal `~/.config` files (Hyprland rice), my zsh setup, maintenance and per
 | Folder | What it is |
 |---|---|
 | [`etc/`](etc) | Files from outside `~/.config` (skipped by the restore loop in [Restore the configs](#restore-the-configs)) |
+| [`home/`](home) | Files that belong directly in `~` (`.zshrc`, `.local/bin` scripts, Quickshell settings in `.local/state`). Also skipped by the restore loop |
 
 ## Shell: zsh
 
@@ -84,6 +97,8 @@ chsh -s /usr/bin/zsh
 Then log out and back in.
 
 ## Launcher: rofi
+
+> Currently replaced by the Quickshell launcher (`Super + R` runs `qs ipc call launcher toggle`). Rofi stays here as a fallback.
 
 - **Look:** monochrome, same background color and 80 % opacity as Kitty, slightly rounded, JetBrains Mono
 - **Behavior:** the shortcut opens rofi and closes it when pressed again, one click launches an app, the mouse wheel scrolls line by line
@@ -173,6 +188,9 @@ variable, so programs started by systemd get a broken path. Fix: create
 LD_PRELOAD=/usr/$$LIB/mangohud/libMangoHud_opengl.so
 ```
 
+This would also load MangoHud into Quickshell (FPS cap + extra vsync in the shell). The start script
+[`qs-start`](home/.local/bin/qs-start) and the `qs` / `quickshell` wrappers keep it out, see the [Quickshell Guide](Quickshell%20Guide.md).
+
 <!-- INSTALL-START -->
 
 ## Install the programs
@@ -194,6 +212,7 @@ _Generated on 28.10.2026: official packages via pacman, everything else via yay 
 | nautilus | File manager | `nautilus` |
 | nwg-look | GTK settings tool | `nwg-look` |
 | qt6ct | Qt 6 theme settings | `qt6ct` |
+| quickshell | My shell (bar, launcher, notifications, ...) | `quickshell`, `inter-font`, `ttf-nerd-fonts-symbols` |
 | rofi | App launcher | `rofi` |
 | swaync | Notifications | `swaync` |
 | vibrantLinux | Per-app color saturation | `vibrantlinux` (AUR) |
@@ -207,7 +226,7 @@ _Generated on 28.10.2026: official packages via pacman, everything else via yay 
 **1. Official packages (pacman):**
 
 ```bash
-sudo pacman -Syu --needed fastfetch fontconfig ttf-jetbrains-mono-nerd gtk3 gtk4 hyprland hyprlock hyprsunset hyprpicker kitty kvantum kvantum-qt5 mangohud lib32-mangohud nautilus nwg-look qt6ct rofi swaync waybar blueman pavucontrol swaybg xdg-desktop-portal xdg-desktop-portal-hyprland xdg-desktop-portal-gtk
+sudo pacman -Syu --needed fastfetch fontconfig ttf-jetbrains-mono-nerd gtk3 gtk4 hyprland hyprlock hyprsunset hyprpicker kitty kvantum kvantum-qt5 mangohud lib32-mangohud nautilus nwg-look qt6ct quickshell inter-font ttf-nerd-fonts-symbols rofi swaync waybar blueman pavucontrol swaybg xdg-desktop-portal xdg-desktop-portal-hyprland xdg-desktop-portal-gtk
 sudo pacman -S --needed - < shell-packages.txt
 ```
 
@@ -234,7 +253,7 @@ cd yay-bin && makepkg -si && cd .. && rm -rf yay-bin
 > Warning: existing configs with the same name will be overwritten.
 
 ```bash
-git clone https://github.com/viggo0paal21/Arch-Vault.git ~/config-backup
+git clone https://github.com/viggo0paal21/Arch-Linux-Vault.git ~/config-backup
 cd ~/config-backup
 
 # restore a single folder, e.g. MangoHud:
@@ -244,7 +263,17 @@ cp -r MangoHud ~/.config/
 for d in */; do case "$d" in home/|etc/) ;; *) cp -r "$d" ~/.config/ ;; esac; done
 
 # Starship prompt and zsh: see "Shell: zsh" above
+
+# scripts for ~/.local/bin (Quickshell start script + wrappers, check-direct-scanout):
+mkdir -p ~/.local/bin && cp home/.local/bin/* ~/.local/bin/
+chmod +x ~/.local/bin/{qs-start,qs,quickshell,check-direct-scanout}
+
+# Quickshell settings:
+mkdir -p ~/.local/state/quickshell/by-shell/oled-bw
+cp home/.local/state/quickshell/by-shell/oled-bw/settings.json ~/.local/state/quickshell/by-shell/oled-bw/
 ```
+
+Quickshell details and checks after restoring: [Quickshell Guide, section 2](Quickshell%20Guide.md#2-install--restore).
 
 The local folder is called `~/config-backup` on purpose: my backup scripts expect that name.
 
