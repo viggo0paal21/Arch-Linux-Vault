@@ -24,15 +24,28 @@ OverlayPanel {
         },
         {
             name: "Behavior",
-            hint: "Animations, notifications, volume",
+            hint: "Notifications, OSD, volume",
             icon: Icons.cogOutline
         },
         {
             name: "Commands",
             hint: "Terminal and lock screen",
             icon: Icons.consoleLine
+        },
+        {
+            name: "Animations",
+            hint: "Curves and speed for everything",
+            icon: Icons.play
         }
     ]
+
+    // Alle Animationswerte zurueck auf den Standard (= Stand beim Einbau dieses Tabs)
+    function resetAnimations() {
+        const d = Config.defaults;
+        const keys = ["animations", "animScale", "barDockDuration", "animBarCurve", "animPanelSpeed", "animPanelOpen", "animPanelClose", "animOverlaySpeed", "animOverlayOpen", "animOverlayClose", "animNotifSpeed", "animNotifCurve", "animOsdSpeed", "animWsSpeed", "animWsCurve", "animCtlSpeed", "animCtlCurve"];
+        for (const k of keys)
+            Config.opts[k] = d[k];
+    }
 
     function switchTab(delta) {
         panel.tab = (panel.tab + delta + panel.tabs.length) % panel.tabs.length;
@@ -51,6 +64,128 @@ OverlayPanel {
 
     component SwitchCtl: Toggle {
         anchors.right: parent ? parent.right : undefined
+    }
+
+    // Kurvenwahl: linke Haelfte = vorige, rechte Haelfte = naechste
+    component CurvePick: Rectangle {
+        id: cp
+
+        property string value: ""
+        readonly property int idx: Math.max(0, Theme.curveKeys.indexOf(cp.value))
+
+        signal picked(string v)
+
+        width: 150
+        height: 30
+        radius: Theme.radiusSm
+        color: cpArea.pressed ? Theme.pressed : (cpArea.containsMouse ? Theme.hover : Theme.layer3)
+        border.width: 1
+        border.color: Theme.border
+
+        Glyph {
+            anchors.left: parent.left
+            anchors.leftMargin: 6
+            anchors.verticalCenter: parent.verticalCenter
+            text: Icons.left
+            color: Theme.fgMuted
+            font.pixelSize: Theme.fontSm
+        }
+
+        Txt {
+            anchors.centerIn: parent
+            text: Theme.curveNames[cp.idx]
+            font.pixelSize: Theme.fontSm
+        }
+
+        Glyph {
+            anchors.right: parent.right
+            anchors.rightMargin: 6
+            anchors.verticalCenter: parent.verticalCenter
+            text: Icons.right
+            color: Theme.fgMuted
+            font.pixelSize: Theme.fontSm
+        }
+
+        MouseArea {
+            id: cpArea
+
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: mouse => {
+                const n = Theme.curveKeys.length;
+                const d = mouse.x < width / 2 ? -1 : 1;
+                cp.picked(Theme.curveKeys[(cp.idx + d + n) % n]);
+            }
+        }
+    }
+
+    // Eine Animationsgruppe: Dauer-Faktor und bis zu zwei Kurven
+    component AnimRow: SettingRow {
+        id: ar
+
+        property real speed: 1
+        property string curveA: ""
+        property string curveB: ""
+        property string labelA: "Curve"
+        property string labelB: ""
+
+        signal speedEdited(real v)
+        signal curveAPicked(string v)
+        signal curveBPicked(string v)
+
+        width: parent ? parent.width : 0
+        controlWidth: 420
+        implicitHeight: Math.max(64, arCol.height + 28)
+
+        Column {
+            id: arCol
+
+            width: parent.width
+            spacing: 8
+
+            RangeControl {
+                width: parent.width
+                from: 0.25
+                to: 3
+                stepSize: 0.05
+                decimals: 2
+                value: ar.speed
+                suffix: "×"
+                onEdited: v => ar.speedEdited(v)
+            }
+
+            Row {
+                visible: ar.curveA !== ""
+                spacing: 8
+
+                Txt {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: ar.labelA
+                    color: Theme.fgMuted
+                    font.pixelSize: Theme.fontSm
+                }
+
+                CurvePick {
+                    value: ar.curveA
+                    onPicked: v => ar.curveAPicked(v)
+                }
+
+                Txt {
+                    visible: ar.curveB !== ""
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: ar.labelB
+                    color: Theme.fgMuted
+                    font.pixelSize: Theme.fontSm
+                }
+
+                CurvePick {
+                    visible: ar.curveB !== ""
+                    value: ar.curveB
+                    onPicked: v => ar.curveBPicked(v)
+                }
+            }
+        }
     }
 
     Card {
@@ -111,7 +246,7 @@ OverlayPanel {
                 interactive: false
                 model: panel.tabs
                 currentIndex: panel.tab
-                highlightMoveDuration: Theme.durFast
+                highlightMoveDuration: Theme.ctlFast
                 highlightFollowsCurrentItem: true
 
                 highlight: Rectangle {
@@ -139,7 +274,7 @@ OverlayPanel {
 
                         Behavior on opacity {
                             Anim {
-                                duration: Theme.durFast
+                                duration: Theme.ctlFast
                             }
                         }
                     }
@@ -638,42 +773,6 @@ OverlayPanel {
                             }
                         }
 
-                        // Dauer des Andockens/Loesens, Reset auf 400 ms
-                        SettingRow {
-                            width: parent.width
-                            visible: Config.opts.barFloating && Config.opts.barFloatingDynamic
-                            label: "Dock animation"
-                            description: "A bit slower than the windows (300 ms) lets a growing window arrive first, so no gap shows"
-                            controlWidth: 400
-
-                            Row {
-                                spacing: 10
-
-                                RangeControl {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    width: 400 - dockResetBtn.width - 10
-                                    from: 200
-                                    to: 700
-                                    stepSize: 10
-                                    value: Config.opts.barDockDuration
-                                    suffix: " ms"
-                                    onEdited: v => Config.opts.barDockDuration = v
-                                }
-
-                                IconButton {
-                                    id: dockResetBtn
-
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    size: 30
-                                    icon: String.fromCodePoint(0xF0450)
-                                    iconSize: Theme.fontSm
-                                    label: "Reset"
-                                    idleColor: Theme.layer3
-                                    onClicked: Config.opts.barDockDuration = 400
-                                }
-                            }
-                        }
-
                         // Hoehe der schwebenden Leiste ueber dem oberen Rand, Reset auf 8 px
                         SettingRow {
                             width: parent.width
@@ -805,32 +904,6 @@ OverlayPanel {
 
                         SettingRow {
                             width: parent.width
-                            label: "Animations"
-
-                            SwitchCtl {
-                                checked: Config.opts.animations
-                                onToggled: Config.opts.animations = !Config.opts.animations
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            label: "Animation duration"
-                            description: "Lower = faster"
-
-                            RangeControl {
-                                from: 0.5
-                                to: 2
-                                stepSize: 0.1
-                                decimals: 1
-                                value: Config.opts.animScale
-                                suffix: "×"
-                                onEdited: v => Config.opts.animScale = v
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
                             label: "Do not disturb"
                             description: "Only critical notifications pop up"
 
@@ -934,6 +1007,156 @@ OverlayPanel {
                             }
                         }
                     }
+
+                    // ----- Animations -----
+                    Column {
+                        id: pageAnimations
+
+                        width: parent.width
+                        spacing: 10
+                        visible: panel.tab === 4
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Animations"
+
+                            SwitchCtl {
+                                checked: Config.opts.animations
+                                onToggled: Config.opts.animations = !Config.opts.animations
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Global duration"
+                            description: "Applies to everything below except bar docking. Lower = faster"
+                            controlWidth: 420
+
+                            RangeControl {
+                                from: 0.25
+                                to: 2
+                                stepSize: 0.05
+                                decimals: 2
+                                value: Config.opts.animScale
+                                suffix: "×"
+                                onEdited: v => Config.opts.animScale = v
+                            }
+                        }
+
+                        SettingRow {
+                            id: dockRow
+
+                            width: parent.width
+                            label: "Bar docking"
+                            description: "Dynamic floating bar. Same curve as the windows in hyprland.lua keeps them in step"
+                            controlWidth: 420
+                            implicitHeight: Math.max(64, dockCol.height + 28)
+
+                            Column {
+                                id: dockCol
+
+                                width: parent.width
+                                spacing: 8
+
+                                RangeControl {
+                                    width: parent.width
+                                    from: 150
+                                    to: 700
+                                    stepSize: 10
+                                    value: Config.opts.barDockDuration
+                                    suffix: " ms"
+                                    onEdited: v => Config.opts.barDockDuration = v
+                                }
+
+                                Row {
+                                    spacing: 8
+
+                                    Txt {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: "Curve"
+                                        color: Theme.fgMuted
+                                        font.pixelSize: Theme.fontSm
+                                    }
+
+                                    CurvePick {
+                                        value: Config.opts.animBarCurve
+                                        onPicked: v => Config.opts.animBarCurve = v
+                                    }
+                                }
+                            }
+                        }
+
+                        AnimRow {
+                            label: "Dashboard & control center"
+                            speed: Config.opts.animPanelSpeed
+                            labelA: "Open"
+                            curveA: Config.opts.animPanelOpen
+                            labelB: "Close"
+                            curveB: Config.opts.animPanelClose
+                            onSpeedEdited: v => Config.opts.animPanelSpeed = v
+                            onCurveAPicked: v => Config.opts.animPanelOpen = v
+                            onCurveBPicked: v => Config.opts.animPanelClose = v
+                        }
+
+                        AnimRow {
+                            label: "Launcher, settings & power menu"
+                            speed: Config.opts.animOverlaySpeed
+                            labelA: "Open"
+                            curveA: Config.opts.animOverlayOpen
+                            labelB: "Close"
+                            curveB: Config.opts.animOverlayClose
+                            onSpeedEdited: v => Config.opts.animOverlaySpeed = v
+                            onCurveAPicked: v => Config.opts.animOverlayOpen = v
+                            onCurveBPicked: v => Config.opts.animOverlayClose = v
+                        }
+
+                        AnimRow {
+                            label: "Notifications"
+                            speed: Config.opts.animNotifSpeed
+                            labelA: "Slide in"
+                            curveA: Config.opts.animNotifCurve
+                            onSpeedEdited: v => Config.opts.animNotifSpeed = v
+                            onCurveAPicked: v => Config.opts.animNotifCurve = v
+                        }
+
+                        AnimRow {
+                            label: "Workspaces"
+                            speed: Config.opts.animWsSpeed
+                            curveA: Config.opts.animWsCurve
+                            onSpeedEdited: v => Config.opts.animWsSpeed = v
+                            onCurveAPicked: v => Config.opts.animWsCurve = v
+                        }
+
+                        AnimRow {
+                            label: "Volume & brightness popup"
+                            speed: Config.opts.animOsdSpeed
+                            onSpeedEdited: v => Config.opts.animOsdSpeed = v
+                        }
+
+                        AnimRow {
+                            label: "Buttons, switches & hover"
+                            speed: Config.opts.animCtlSpeed
+                            curveA: Config.opts.animCtlCurve
+                            onSpeedEdited: v => Config.opts.animCtlSpeed = v
+                            onCurveAPicked: v => Config.opts.animCtlCurve = v
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Reset all animations"
+                            description: "Back to the defaults (the setup this tab was built with)"
+
+                            IconButton {
+                                anchors.right: parent.right
+                                size: 30
+                                icon: String.fromCodePoint(0xF0450)
+                                iconSize: Theme.fontSm
+                                label: "Reset"
+                                idleColor: Theme.layer3
+                                onClicked: panel.resetAnimations()
+                            }
+                        }
+                    }
                 }
             }
 
@@ -958,7 +1181,7 @@ OverlayPanel {
                 property: "opacity"
                 from: 0
                 to: 1
-                duration: Theme.durMed
+                duration: Theme.ctlMed
                 easing.type: Easing.OutCubic
             }
 
@@ -967,7 +1190,7 @@ OverlayPanel {
                 property: "shift"
                 from: 10
                 to: 0
-                duration: Theme.durMed
+                duration: Theme.ctlMed
                 easing.type: Easing.OutCubic
             }
         }

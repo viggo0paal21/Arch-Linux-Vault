@@ -100,7 +100,7 @@ OverlayPanel {
 
         Behavior on height {
             Anim {
-                duration: Theme.durFast
+                duration: Theme.ctlFast
             }
         }
 
@@ -193,7 +193,7 @@ OverlayPanel {
             model: panel.results
             currentIndex: panel.current
             boundsBehavior: Flickable.StopAtBounds
-            highlightMoveDuration: Theme.durFast
+            highlightMoveDuration: Theme.ctlFast
             highlightFollowsCurrentItem: true
 
             highlight: Rectangle {

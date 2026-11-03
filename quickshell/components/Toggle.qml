@@ -34,7 +34,7 @@ Item {
 
         Behavior on x {
             Anim {
-                duration: Theme.durFast
+                duration: Theme.ctlFast
             }
         }
         Behavior on color {

@@ -15,6 +15,7 @@ OverlayPanel {
     screen: Ui.panelScreen
     ns: "qs-control"
     animDuration: Theme.durSlow
+    animGroup: "panel"
     onDismissed: Ui.close()
 
     // Gleitet von oben unter der Leiste hervor

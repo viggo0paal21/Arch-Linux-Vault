@@ -51,7 +51,7 @@ PanelWindow {
     Timer {
         id: hold
 
-        interval: Theme.durSlow + 120
+        interval: Math.round(Theme.durSlow * Config.opts.animNotifSpeed) + 120
         onTriggered: {
             if (!win.hasPopups)
                 win.mapped = false;
@@ -82,14 +82,14 @@ PanelWindow {
                     property: "x"
                     from: 72
                     to: 0
-                    duration: Theme.durSlow
-                    easing.bezierCurve: Theme.curveEmph
+                    duration: Math.round(Theme.durSlow * Config.opts.animNotifSpeed)
+                    easing.bezierCurve: Theme.curveOf(Config.opts.animNotifCurve)
                 }
                 Anim {
                     property: "opacity"
                     from: 0
                     to: 1
-                    duration: Theme.durMed
+                    duration: Math.round(Theme.durMed * Config.opts.animNotifSpeed)
                 }
             }
         }
@@ -99,12 +99,12 @@ PanelWindow {
                 Anim {
                     property: "x"
                     to: 72
-                    duration: Theme.durMed
+                    duration: Math.round(Theme.durMed * Config.opts.animNotifSpeed)
                 }
                 Anim {
                     property: "opacity"
                     to: 0
-                    duration: Theme.durMed
+                    duration: Math.round(Theme.durMed * Config.opts.animNotifSpeed)
                 }
             }
         }
@@ -112,7 +112,7 @@ PanelWindow {
         displaced: Transition {
             Anim {
                 property: "y"
-                duration: Theme.durMed
+                duration: Math.round(Theme.durMed * Config.opts.animNotifSpeed)
             }
         }
 

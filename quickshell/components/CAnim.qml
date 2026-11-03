@@ -2,7 +2,7 @@ import QtQuick
 import qs.config
 
 ColorAnimation {
-    duration: Theme.durFast
+    duration: Theme.ctlFast
     easing.type: Easing.BezierSpline
     easing.bezierCurve: Theme.curve
 }

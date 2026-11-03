@@ -138,7 +138,7 @@ PanelWindow {
             NumberAnimation {
                 duration: Config.opts.animations ? Config.opts.barDockDuration : 0
                 easing.type: Easing.BezierSpline
-                easing.bezierCurve: [0.22, 1.0, 0.36, 1.0, 1.0, 1.0]
+                easing.bezierCurve: Theme.curveOf(Config.opts.animBarCurve)
             }
         }
 
@@ -173,7 +173,7 @@ PanelWindow {
                 NumberAnimation {
                     duration: bar.dynamic ? (Config.opts.animations ? Config.opts.barDockDuration : 0) : Theme.durSlow
                     easing.type: Easing.BezierSpline
-                    easing.bezierCurve: bar.dynamic ? [0.22, 1.0, 0.36, 1.0, 1.0, 1.0] : Theme.curve
+                    easing.bezierCurve: bar.dynamic ? Theme.curveOf(Config.opts.animBarCurve) : Theme.curve
                 }
             }
         }

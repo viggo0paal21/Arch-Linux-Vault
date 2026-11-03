@@ -66,7 +66,27 @@ Singleton {
     readonly property int durFast: Math.round(130 * animScale)
     readonly property int durMed: Math.round(240 * animScale)
     readonly property int durSlow: Math.round(420 * animScale)
-    readonly property list<real> curve: [0.2, 0.0, 0.0, 1.0, 1.0, 1.0]
+    // Kurven zur Auswahl (Settings > Animations)
+    readonly property var curveKeys: ["standard", "outCubic", "inCubic", "smoothOut", "md3Decel", "inOutSine", "linear"]
+    readonly property var curveNames: ["Standard", "Ease out cubic", "Ease in cubic", "Smooth out", "MD3 decelerate", "Ease in-out", "Linear"]
+    readonly property var curvePoints: ({
+            standard: [0.2, 0.0, 0.0, 1.0, 1.0, 1.0],
+            outCubic: [0.33, 1.0, 0.68, 1.0, 1.0, 1.0],
+            inCubic: [0.32, 0.0, 0.67, 0.0, 1.0, 1.0],
+            smoothOut: [0.22, 1.0, 0.36, 1.0, 1.0, 1.0],
+            md3Decel: [0.05, 0.7, 0.1, 1.0, 1.0, 1.0],
+            inOutSine: [0.37, 0.0, 0.63, 1.0, 1.0, 1.0],
+            linear: [0.0, 0.0, 1.0, 1.0, 1.0, 1.0]
+        })
+
+    function curveOf(key) {
+        return root.curvePoints[key] || root.curvePoints.standard;
+    }
+
+    // Bedienelemente (Hover, Schalter, Regler, Listen): Kurve und Tempo aus Settings > Animations
+    readonly property list<real> curve: root.curveOf(Config.opts.animCtlCurve)
+    readonly property int ctlFast: Math.round(durFast * Config.opts.animCtlSpeed)
+    readonly property int ctlMed: Math.round(durMed * Config.opts.animCtlSpeed)
     // Reinkommen: easeOutCubic, Rausgehen: easeInCubic. Gleichmaessige Schritte pro Frame
     // (die alte M3-Kurve sprang im ersten Frame um >100 px, das wirkte ruckelig).
     readonly property list<real> curveEmph: [0.33, 1.0, 0.68, 1.0, 1.0, 1.0]

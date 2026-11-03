@@ -52,14 +52,14 @@ Item {
 
         Behavior on width {
             Anim {
-                duration: Theme.durFast
+                duration: Theme.ctlFast
             }
         }
         Behavior on x {
             enabled: !root.dragging
 
             Anim {
-                duration: Theme.durFast
+                duration: Theme.ctlFast
             }
         }
     }

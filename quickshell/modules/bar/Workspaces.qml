@@ -72,7 +72,8 @@ Item {
 
                 Behavior on width {
                     Anim {
-                        easing.bezierCurve: Theme.curveEmph
+                        duration: Math.round(Theme.durMed * Config.opts.animWsSpeed)
+                        easing.bezierCurve: Theme.curveOf(Config.opts.animWsCurve)
                     }
                 }
                 Behavior on color {

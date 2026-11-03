@@ -89,6 +89,11 @@ part of the motion. The bottom edge is one continuous curve (position + docked e
 reaches the bar no gap can reopen. Set `border_size = 0` for a single window in only one rule; two rules setting it
 made the windows jitter when the smart gaps switched.
 
+**Animations tab** (Settings → Animations): on/off, global duration, bar docking (ms + curve), and for dashboard /
+control center, launcher / settings / power menu, notifications, workspaces, OSD and buttons a duration factor plus
+curves (click the right / left half of a curve button for the next / previous curve). **Reset all animations** goes
+back to the defaults. The windows in Hyprland keep their own curve from `hyprland.lua`.
+
 **Smooth text** (Settings → Appearance, off by default) draws text with Qt's distance-field renderer so text and icons
 can move by fractions of a pixel. Smoother motion, slightly softer glyphs.
 

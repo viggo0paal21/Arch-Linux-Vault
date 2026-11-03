@@ -16,7 +16,7 @@ Singleton {
         radius: 8,
         barHeight: 37,
         barDockedExtra: 2,
-        barDockDuration: 400,
+        barDockDuration: 300,
         smoothText: false,
         barFloatOffset: 8,
         barFloating: false,
@@ -40,7 +40,21 @@ Singleton {
         barSolidWithWindows: false,
         barSolidOnlySingle: false,
         barExcludeKitty: false,
-        animScale: 1.0,
+        animScale: 0.5,
+        animBarCurve: "smoothOut",
+        animPanelSpeed: 1.0,
+        animPanelOpen: "outCubic",
+        animPanelClose: "inCubic",
+        animOverlaySpeed: 1.0,
+        animOverlayOpen: "outCubic",
+        animOverlayClose: "inCubic",
+        animNotifSpeed: 1.0,
+        animNotifCurve: "outCubic",
+        animOsdSpeed: 1.0,
+        animWsSpeed: 1.0,
+        animWsCurve: "outCubic",
+        animCtlSpeed: 1.0,
+        animCtlCurve: "standard",
         monochromeIcons: true,
         dnd: false,
         notifTimeout: 5,
@@ -106,6 +120,20 @@ Singleton {
             property bool barSolidOnlySingle: root.defaults.barSolidOnlySingle
             property bool barExcludeKitty: root.defaults.barExcludeKitty
             property real animScale: root.defaults.animScale
+            property string animBarCurve: root.defaults.animBarCurve
+            property real animPanelSpeed: root.defaults.animPanelSpeed
+            property string animPanelOpen: root.defaults.animPanelOpen
+            property string animPanelClose: root.defaults.animPanelClose
+            property real animOverlaySpeed: root.defaults.animOverlaySpeed
+            property string animOverlayOpen: root.defaults.animOverlayOpen
+            property string animOverlayClose: root.defaults.animOverlayClose
+            property real animNotifSpeed: root.defaults.animNotifSpeed
+            property string animNotifCurve: root.defaults.animNotifCurve
+            property real animOsdSpeed: root.defaults.animOsdSpeed
+            property real animWsSpeed: root.defaults.animWsSpeed
+            property string animWsCurve: root.defaults.animWsCurve
+            property real animCtlSpeed: root.defaults.animCtlSpeed
+            property string animCtlCurve: root.defaults.animCtlCurve
             property bool monochromeIcons: root.defaults.monochromeIcons
             property bool dnd: root.defaults.dnd
             property int notifTimeout: root.defaults.notifTimeout

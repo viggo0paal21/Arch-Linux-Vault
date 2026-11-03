@@ -45,7 +45,7 @@ PanelWindow {
     Timer {
         id: unmapHold
 
-        interval: Theme.durMed + 80
+        interval: Math.round(Theme.durMed * Config.opts.animOsdSpeed) + 80
         onTriggered: {
             if (!win.shown)
                 win.mapped = false;
@@ -79,7 +79,7 @@ PanelWindow {
 
         Behavior on t {
             Anim {
-                duration: Theme.durMed
+                duration: Math.round(Theme.durMed * Config.opts.animOsdSpeed)
             }
         }
 

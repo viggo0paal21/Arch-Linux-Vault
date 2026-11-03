@@ -15,6 +15,7 @@ OverlayPanel {
     screen: Ui.panelScreen
     ns: "qs-dashboard"
     animDuration: Theme.durSlow
+    animGroup: "panel"
     onDismissed: Ui.close()
     onOpenChanged: {
         if (open)

@@ -13,6 +13,10 @@ PanelWindow {
     property real dimOpacity: 0.5
     property string ns: "qs-panel"
     property int animDuration: Theme.durMed
+    // Gruppe fuer Settings > Animations: "panel" (Dashboard, Control Center) oder "overlay" (Launcher, Settings, Power)
+    property string animGroup: "overlay"
+    readonly property bool panelGroup: win.animGroup === "panel"
+    readonly property real animSpeed: win.panelGroup ? Config.opts.animPanelSpeed : Config.opts.animOverlaySpeed
     property bool mapped: false
     // Geschlossene Panels bleiben unsichtbar gemappt. So muss beim Oeffnen kein neues
     // Fenster (Wayland-Flaeche + Vulkan-Swapchain) angelegt werden, das gab ~90 ms Ruckler.
@@ -83,9 +87,9 @@ PanelWindow {
         target: stage
         property: "t"
         to: 1
-        duration: win.animDuration
+        duration: Math.round(win.animDuration * win.animSpeed)
         easing.type: Easing.BezierSpline
-        easing.bezierCurve: Theme.curveEmph
+        easing.bezierCurve: Theme.curveOf(win.panelGroup ? Config.opts.animPanelOpen : Config.opts.animOverlayOpen)
     }
 
     NumberAnimation {
@@ -94,9 +98,9 @@ PanelWindow {
         target: stage
         property: "t"
         to: 0
-        duration: Math.round(win.animDuration * 0.85)
+        duration: Math.round(win.animDuration * 0.85 * win.animSpeed)
         easing.type: Easing.BezierSpline
-        easing.bezierCurve: Theme.curveAccel
+        easing.bezierCurve: Theme.curveOf(win.panelGroup ? Config.opts.animPanelClose : Config.opts.animOverlayClose)
     }
 
     Timer {
