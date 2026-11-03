@@ -19,8 +19,8 @@ Singleton {
     property real barFloat: Config.opts.barFloating ? 1 : 0
     property bool barFloatTarget: Config.opts.barFloating
     // Unterkante der Leiste (Panels klappen darunter auf)
-    readonly property int barBottom: Math.round(Theme.barHeight + Theme.gap * root.barFloat)
-    readonly property int barBottomTarget: Theme.barHeight + (root.barFloatTarget ? Theme.gap : 0)
+    readonly property real barBottom: Theme.px(Theme.barHeight + Config.opts.barFloatOffset * root.barFloat)
+    readonly property int barBottomTarget: Theme.barHeight + (root.barFloatTarget ? Config.opts.barFloatOffset : 0)
 
     // Rechte Kante des Uhr-/System-Kaestchens in der Leiste, je Bildschirm (Bildschirm-Name -> x).
     // Das Dashboard klappt genau darunter auf.

@@ -7,7 +7,7 @@ Text {
     font.pixelSize: Theme.fontSize
     font.weight: Theme.weight
     font.italic: false
-    renderType: Text.NativeRendering
+    renderType: Theme.smooth ? Text.QtRendering : Text.NativeRendering
     verticalAlignment: Text.AlignVCenter
     elide: Text.ElideRight
 

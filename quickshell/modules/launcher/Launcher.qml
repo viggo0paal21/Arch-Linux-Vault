@@ -93,7 +93,7 @@ OverlayPanel {
 
         // Nur Einblenden + kurzes Gleiten, immer auf ganze Pixel: Text bleibt in jedem Frame scharf
         x: Math.round((parent.width - width) / 2)
-        y: Math.round(parent.height * 0.16 - 14 * (1 - panel.progress))
+        y: Theme.px(parent.height * 0.16 - 14 * (1 - panel.progress))
         width: Math.min(620, parent.width - 40)
         height: header.height + list.height + 26
         opacity: panel.progress
@@ -146,7 +146,7 @@ OverlayPanel {
                 font.family: Theme.font
                 font.pixelSize: Theme.fontLg
                 font.weight: Theme.weight
-                renderType: Text.NativeRendering
+                renderType: Theme.smooth ? Text.QtRendering : Text.NativeRendering
                 clip: true
 
                 Keys.onDownPressed: panel.move(1)

@@ -60,7 +60,7 @@ OverlayPanel {
 
         // Nur Einblenden + kurzes Gleiten, immer auf ganze Pixel: Text bleibt in jedem Frame scharf
         x: Math.round((parent.width - width) / 2)
-        y: Math.round((parent.height - height) / 2 + 12 * (1 - panel.progress))
+        y: Theme.px((parent.height - height) / 2 + 12 * (1 - panel.progress))
         width: Math.min(940, parent.width - 80)
         height: Math.min(700, parent.height - 140)
         opacity: panel.progress
@@ -280,7 +280,7 @@ OverlayPanel {
                     height: [pageAppearance, pageBar, pageBehavior, pageCommands][panel.tab].implicitHeight
 
                     transform: Translate {
-                        y: Math.round(pages.shift)
+                        y: Theme.px(pages.shift)
                     }
 
                     // ----- Appearance -----
@@ -397,6 +397,17 @@ OverlayPanel {
                                     checked: Config.opts.barSolidWithWindows
                                     onToggled: Config.opts.barSolidWithWindows = !Config.opts.barSolidWithWindows
                                 }
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Smooth text"
+                            description: "Text and icons glide without pixel steps while moving (glyphs look a bit softer)"
+
+                            SwitchCtl {
+                                checked: Config.opts.smoothText
+                                onToggled: Config.opts.smoothText = !Config.opts.smoothText
                             }
                         }
 
@@ -624,6 +635,77 @@ OverlayPanel {
                             SwitchCtl {
                                 checked: Config.opts.barFloatingDynamic
                                 onToggled: Config.opts.barFloatingDynamic = !Config.opts.barFloatingDynamic
+                            }
+                        }
+
+                        // Dauer des Andockens/Loesens, Reset auf 400 ms
+                        SettingRow {
+                            width: parent.width
+                            visible: Config.opts.barFloating && Config.opts.barFloatingDynamic
+                            label: "Dock animation"
+                            description: "A bit slower than the windows (300 ms) lets a growing window arrive first, so no gap shows"
+                            controlWidth: 400
+
+                            Row {
+                                spacing: 10
+
+                                RangeControl {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 400 - dockResetBtn.width - 10
+                                    from: 200
+                                    to: 700
+                                    stepSize: 10
+                                    value: Config.opts.barDockDuration
+                                    suffix: " ms"
+                                    onEdited: v => Config.opts.barDockDuration = v
+                                }
+
+                                IconButton {
+                                    id: dockResetBtn
+
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    size: 30
+                                    icon: String.fromCodePoint(0xF0450)
+                                    iconSize: Theme.fontSm
+                                    label: "Reset"
+                                    idleColor: Theme.layer3
+                                    onClicked: Config.opts.barDockDuration = 400
+                                }
+                            }
+                        }
+
+                        // Hoehe der schwebenden Leiste ueber dem oberen Rand, Reset auf 8 px
+                        SettingRow {
+                            width: parent.width
+                            visible: Config.opts.barFloating
+                            label: "Floating position"
+                            description: "Distance of the floating bar from the top edge. Higher values also shrink the gap to the windows"
+                            controlWidth: 400
+
+                            Row {
+                                spacing: 10
+
+                                RangeControl {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 400 - posResetBtn.width - 10
+                                    from: 0
+                                    to: 20
+                                    value: Config.opts.barFloatOffset
+                                    suffix: " px"
+                                    onEdited: v => Config.opts.barFloatOffset = v
+                                }
+
+                                IconButton {
+                                    id: posResetBtn
+
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    size: 30
+                                    icon: String.fromCodePoint(0xF0450)
+                                    iconSize: Theme.fontSm
+                                    label: "Reset"
+                                    idleColor: Theme.layer3
+                                    onClicked: Config.opts.barFloatOffset = 8
+                                }
                             }
                         }
 

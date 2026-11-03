@@ -7,6 +7,15 @@ import Quickshell
 Singleton {
     id: root
 
+    // "Smooth text" (Settings > Appearance): Schrift auf Bruchteile von Pixeln positionierbar, Bewegungen
+    // ohne Pixelspruenge. Aus = knackscharfe Schrift, Positionen auf ganze Pixel gerundet.
+    readonly property bool smooth: Config.opts.smoothText
+
+    // Position fuer Bewegungen: mit Smooth text genau, sonst auf ganze Pixel (scharfe Schrift in jedem Frame)
+    function px(v) {
+        return root.smooth ? v : Math.round(v);
+    }
+
     // Farben: echtes Schwarz als Basis, Graustufen nur fuer Tiefe und Hover
     readonly property color bg: "#000000"
     readonly property color layer1: "#000000"
@@ -48,7 +57,7 @@ Singleton {
 
     // Abstaende
     readonly property int barHeight: Config.opts.barHeight
-    readonly property int barBottom: (Config.opts.barFloating ? gap : 0) + barHeight
+    readonly property int barBottom: (Config.opts.barFloating ? Config.opts.barFloatOffset : 0) + barHeight
     readonly property int gap: 8
     readonly property int pad: 14
 

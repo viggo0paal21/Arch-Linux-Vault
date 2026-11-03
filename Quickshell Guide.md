@@ -55,9 +55,11 @@ Floating windows don't count for the two switches. **Transparent when empty** (B
 With exactly 1 tiled window the bar docks to the top edge (no gap, square corners), with none or 2 and more it floats
 again. Floating windows never count. This matches a smart-gaps rule like `hl.workspace_rule({ workspace = "w[tv1]", gaps_out = 0 })`.
 
-The change takes 300 ms with the `md3_decel` curve, the same as the `windows` animation in `hyprland.lua`
-(`speed = 3` = 300 ms). If you change the `windows` speed, change `duration: ... 300` in `modules/bar/Bar.qml`
-to match (speed × 100 ms).
+The bar and the windows use the same curve, `smooth_out` (easeOutQuint, `0.22, 1, 0.36, 1`), defined in
+`hyprland.lua` for `windows` / `windowsIn`. `md3_decel` covered half the way in 3 frames and then crept along for
+~100 ms, which looked like the last frames were skipped ("snapping in"); easeOutQuint lands evenly.
+Duration: Settings → Bar → **Dock animation** (default 400 ms, Reset button; the windows use `speed = 3` = 300 ms).
+**Floating position** moves the floating bar up or down (default 8 px from the top edge, Reset button).
 
 With Dynamic on, the bar always reserves only its own height at the top. The 8 px gap under the floating bar comes
 from Hyprland's outer gap instead, so `hyprland.lua` needs the top gap raised by 8:
@@ -78,12 +80,17 @@ Docked, the bar is a bit thicker at the bottom (Settings → Bar → Bar height 
 **Reset** goes back to 37 / 39). The extra pixels lie over the top rows of the window. Reason: closing one of two
 windows makes the other grow 18 px upward while the bar only slides 8 px; with the same curve the window still creeps
 its last pixel when the bar has already arrived, and the wallpaper flashed through as a line. The icons move down by
-half the extra so they stay centered. Keep Docked at least 2 px above Floating.
+With Dynamic on, the icons sit 1 px lower in both states, so they look centered docked and floating without
+shifting during the transition. Keep Docked at least 2 px above Floating.
 
 Smoothness details in `Bar.qml`: left/right edges and corners slide with sub-pixel precision; top/bottom edges and the
 contents move in whole pixels (sharp text), rounded toward the target so the last pixel step happens during the fast
-part of the motion. Set `border_size = 0` for a single window in only one rule; two rules setting it made the windows
-jitter when the smart gaps switched.
+part of the motion. The bottom edge is one continuous curve (position + docked extra) rounded down, so once a window
+reaches the bar no gap can reopen. Set `border_size = 0` for a single window in only one rule; two rules setting it
+made the windows jitter when the smart gaps switched.
+
+**Smooth text** (Settings → Appearance, off by default) draws text with Qt's distance-field renderer so text and icons
+can move by fractions of a pixel. Smoother motion, slightly softer glyphs.
 
 The blur itself comes from Hyprland, so `hyprland.lua` needs it for the Quickshell layers (blur must also be enabled under `decoration`):
 

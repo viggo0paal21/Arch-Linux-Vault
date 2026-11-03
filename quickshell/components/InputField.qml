@@ -42,7 +42,7 @@ Rectangle {
         font.family: Theme.font
         font.pixelSize: Theme.fontSize
         font.weight: Theme.weight
-        renderType: Text.NativeRendering
+        renderType: Theme.smooth ? Text.QtRendering : Text.NativeRendering
         selectByMouse: true
         onAccepted: root.committed(text)
         onActiveFocusChanged: {

@@ -3,8 +3,10 @@
     "animations": true,
     "barAutoTransparent": false,
     "barBorder": false,
-    "barDockedExtra": 2,
+    "barDockDuration": 300,
+    "barDockedExtra": 3,
     "barExcludeKitty": true,
+    "barFloatOffset": 10,
     "barFloating": true,
     "barFloatingDynamic": true,
     "barHeight": 37,
@@ -26,7 +28,8 @@
     "osdEnabled": true,
     "popupsSolidWithWindows": false,
     "radius": 8,
-    "screenCorners": false,
+    "screenCorners": true,
+    "smoothText": false,
     "terminal": "kitty",
     "transparency": "everywhere",
     "uiFont": "Inter",
@@ -35,5 +38,5 @@
     "uiIconFont": "JetBrainsMono Nerd Font Propo",
     "volumeStep": 5,
     "wallpaper": "",
-    "workspaceCount": 10
+    "workspaceCount": 1
 }

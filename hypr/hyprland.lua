@@ -148,6 +148,9 @@ hl.config({
 hl.curve("linear",        { type = "bezier", points = { {0, 0},       {1, 1}       } })
 hl.curve("md3_standard",  { type = "bezier", points = { {0.2, 0},     {0, 1}       } })
 hl.curve("md3_decel",     { type = "bezier", points = { {0.05, 0.7},  {0.1, 1}     } })
+-- gleichmaessig abbremsend (easeOutQuint): sanfter Start, weiche Landung ohne langes Nachkriechen.
+-- Dieselbe Kurve nutzt die Quickshell-Leiste beim An-/Abdocken, damit beide gleich laufen.
+hl.curve("smooth_out",    { type = "bezier", points = { {0.22, 1},    {0.36, 1}    } })
 hl.curve("md3_accel",     { type = "bezier", points = { {0.3, 0},     {0.8, 0.15}  } })
 hl.curve("overshot",      { type = "bezier", points = { {0.05, 0.9},  {0.1, 1.1}   } })
 hl.curve("crazyshot",     { type = "bezier", points = { {0.1, 1.5},   {0.76, 0.92} } })
@@ -163,8 +166,8 @@ hl.curve("md2",           { type = "bezier", points = { {0.4, 0},     {0.2, 1}  
 
 
 -- Animation configs
-hl.animation({ leaf = "windows",       enabled = true, speed = 3,   bezier = "md3_decel",  style = "popin 60%" })
-hl.animation({ leaf = "windowsIn",     enabled = true, speed = 3,   bezier = "md3_decel",  style = "popin 60%" })
+hl.animation({ leaf = "windows",       enabled = true, speed = 3,   bezier = "smooth_out", style = "popin 60%" })
+hl.animation({ leaf = "windowsIn",     enabled = true, speed = 3,   bezier = "smooth_out", style = "popin 60%" })
 hl.animation({ leaf = "windowsOut",    enabled = true, speed = 3,   bezier = "md3_accel",  style = "popin 60%" })
 hl.animation({ leaf = "border",        enabled = true, speed = 2.5,  bezier = "default" })
 hl.animation({ leaf = "fade",          enabled = true, speed = 3,   bezier = "md3_decel" })

@@ -68,7 +68,7 @@ PanelWindow {
         property real t: win.shown ? 1 : 0
 
         anchors.horizontalCenter: parent.horizontalCenter
-        y: Math.round(8 + 12 * (1 - t))
+        y: Theme.px(8 + 12 * (1 - t))
         width: parent.width
         height: 48
         radius: height / 2

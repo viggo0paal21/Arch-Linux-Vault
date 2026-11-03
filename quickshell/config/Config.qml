@@ -16,6 +16,9 @@ Singleton {
         radius: 8,
         barHeight: 37,
         barDockedExtra: 2,
+        barDockDuration: 400,
+        smoothText: false,
+        barFloatOffset: 8,
         barFloating: false,
         barFloatingDynamic: false,
         barBorder: true,
@@ -78,6 +81,9 @@ Singleton {
             property int radius: root.defaults.radius
             property int barHeight: root.defaults.barHeight
             property int barDockedExtra: root.defaults.barDockedExtra
+            property int barDockDuration: root.defaults.barDockDuration
+            property bool smoothText: root.defaults.smoothText
+            property int barFloatOffset: root.defaults.barFloatOffset
             property bool barFloating: root.defaults.barFloating
             property bool barFloatingDynamic: root.defaults.barFloatingDynamic
             property bool barBorder: root.defaults.barBorder

@@ -108,7 +108,7 @@ OverlayPanel {
     Column {
         // Nur Einblenden + kurzes Gleiten, immer auf ganze Pixel: Text bleibt in jedem Frame scharf
         x: Math.round((parent.width - width) / 2)
-        y: Math.round((parent.height - height) / 2 + 14 * (1 - panel.progress))
+        y: Theme.px((parent.height - height) / 2 + 14 * (1 - panel.progress))
         spacing: 22
         opacity: panel.progress
 
