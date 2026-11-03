@@ -74,10 +74,16 @@ always starts a few milliseconds later. With `md3_decel` that is 1-2 px, enough 
 window. This way only Hyprland moves windows (in one go) and the bar slides over them. Turning Dynamic off: set
 `top` back to 10.
 
+Docked, the bar is a bit thicker at the bottom (Settings → Bar → Bar height → **Docked**, default 39 px vs 37 floating,
+**Reset** goes back to 37 / 39). The extra pixels lie over the top rows of the window. Reason: closing one of two
+windows makes the other grow 18 px upward while the bar only slides 8 px; with the same curve the window still creeps
+its last pixel when the bar has already arrived, and the wallpaper flashed through as a line. The icons move down by
+half the extra so they stay centered. Keep Docked at least 2 px above Floating.
+
 Smoothness details in `Bar.qml`: left/right edges and corners slide with sub-pixel precision; top/bottom edges and the
-contents move in whole pixels (sharp text, constant bar height), rounded toward the target so the last pixel step
-happens during the motion. Set `border_size = 0` for a single window in only one rule; two rules setting it made the
-windows jitter when the smart gaps switched.
+contents move in whole pixels (sharp text), rounded toward the target so the last pixel step happens during the fast
+part of the motion. Set `border_size = 0` for a single window in only one rule; two rules setting it made the windows
+jitter when the smart gaps switched.
 
 The blur itself comes from Hyprland, so `hyprland.lua` needs it for the Quickshell layers (blur must also be enabled under `decoration`):
 

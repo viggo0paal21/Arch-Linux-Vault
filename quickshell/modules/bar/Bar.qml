@@ -23,6 +23,15 @@ PanelWindow {
     // die Leiste sichtbar gleitet (~95 ms) statt einzeln hinterher (~140 ms, wirkte wie "Einklicken").
     // Der Inhalt ist dabei nie mehr als 1 px vor dem Hintergrund.
     readonly property int edge: bar.floatingNow ? Math.ceil(bar.edgeExact - 0.001) : Math.floor(bar.edgeExact + 0.001)
+    // Angedockt ist der Hintergrund unten etwas dicker (Settings > Bar > Bar height > Docked, Standard 2 px)
+    // und liegt damit ueber den obersten Pixelreihen des Fensters. Schliesst man eins von zwei Fenstern,
+    // waechst das andere 18 px nach oben, die Leiste gleitet nur 8 px. Das Fenster kriecht seinen letzten
+    // Pixel noch, wenn die Leiste schon oben ist; ohne die Extra-Pixel blitzt dazwischen das Wallpaper als
+    // Linie. Waechst mit dem Andocken von 0 auf den eingestellten Wert (schwebend 0).
+    readonly property int dockExtra: bar.dynamic ? Math.round(Math.max(0, Config.opts.barDockedExtra) * (1 - frame.progress)) : 0
+    // Inhalt um die Haelfte davon nach unten, damit er auch angedockt genau mittig sitzt. Ganze Pixel wie der
+    // restliche Inhalt; der Schritt faellt in den schnellen Anfang der Bewegung.
+    readonly property int contentShift: bar.dynamic ? Math.round(Math.max(0, Config.opts.barDockedExtra) * (1 - frame.progress) / 2) : 0
     // Unterkante der sichtbaren Leiste (fuer das Tray-Menue)
     readonly property int visualBottom: frame.y + frame.height
     readonly property var hyprMonitor: Hyprland.monitorFor(bar.modelData)
@@ -123,7 +132,7 @@ PanelWindow {
             x: bar.edgeExact - bar.edge
             y: 0
             width: bar.width - 2 * bar.edgeExact
-            height: Theme.barHeight
+            height: Theme.barHeight + bar.dockExtra
             antialiasing: true
             color: Theme.bg
             opacity: bar.bgOpacity
@@ -158,6 +167,7 @@ PanelWindow {
             anchors.left: parent.left
             anchors.leftMargin: 6
             anchors.verticalCenter: parent.verticalCenter
+            anchors.verticalCenterOffset: bar.contentShift
             spacing: 6
 
             IconButton {
@@ -185,6 +195,7 @@ PanelWindow {
             anchors.left: leftRow.right
             anchors.leftMargin: 12
             anchors.verticalCenter: parent.verticalCenter
+            anchors.verticalCenterOffset: bar.contentShift
             width: Math.max(0, Math.min(implicitWidth, rightRow.x - x - 24))
             visible: Config.opts.barShowTitle && value !== "" && width > 30
             text: value
@@ -198,6 +209,7 @@ PanelWindow {
             anchors.right: parent.right
             anchors.rightMargin: 6
             anchors.verticalCenter: parent.verticalCenter
+            anchors.verticalCenterOffset: bar.contentShift
             spacing: 4
 
             Tray {

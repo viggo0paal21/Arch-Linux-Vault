@@ -14,7 +14,8 @@ Singleton {
 
     readonly property var defaults: ({
         radius: 8,
-        barHeight: 36,
+        barHeight: 37,
+        barDockedExtra: 2,
         barFloating: false,
         barFloatingDynamic: false,
         barBorder: true,
@@ -76,6 +77,7 @@ Singleton {
 
             property int radius: root.defaults.radius
             property int barHeight: root.defaults.barHeight
+            property int barDockedExtra: root.defaults.barDockedExtra
             property bool barFloating: root.defaults.barFloating
             property bool barFloatingDynamic: root.defaults.barFloatingDynamic
             property bool barBorder: root.defaults.barBorder
