@@ -24,7 +24,9 @@ PanelWindow {
     // Der Inhalt ist dabei nie mehr als 1 px vor dem Hintergrund.
     readonly property int intEdge: bar.floatingNow ? Math.ceil(bar.edgeExact - 0.001) : Math.floor(bar.edgeExact + 0.001)
     // Mit "Smooth text" gleitet auch der Inhalt genau mit; die Unterkante bleibt trotzdem auf ganzen Pixeln
-    readonly property real edge: Theme.smooth ? bar.edgeExact : bar.intEdge
+    // Seitlich und nach oben aus EINEM Pixelzaehler (intOffset): Liefen beide getrennt gerundet, sprang die
+    // Leiste mal nur seitlich, mal nur hoch und zitterte im Zickzack statt gerade schraeg zu gleiten.
+    readonly property real edge: Theme.smooth ? bar.edgeExact : (Config.opts.barFloatOffset > 0 ? Math.round(bar.intOffset * Theme.gap / Config.opts.barFloatOffset) : bar.intEdge)
     // Hoehe der schwebenden Leiste ueber dem Bildschirmrand (Settings > Bar > Floating position, Standard 8 px).
     // Gleitet wie edge, nur mit eigenem Weg; die Seiten bleiben bei Theme.gap.
     readonly property real offsetExact: Config.opts.barFloatOffset * frame.progress
@@ -147,9 +149,11 @@ PanelWindow {
         // (vorher kroch die Oberkante am Ende noch den letzten Pixel nach und die Leiste wurde sichtbar duenner),
         // und unten gibt es keine halb bedeckte Pixelreihe ueber dem Fenster.
         Rectangle {
-            x: bar.edgeExact - bar.edge
+            // Links/rechts im selben Pixeltakt wie die Icons: Lief der Hintergrund auf Bruchteilen von Pixeln
+            // und die Icons auf ganzen, verschoben sie sich gegeneinander staendig um bis zu 1 px (Wackeln).
+            x: 0
             y: 0
-            width: bar.width - 2 * bar.edgeExact
+            width: frame.width
             height: bar.bottomEdge - bar.offset
             antialiasing: true
             color: Theme.bg
