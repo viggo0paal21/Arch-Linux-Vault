@@ -48,11 +48,20 @@ PanelWindow {
     visible: win.mapped || !win.fullscreenActive
     color: win.dim ? Qt.rgba(0, 0, 0, win.dimOpacity * stage.t) : "transparent"
 
+    // Geschlossen wird das Fenster komplett nach oben aus dem Bild geschoben (gleiche Groesse, bleibt gemappt).
+    // Lag es unsichtbar ueber dem Bildschirm, hat Hyprland wegen des Blurs bei jedem Workspace-Wechsel fuer
+    // jedes geschlossene Panel den ganzen Bildschirm verwischt (FPS-Einbruch auf ~140). Nur verschieben statt
+    // verkleinern: Eine Groessenaenderung baut die Vulkan-Swapchain neu auf, das gab ~40 ms Lag beim Oeffnen.
+    implicitWidth: win.screen ? win.screen.width : 1920
+    implicitHeight: win.screen ? win.screen.height : 1080
+
     anchors {
         top: true
-        bottom: true
         left: true
-        right: true
+    }
+
+    margins {
+        top: win.mapped ? 0 : -(win.implicitHeight + 64)
     }
     exclusionMode: ExclusionMode.Ignore
 

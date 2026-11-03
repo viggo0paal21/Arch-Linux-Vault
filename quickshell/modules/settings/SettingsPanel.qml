@@ -668,7 +668,7 @@ OverlayPanel {
                         spacing: 10
                         visible: panel.tab === 1
 
-                        // Dicke schwebend (= Leistenhoehe) und angedockt (nur mit "Dynamic"), Reset auf 37 / 39 px
+                        // Dicke angedockt (oben, verschiebt beide) und schwebend (unten, nur schwebend). Reset = Standardwerte
                         SettingRow {
                             id: heightRow
 
@@ -679,7 +679,7 @@ OverlayPanel {
                             width: parent.width
                             implicitHeight: Math.max(64, heightCol.height + 28)
                             label: "Bar height"
-                            description: heightRow.dynamic ? "Docked overlaps the window a little, so no gap shows (keep 2 px above floating)" : ""
+                            description: heightRow.dynamic ? "Docked moves both, Floating only the floating bar" : ""
                             controlWidth: 400
 
                             Column {
@@ -687,6 +687,38 @@ OverlayPanel {
 
                                 width: parent.width
                                 spacing: 10
+
+                                Row {
+                                    visible: heightRow.dynamic
+                                    spacing: 10
+
+                                    Txt {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        width: heightRow.labelWidth
+                                        text: "Docked"
+                                        color: Theme.fgMuted
+                                        font.pixelSize: Theme.fontSm
+                                    }
+
+                                    RangeControl {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        width: heightRow.sliderWidth
+                                        from: 28
+                                        to: 48
+                                        value: Config.opts.barDockedHeight
+                                        suffix: " px"
+                                        onEdited: v => {
+                                            const d = v - Config.opts.barDockedHeight;
+                                            Config.opts.barDockedHeight = v;
+                                            Config.opts.barHeight = Math.max(28, Math.min(48, Config.opts.barHeight + d));
+                                        }
+                                    }
+
+                                    Item {
+                                        width: resetBtn.width
+                                        height: 1
+                                    }
+                                }
 
                                 Row {
                                     spacing: 10
@@ -719,32 +751,9 @@ OverlayPanel {
                                         label: "Reset"
                                         idleColor: Theme.layer3
                                         onClicked: {
-                                            Config.opts.barHeight = 37;
-                                            Config.opts.barDockedExtra = 2;
+                                            Config.opts.barHeight = Config.defaults.barHeight;
+                                            Config.opts.barDockedHeight = Config.defaults.barDockedHeight;
                                         }
-                                    }
-                                }
-
-                                Row {
-                                    visible: heightRow.dynamic
-                                    spacing: 10
-
-                                    Txt {
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        width: heightRow.labelWidth
-                                        text: "Docked"
-                                        color: Theme.fgMuted
-                                        font.pixelSize: Theme.fontSm
-                                    }
-
-                                    RangeControl {
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        width: heightRow.sliderWidth
-                                        from: Config.opts.barHeight
-                                        to: Config.opts.barHeight + 8
-                                        value: Config.opts.barHeight + Config.opts.barDockedExtra
-                                        suffix: " px"
-                                        onEdited: v => Config.opts.barDockedExtra = v - Config.opts.barHeight
                                     }
                                 }
                             }
@@ -803,7 +812,7 @@ OverlayPanel {
                                     iconSize: Theme.fontSm
                                     label: "Reset"
                                     idleColor: Theme.layer3
-                                    onClicked: Config.opts.barFloatOffset = 8
+                                    onClicked: Config.opts.barFloatOffset = Config.defaults.barFloatOffset
                                 }
                             }
                         }

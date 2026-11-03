@@ -103,7 +103,7 @@ hl.config({
         gaps_in  = 5,
         -- oben 10 + 8 fuer die schwebende Quickshell-Leiste ("Dynamic" reserviert nur die Leistenhoehe,
         -- den Abstand darunter macht Hyprland). Ergibt dieselben 54 px wie vorher 44 + 10.
-        gaps_out = { top = 18, right = 10, bottom = 10, left = 10 },
+        gaps_out = { top = 20, right = 10, bottom = 10, left = 10 },
         --gaps_out = { top = 0, right = 15, bottom = 15, left = 15 },
         border_size = 1,
 

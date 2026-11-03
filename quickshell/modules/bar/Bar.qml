@@ -37,13 +37,16 @@ PanelWindow {
     // waechst das andere 18 px nach oben, die Leiste gleitet nur 8 px. Das Fenster kriecht seinen letzten
     // Pixel noch, wenn die Leiste schon oben ist; ohne die Extra-Pixel blitzt dazwischen das Wallpaper als
     // Linie. Waechst mit dem Andocken von 0 auf den eingestellten Wert (schwebend 0).
-    readonly property int dockExtra: bar.dynamic ? Math.round(Math.max(0, Config.opts.barDockedExtra) * (1 - frame.progress)) : 0
+    readonly property int dockExtra: bar.dynamic ? Math.round(Math.max(0, Config.opts.barDockedHeight - Config.opts.barHeight) * (1 - frame.progress)) : 0
     // Unterkante des Hintergrunds als eine stetige Kurve (Position + Extra-Dicke), auf ganze Pixel nach unten
     // gerundet: Sobald die Fensterkante die Leiste erreicht hat, kann sie nicht mehr darunter hervorschauen
     // (vorher sprangen Position und Extra-Dicke getrennt und der Spalt ging fuer einzelne Frames wieder auf).
     // Die -0.25 lassen sie kurz vor Schluss ankommen statt erst im letzten Frame (kein Nachklicken).
-    readonly property real bottomExact: Theme.barHeight + bar.offsetExact + (bar.dynamic ? Math.max(0, Config.opts.barDockedExtra) * (1 - frame.progress) : 0)
-    readonly property int bottomY: Math.ceil(bar.bottomExact - 0.25)
+    readonly property real bottomExact: Theme.barHeight + bar.offsetExact + (bar.dynamic ? Math.max(0, Config.opts.barDockedHeight - Config.opts.barHeight) * (1 - frame.progress) : 0)
+    // Beim Loesen (schwebend werden) im selben Pixelzaehler wie Oberkante und Icons: Sonst kam die Unterkante
+    // einen Frame spaeter an, die Leiste war kurz 1 px duenner und rutschte am Ende 1 px nach unten.
+    // Beim Andocken bleibt die stetige, nach unten gerundete Kurve (verhindert den Spalt zum Fenster).
+    readonly property int bottomY: bar.floatingNow ? bar.intOffset + Theme.barHeight + Math.round((bar.dynamic ? Math.max(0, Config.opts.barDockedHeight - Config.opts.barHeight) : 0) * (1 - frame.progress)) : Math.ceil(bar.bottomExact - 0.25)
     // Mit "Smooth text" gleitet auch die Unterkante auf Bruchteile von Pixeln (kein Einrasten im letzten Pixel).
     // Die Extra-Dicke sorgt dafuer, dass sie dabei ueber dem Fenster liegt und nicht ueber einem Spalt.
     readonly property real bottomEdge: Theme.smooth ? bar.bottomExact : bar.bottomY
