@@ -3,8 +3,8 @@ pragma Singleton
 import QtQuick
 import Quickshell
 
-// Nerd-Font-Glyphen (Material Design Icons aus "JetBrainsMono Nerd Font").
-// Codepoints geprueft gegen nerd-fonts/glyphnames.json.
+// Nerd Font glyphs (Material Design Icons from "JetBrainsMono Nerd Font").
+// Codepoints checked against nerd-fonts/glyphnames.json.
 Singleton {
     readonly property string arch: String.fromCodePoint(0xF303)
     readonly property string volHigh: String.fromCodePoint(0xF057E)
@@ -80,7 +80,7 @@ Singleton {
     readonly property string pulse: String.fromCodePoint(0xF0430)
     readonly property string monitor: String.fromCodePoint(0xF0379)
     readonly property string fan: String.fromCodePoint(0xF0210)
-    // Settings-Tabs
+    // Settings tabs
     readonly property string palette: String.fromCodePoint(0xF0E0C) // md-palette_outline
     readonly property string dockTop: String.fromCodePoint(0xF1513) // md-dock_top
     readonly property string cogOutline: String.fromCodePoint(0xF08BB) // md-cog_outline

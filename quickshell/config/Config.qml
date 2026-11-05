@@ -4,9 +4,9 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// Persistente Einstellungen. Gespeichert unter
+// Persistent settings. Stored in
 // ~/.local/state/quickshell/by-shell/oled-bw/settings.json
-// Aenderungen im Einstellungs-Panel werden sofort geschrieben.
+// Changes in the settings panel are written immediately.
 Singleton {
     id: root
 

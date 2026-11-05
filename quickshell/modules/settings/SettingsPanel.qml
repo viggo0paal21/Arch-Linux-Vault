@@ -4,9 +4,9 @@ import qs.config
 import qs.components
 import qs.services
 
-// Einstellungen: Tabs links im Stil des Launchers, rechts die Optionen mit viel Luft.
-// Alles wird sofort angewendet und automatisch gespeichert.
-// Tastatur: Tab / Shift+Tab oder Pfeil hoch/runter wechseln den Tab, Esc schliesst.
+// Settings: tabs on the left in the launcher's style, options on the right with plenty of space.
+// Everything applies immediately and is saved automatically.
+// Keyboard: Tab / Shift+Tab or arrow up/down switch tabs, Esc closes.
 OverlayPanel {
     id: panel
 
@@ -39,7 +39,7 @@ OverlayPanel {
         }
     ]
 
-    // Alle Animationswerte zurueck auf den Standard (= Stand beim Einbau dieses Tabs)
+    // All animation values back to the defaults
     function resetAnimations() {
         const d = Config.defaults;
         const keys = ["animations", "animScale", "barDockDuration", "animBarCurve", "animPanelSpeed", "animPanelOpen", "animPanelClose", "animOverlaySpeed", "animOverlayOpen", "animOverlayClose", "animNotifSpeed", "animNotifCurve", "animOsdSpeed", "animWsSpeed", "animWsCurve", "animCtlSpeed", "animCtlCurve"];
@@ -66,7 +66,7 @@ OverlayPanel {
         anchors.right: parent ? parent.right : undefined
     }
 
-    // Kurvenwahl: linke Haelfte = vorige, rechte Haelfte = naechste
+    // Curve picker: left half = previous, right half = next
     component CurvePick: Rectangle {
         id: cp
 
@@ -120,7 +120,7 @@ OverlayPanel {
         }
     }
 
-    // Eine Animationsgruppe: Dauer-Faktor und bis zu zwei Kurven
+    // One animation group: duration factor and up to two curves
     component AnimRow: SettingRow {
         id: ar
 
@@ -193,7 +193,7 @@ OverlayPanel {
 
         readonly property int tabHeight: 56
 
-        // Nur Einblenden + kurzes Gleiten, immer auf ganze Pixel: Text bleibt in jedem Frame scharf
+        // Only fade in + a short slide, always on whole pixels: text stays sharp in every frame
         x: Math.round((parent.width - width) / 2)
         y: Theme.px((parent.height - height) / 2 + 12 * (1 - panel.progress))
         width: Math.min(940, parent.width - 80)
@@ -206,7 +206,7 @@ OverlayPanel {
         Keys.onDownPressed: panel.switchTab(1)
         Keys.onUpPressed: panel.switchTab(-1)
 
-        // ---------- Links: Tabs ----------
+        // ---------- Left: tabs ----------
         Item {
             id: sidebar
 
@@ -324,7 +324,7 @@ OverlayPanel {
                 }
             }
 
-            // Unten: Zuruecksetzen + Speicherort
+            // Bottom: reset + storage location
             Column {
                 anchors.left: parent.left
                 anchors.right: parent.right
@@ -361,7 +361,7 @@ OverlayPanel {
             color: Theme.border
         }
 
-        // ---------- Rechts: Optionen des Tabs ----------
+        // ---------- Right: options of the tab ----------
         Item {
             id: content
 
@@ -503,7 +503,7 @@ OverlayPanel {
                                 anchors.right: parent.right
                                 spacing: 10
 
-                                // "Only 1": schwarz nur bei genau 1 Fenster
+                                // "Only 1": black only with exactly 1 window
                                 Txt {
                                     anchors.verticalCenter: parent.verticalCenter
                                     text: "Only 1"
@@ -668,7 +668,7 @@ OverlayPanel {
                         spacing: 10
                         visible: panel.tab === 1
 
-                        // Dicke angedockt (oben, verschiebt beide) und schwebend (unten, nur schwebend). Reset = Standardwerte
+                        // Thickness docked (top, moves both) and floating (bottom, floating only). Reset = defaults
                         SettingRow {
                             id: heightRow
 
@@ -782,7 +782,7 @@ OverlayPanel {
                             }
                         }
 
-                        // Hoehe der schwebenden Leiste ueber dem oberen Rand, Reset auf 8 px
+                        // Height of the floating bar above the top edge, reset to the default
                         SettingRow {
                             width: parent.width
                             visible: Config.opts.barFloating
@@ -828,7 +828,7 @@ OverlayPanel {
                             }
                         }
 
-                        // Boxfarbe: Klick auf die Farbe klappt den Farbwaehler auf
+                        // Box color: clicking the color opens the color picker
                         Column {
                             id: boxColorBlock
 
@@ -1260,7 +1260,7 @@ OverlayPanel {
                 }
             }
 
-            // Schmale Scroll-Anzeige, nur wenn der Tab laenger als der Platz ist
+            // Thin scroll indicator, only when the tab is taller than the space
             Rectangle {
                 x: parent.width - 4
                 y: flick.y + flick.visibleArea.yPosition * flick.height
@@ -1272,7 +1272,7 @@ OverlayPanel {
             }
         }
 
-        // Neuer Tab gleitet kurz von unten rein
+        // A new tab briefly slides in from below
         ParallelAnimation {
             id: tabIn
 

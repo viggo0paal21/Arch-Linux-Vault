@@ -3,8 +3,8 @@ import qs.config
 import qs.components
 import qs.services
 
-// CPU / RAM / Temperatur kompakt. Sitzt zusammen mit der Uhr in einem Kaestchen der Leiste,
-// "fg"/"fgDim" kommen von dort (weiss auf schwarz, schwarz auf weiss wenn aktiv).
+// Compact CPU / RAM / temperature. Sits in one box of the bar together with the clock,
+// "fg"/"fgDim" come from there (white on black, black on white when active).
 Row {
     id: root
 

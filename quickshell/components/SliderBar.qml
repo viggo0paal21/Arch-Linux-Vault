@@ -1,7 +1,7 @@
 import QtQuick
 import qs.config
 
-// Schieberegler 0..1. Setzt "value" nie selbst, sondern meldet moved(v).
+// Slider 0..1. Never sets "value" itself, it reports moved(v).
 Item {
     id: root
 

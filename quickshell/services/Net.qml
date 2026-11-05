@@ -6,7 +6,7 @@ import Quickshell.Io
 import Quickshell.Networking
 import qs.config
 
-// Netzwerkstatus ueber NetworkManager. Ohne NetworkManager: Fallback ueber "ip route".
+// Network status via NetworkManager. Without NetworkManager: fallback via "ip route".
 Singleton {
     id: root
 

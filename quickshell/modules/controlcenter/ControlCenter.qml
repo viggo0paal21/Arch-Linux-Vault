@@ -5,7 +5,7 @@ import qs.components
 import qs.services
 import qs.modules.notifications
 
-// Kontrollzentrum oben rechts: Schnelleinstellungen, Lautstaerke, Medien, Benachrichtigungen.
+// Control center top right: quick settings, volume, media, notifications.
 OverlayPanel {
     id: panel
 
@@ -18,7 +18,7 @@ OverlayPanel {
     animGroup: "panel"
     onDismissed: Ui.close()
 
-    // Gleitet von oben unter der Leiste hervor
+    // Slides out from under the bar
     DropdownSlot {
         anchors.right: parent.right
         anchors.rightMargin: Theme.gap
@@ -49,7 +49,7 @@ OverlayPanel {
                     width: flick.width
                     spacing: 14
 
-                    // Kopfzeile
+                    // Header
                     Item {
                         width: col.width
                         height: 40
@@ -123,7 +123,7 @@ OverlayPanel {
                         }
                     }
 
-                    // Schnelleinstellungen
+                    // Quick settings
                     Grid {
                         width: col.width
                         columns: 2
@@ -193,7 +193,7 @@ OverlayPanel {
                         }
                     }
 
-                    // Lautstaerke
+                    // Volume
                     Rectangle {
                         width: col.width
                         height: audioCol.implicitHeight + 24
@@ -280,7 +280,7 @@ OverlayPanel {
                         visible: Media.player !== null
                     }
 
-                    // Benachrichtigungen
+                    // Notifications
                     Item {
                         width: col.width
                         height: 30

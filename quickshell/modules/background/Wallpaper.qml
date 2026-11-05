@@ -3,7 +3,7 @@ import Quickshell
 import Quickshell.Wayland
 import qs.config
 
-// Hintergrund pro Bildschirm: echtes Schwarz oder ein Bild.
+// Background per screen: true black or an image.
 PanelWindow {
     id: win
 

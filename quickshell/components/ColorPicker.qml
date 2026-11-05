@@ -1,15 +1,15 @@
 import QtQuick
 import qs.config
 
-// Moderner Farbwaehler: Saettigung/Helligkeit-Feld, Farbton- und Deckkraft-Regler, Hex-Feld und Vorlagen.
-// Setzt "color" nicht selbst, sondern meldet picked("#RRGGBB" bzw. "#AARRGGBB").
+// Modern color picker: saturation/value field, hue and opacity sliders, hex field and presets.
+// Doesn't set "color" itself, it reports picked("#RRGGBB" or "#AARRGGBB").
 Item {
     id: root
 
     property color color: "#1f1f1f"
     property var presets: ["#1f1f1f", "#2e2e2e", "#26ffffff", "#ffffff", "#ff453a", "#ff9f0a", "#ffd60a", "#30d158", "#64d2ff", "#0a84ff", "#5e5ce6", "#bf5af2"]
 
-    // Eigener HSV-Zustand: Bei Grau/Schwarz geht der Farbton sonst verloren und das Feld springt.
+    // Own HSV state: otherwise the hue gets lost on grey/black and the field jumps.
     property real h: 0
     property real s: 0
     property real v: 0
@@ -56,7 +56,7 @@ Item {
         width: parent.width
         spacing: 12
 
-        // Saettigung (links -> rechts) und Helligkeit (oben -> unten)
+        // Saturation (left -> right) and value (top -> bottom)
         Rectangle {
             id: sv
 
@@ -124,7 +124,7 @@ Item {
             }
         }
 
-        // Farbton
+        // Hue
         Item {
             id: hueBar
 
@@ -176,7 +176,7 @@ Item {
             }
         }
 
-        // Deckkraft (Schachbrett zeigt Transparenz)
+        // Opacity (checkerboard shows transparency)
         Item {
             id: alphaBar
 
@@ -242,7 +242,7 @@ Item {
             }
         }
 
-        // Vorschau, Hex-Feld, Deckkraft in %
+        // Preview, hex field, opacity in %
         Row {
             width: parent.width
             spacing: 10
@@ -278,7 +278,7 @@ Item {
             }
         }
 
-        // Vorlagen
+        // Presets
         Flow {
             width: parent.width
             spacing: 8

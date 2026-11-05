@@ -1,7 +1,7 @@
 import QtQuick
 import qs.config
 
-// Duenner Fortschrittsbalken (0..1)
+// Thin progress bar (0..1)
 Rectangle {
     id: root
 

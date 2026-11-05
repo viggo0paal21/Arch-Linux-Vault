@@ -6,7 +6,7 @@ import qs.config
 import qs.components
 import qs.services
 
-// Aktueller Mediaplayer (MPRIS): Cover, Titel, Fortschritt, Steuerung.
+// Current media player (MPRIS): cover, title, progress, controls.
 Rectangle {
     id: root
 

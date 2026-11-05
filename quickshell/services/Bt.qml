@@ -4,7 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Bluetooth
 
-// Bluetooth ueber BlueZ (nur Status + an/aus, Geraete verwaltet blueman/bluetoothctl).
+// Bluetooth via BlueZ (status + on/off only, devices are managed by blueman/bluetoothctl).
 Singleton {
     id: root
 

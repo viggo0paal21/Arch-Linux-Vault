@@ -5,8 +5,8 @@ import Quickshell
 import Quickshell.Io
 import qs.config
 
-// Systemmonitor: CPU, RAM, Temperatur, Netz, Laufwerke, NVIDIA-GPU.
-// Teure Abfragen (GPU, Laufwerke) laufen nur, solange das Dashboard offen ist.
+// System monitor: CPU, RAM, temperature, network, drives, NVIDIA GPU.
+// Expensive queries (GPU, drives) only run while the dashboard is open.
 Singleton {
     id: root
 
@@ -218,7 +218,7 @@ Singleton {
         onLoaded: root.cpuTemp = (Number(text().trim()) || 0) / 1000
     }
 
-    // CPU-Temperatursensor einmalig suchen (Intel coretemp, AMD k10temp, ...)
+    // Find the CPU temperature sensor once (Intel coretemp, AMD k10temp, ...)
     Process {
         running: true
         command: ["sh", "-c", "for d in /sys/class/hwmon/hwmon*; do n=$(cat \"$d/name\" 2>/dev/null); case \"$n\" in coretemp|k10temp|zenpower|cpu_thermal) [ -r \"$d/temp1_input\" ] && echo \"$d/temp1_input\" && exit 0;; esac; done; for z in /sys/class/thermal/thermal_zone*; do case \"$(cat \"$z/type\" 2>/dev/null)\" in x86_pkg_temp|cpu*|acpitz) echo \"$z/temp\"; exit 0;; esac; done; exit 0"]
@@ -227,7 +227,7 @@ Singleton {
         }
     }
 
-    // NVIDIA: ein dauerhafter nvidia-smi-Prozess (alle 2 s), nur bei offenem Dashboard
+    // NVIDIA: one persistent nvidia-smi process (every 2 s), only while the dashboard is open
     Process {
         id: gpuProc
 

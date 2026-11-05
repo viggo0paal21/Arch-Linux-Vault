@@ -1,7 +1,7 @@
 import QtQuick
 import qs.config
 
-// Einzeiliges Textfeld. Uebernimmt den Wert bei Enter oder beim Verlassen.
+// Single-line text field. Commits the value on Enter or when leaving the field.
 Rectangle {
     id: root
 

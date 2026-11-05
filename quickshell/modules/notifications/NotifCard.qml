@@ -5,8 +5,8 @@ import qs.components
 import qs.services
 import Quickshell.Services.Notifications
 
-// Eine Benachrichtigung. Als Popup mit Laufzeitbalken (pausiert bei Hover),
-// im Verlauf kompakt. Alle Zugriffe abgesichert, falls die App sie schon geschlossen hat.
+// One notification. As a popup with a timeout bar (pauses on hover),
+// compact in the history. All accesses are guarded in case the app already closed it.
 Rectangle {
     id: root
 
@@ -38,8 +38,8 @@ Rectangle {
     border.color: root.critical ? Theme.fg : (hover.hovered ? Theme.borderStrong : Theme.border)
     clip: true
 
-    // Beim Rein-/Rausgleiten liegen x/y oft zwischen zwei Pixeln, dann flimmert der Text.
-    // Der Gegen-Versatz zeichnet die Karte immer auf ganzen Pixeln.
+    // While sliding in/out, x/y often sit between two pixels and the text shimmers.
+    // The counter offset always draws the card on whole pixels.
     transform: Translate {
         x: Math.round(root.x) - root.x
         y: Math.round(root.y) - root.y
@@ -200,7 +200,7 @@ Rectangle {
         }
     }
 
-    // Laufzeitbalken unten
+    // Timeout bar at the bottom
     Rectangle {
         anchors.left: parent.left
         anchors.bottom: parent.bottom

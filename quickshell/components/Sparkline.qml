@@ -1,7 +1,7 @@
 import QtQuick
 import qs.config
 
-// Mini-Verlaufsgraph. values: Array von Zahlen 0..1 (oder 0..max).
+// Mini history graph. values: array of numbers 0..1 (or 0..max).
 Canvas {
     id: root
 

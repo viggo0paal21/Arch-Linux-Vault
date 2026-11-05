@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Uhr für Waybar: Text = Uhrzeit, Tooltip (Hover) = Datum + Wetter.
-# Wetter kommt von wttr.in und wird alle 15 Minuten aktualisiert.
-# LOCATION leer = Standort automatisch per IP. Sonst z. B. LOCATION="Berlin"
+# Clock for Waybar: text = time, tooltip (hover) = date + weather.
+# Weather comes from wttr.in and is refreshed every 15 minutes.
+# LOCATION empty = location detected by IP. Otherwise e.g. LOCATION="Berlin"
 LOCATION=""
 
 export LC_TIME=C LC_NUMERIC=C
@@ -33,7 +33,7 @@ update_weather() {
   printf '%s  %s  ·  %s' "$icon" "$temp" "$cond" > "$cache"
 }
 
-# Wetter im Hintergrund holen: alle 15 Min, bei Fehler nach 1 Min nochmal
+# Fetch the weather in the background: every 15 min, on error retry after 1 min
 (
   while :; do
     if update_weather; then sleep 900; else sleep 60; fi
@@ -46,12 +46,12 @@ trap 'exit 0' TERM INT HUP
 while :; do
   printf -v now  '%(%I:%M:%S %p)T' -1
   printf -v date '%(%A, %B %d %Y)T' -1
-  weather="Wetter lädt …"
+  weather="Loading weather …"
   [[ -s "$cache" ]] && weather=$(<"$cache")
 
   jq -cn --arg t "$now" --arg tip "$date"$'\n'"$weather" '{text: $t, tooltip: $tip}'
 
-  # Bis kurz nach der nächsten vollen Sekunde schlafen (kein Springen der Sekunden)
+  # Sleep until just after the next full second (no skipping seconds)
   t=${EPOCHREALTIME//[!0-9]/}
   us=$(( 1020000 - 10#${t: -6} ))
   sleep "$(( us / 1000000 )).$(printf '%06d' $(( us % 1000000 )))"

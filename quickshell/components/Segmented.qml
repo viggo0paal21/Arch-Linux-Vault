@@ -1,7 +1,7 @@
 import QtQuick
 import qs.config
 
-// Auswahl aus wenigen Optionen nebeneinander, die aktive ist weiss gefuellt.
+// Choice between a few options side by side, the active one is filled white.
 // options: [{ value: "off", label: "Off" }, ...]
 Row {
     id: root

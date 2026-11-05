@@ -1,6 +1,6 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- HYPRLAND CONFIG (Lua)                                 --
--- Doku: https://wiki.hypr.land/Configuring/Start/       --
+-- Docs: https://wiki.hypr.land/Configuring/Start/       --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 
@@ -9,8 +9,8 @@
 ------------------
 
 -- See https://wiki.hypr.land/Configuring/Basics/Monitors/
--- Falls dein Monitor nicht mit seinen vollen Hertz läuft, setze mode fest,
--- z.B. mode = "2560x1440@144" (Werte siehst du mit: hyprctl monitors)
+-- If your monitor doesn't run at its full refresh rate, set the mode explicitly,
+-- e.g. mode = "2560x1440@144" (see the values with: hyprctl monitors)
 hl.monitor({
     output   = "DP-1",
     mode     = "2560x1440@170",
@@ -39,7 +39,7 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("dbus-update-activation-environment --systemd GDK_WAYLAND_DISABLE")
     --hl.exec_cmd("waybar &")   -- ersetzt durch Quickshell
     --hl.exec_cmd("swaync &")   -- Quickshell hat eigene Benachrichtigungen
-    -- Quickshell ohne MangoHud, per Vulkan mit stabilen 170 fps
+    -- Quickshell without MangoHud, on Vulkan with a stable 170 fps
     hl.exec_cmd(os.getenv("HOME") .. "/.local/bin/qs-start")
     --hl.exec_cmd("swaybg -m fill -i /home/viggo/Wallpapers/wallpaperflare.com_wallpaper.jpg &")
     hl.exec_cmd("swww-daemon &")
@@ -54,7 +54,7 @@ end)
 -------------------------------
 
 -- See https://wiki.hypr.land/Configuring/Advanced-and-Cool/Environment-variables/
--- Hinweis: Änderungen hier gelten erst nach einem Neustart von Hyprland.
+-- Note: changes here only apply after restarting Hyprland.
 
 hl.env("XCURSOR_SIZE", "24")
 hl.env("HYPRCURSOR_SIZE", "24")
@@ -65,12 +65,12 @@ hl.env("GTK_THEME", "Adwaita:dark")
 hl.env("GTK_APPLICATION_PREFER_DARK_THEME", "1")
 hl.env("ADW_DISABLE_PORTAL", "1")
 hl.env("GDK_WAYLAND_DISABLE", "ext_background_effect_manager_v1")
--- MangoHud als globale Vulkan-Schicht. Das FPS-Limit steht in ~/.config/MangoHud/MangoHud.conf
+-- MangoHud as a global Vulkan layer. The FPS limit is in ~/.config/MangoHud/MangoHud.conf
 hl.env("MANGOHUD", "1")
 
 hl.env("GTK_USE_PORTAL", "1")
 
--- Optional (Low Latency für OpenGL): erst aktivieren, wenn alles andere läuft.
+-- Optional (low latency for OpenGL): only enable once everything else works.
 -- hl.env("__GL_MaxFramesAllowed", "1")
 
 
@@ -101,13 +101,13 @@ hl.env("GTK_USE_PORTAL", "1")
 hl.config({
     general = {
         gaps_in  = 5,
-        -- oben 10 + 8 fuer die schwebende Quickshell-Leiste ("Dynamic" reserviert nur die Leistenhoehe,
-        -- den Abstand darunter macht Hyprland). Ergibt dieselben 54 px wie vorher 44 + 10.
+        -- top: 10 + 10 for the floating Quickshell bar ("Dynamic" only reserves the bar height,
+        -- the gap below it comes from Hyprland).
         gaps_out = { top = 20, right = 10, bottom = 10, left = 10 },
         --gaps_out = { top = 0, right = 15, bottom = 15, left = 15 },
         border_size = 1,
 
-        -- Dezentes Grau für das aktive Fenster, inaktive Fenster ohne sichtbaren Rahmen
+        -- Subtle grey for the active window, inactive windows without a visible border
         col = {
             active_border = "rgba(a8a8a8ff)",
             inactive_border = "rgba(00000000)",
@@ -120,13 +120,13 @@ hl.config({
     },
 
     decoration = {
-        -- Komplett eckig
+        -- Fully square
         rounding = 8,
 
         active_opacity   = 1.0,
         inactive_opacity = 1.0,
 
-        -- Schatten deaktivieren für einen flachen, minimalistischen Look
+        -- Shadows off for a flat, minimal look
         shadow = {
             enabled = false,
         },
@@ -144,12 +144,12 @@ hl.config({
 })
 
 
--- Kurven
+-- Curves
 hl.curve("linear",        { type = "bezier", points = { {0, 0},       {1, 1}       } })
 hl.curve("md3_standard",  { type = "bezier", points = { {0.2, 0},     {0, 1}       } })
 hl.curve("md3_decel",     { type = "bezier", points = { {0.05, 0.7},  {0.1, 1}     } })
--- gleichmaessig abbremsend (easeOutQuint): sanfter Start, weiche Landung ohne langes Nachkriechen.
--- Dieselbe Kurve nutzt die Quickshell-Leiste beim An-/Abdocken, damit beide gleich laufen.
+-- evenly decelerating (easeOutQuint): gentle start, soft landing without a long creep at the end.
+-- Used for windows; the Quickshell bar has its own curve setting (Settings > Animations).
 hl.curve("smooth_out",    { type = "bezier", points = { {0.22, 1},    {0.36, 1}    } })
 hl.curve("md3_accel",     { type = "bezier", points = { {0.3, 0},     {0.8, 0.15}  } })
 hl.curve("overshot",      { type = "bezier", points = { {0.05, 0.9},  {0.1, 1.1}   } })
@@ -183,10 +183,10 @@ hl.animation({ leaf = "workspaces",    enabled = true, speed = 4,   bezier = "me
 hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 3, bezier = "md3_decel", style = "slidevert" })
 
 hl.layer_rule({ match = { namespace = "qs-.*" }, no_anim = true, blur = true, ignore_alpha = 0.5 }) 
--- Popups ohne Abdunklung dahinter (Dashboard, Control Center, Benachrichtigungen, OSD):
--- Blur auch unter 50 % Opacity (der Regler geht bis 25 %). Settings, Launcher und Power-Menue bleiben bei 0.5,
--- sonst wuerde auch ihre Abdunklung verwischt. Ihre Karten liegen auf der Abdunklung und sind dadurch immer ueber 0.5.
--- Die Leiste bleibt bei 0.5: Mit 0.2 flackert beim Andocken eine Linie zwischen Leiste und Fenster.
+-- Popups without a dimmed background (dashboard, control center, notifications, OSD):
+-- blur even below 50 % opacity (the slider goes down to 25 %). Settings, launcher and power menu stay at 0.5,
+-- otherwise their dimmed background would be blurred too. Their cards sit on the dimming, so they are always above 0.5.
+-- The bar stays at 0.5: with 0.2 a line flickers between bar and window while docking.
 hl.layer_rule({ match = { namespace = "qs-(dashboard|control|notifications|osd)" }, ignore_alpha = 0.2 })
 
 hl.layer_rule({
@@ -201,7 +201,7 @@ hl.layer_rule({
   ignore_alpha = 0,
 })
 
--- Leiste: nur das Wallpaper verwischen, keine Fenster (sonst dunkler Rand unten durch das Fenster darunter)
+-- Bar: only blur the wallpaper, not windows (otherwise a dark edge at the bottom from the window below)
 hl.layer_rule({ match = { namespace = "qs-bar" }, xray = true })
 
 --hl.window_rule({
@@ -216,7 +216,7 @@ hl.layer_rule({ match = { namespace = "qs-bar" }, xray = true })
     --immediate = true,
 --})
 
--- Ausnahmen: müssen UNTER tearing-all stehen
+-- Exceptions: have to be BELOW tearing-all
 hl.window_rule({
     name  = "no-tearing-video",
     match = { class = "crunchyroll|firefox" },
@@ -239,7 +239,7 @@ hl.workspace_rule({ workspace = "f[1]",    gaps_out = 0, gaps_in = 0 })
 hl.window_rule({
     name  = "no-gaps-wtv1",
     match = { float = false, workspace = "w[tv1]" },
-    -- border_size = 0 steht schon in "smart-border-single-tiled" weiter unten, hier nicht doppelt setzen
+    -- border_size = 0 is already set in "smart-border-single-tiled" further down, don't set it twice here
     --border_size = 0,
     rounding    = 0,
 })
@@ -284,12 +284,12 @@ hl.config({
 
 hl.config({
     render = {
-        direct_scanout = true, -- Direct Scanout hier aktivieren
+        direct_scanout = true, -- enable direct scanout here
     },
     misc = {
         force_default_wallpaper = -1,    -- Set to 0 or 1 to disable the anime mascot wallpapers
         disable_hyprland_logo   = false, -- If true disables the random hyprland logo / anime girl background. :(
-        vrr                     = 2,     -- G-Sync/VRR nur für Vollbild-Anwendungen (1 = immer an)
+        vrr                     = 2,     -- G-Sync/VRR only for fullscreen apps (1 = always on)
     },
     cursor = {
         no_break_fs_vrr = 1,
@@ -313,7 +313,7 @@ hl.config({
 
         follow_mouse = 1,
 
-        -- Mausbeschleunigung deaktivieren
+        -- Disable mouse acceleration
         accel_profile = "flat",
         sensitivity   = 0, -- -1.0 - 1.0, 0 means no modification.
 
@@ -349,8 +349,8 @@ local closeWindowBind = hl.bind(mainMod .. " + C", hl.dsp.window.close())
 -- closeWindowBind:set_enabled(false)
 hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'"))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
---siehe zeile 428 --hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
--- vorher: rofi (local menu oben)
+--see SUPER + V at the end --hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
+-- before: rofi (local menu above)
 --hl.bind(mainMod .. " + R", hl.dsp.exec_cmd(menu))
 hl.bind(mainMod .. " + R", hl.dsp.exec_cmd("qs ipc call launcher toggle"))
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
@@ -453,31 +453,31 @@ hl.window_rule({
 ---- SMART BORDERS ----
 ------------------------
 
--- 1. Entfernt den Rand, wenn exakt 1 gekacheltes Fenster auf dem Workspace sichtbar ist
+-- 1. Removes the border when exactly 1 tiled window is visible on the workspace
 hl.window_rule({
     name = "smart-border-single-tiled",
     match = { float = false, workspace = "w[tv1]" },
     border_size = 0,
 })
 
--- 2. WICHTIG: Sorgt dafür, dass frei schwebende Fenster (Floating) IMMER ihren Rand behalten
+-- 2. IMPORTANT: makes sure floating windows ALWAYS keep their border
 hl.window_rule({
     name = "smart-border-floating-override",
     match = { float = true },
     border_size = 1,
 })
 
--- ── Floating-Fenster in 16:9 ──────────────────────
-local FLOAT_ANTEIL   = 0.6    -- Breite = 60 % der Monitorbreite
-local NUR_ERSTES_MAL = true  -- true = danach merkt sich Hyprland deine eigene Größe
+-- ── Floating windows in 16:9 ──────────────────────
+local FLOAT_SHARE     = 0.6    -- width = 60 % of the monitor width
+local ONLY_FIRST_TIME = true  -- true = afterwards Hyprland remembers your own size
 
-local schon_gefloatet = {}
+local already_floated = {}
 
 local function toggle_float_16_9()
   local w = hl.get_active_window()
   if not w then return end
 
-  -- schon floating → zurück ins Tiling
+  -- already floating → back to tiling
   if w.floating then
     hl.dispatch(hl.dsp.window.float({ action = "unset" }))
     return
@@ -485,19 +485,19 @@ local function toggle_float_16_9()
 
   hl.dispatch(hl.dsp.window.float({ action = "set" }))
 
-  if NUR_ERSTES_MAL and schon_gefloatet[w.address] then return end
-  schon_gefloatet[w.address] = true
+  if ONLY_FIRST_TIME and already_floated[w.address] then return end
+  already_floated[w.address] = true
 
   local m      = w.monitor
-  local breite = math.floor(m.width / m.scale * FLOAT_ANTEIL)
-  local hoehe  = math.floor(breite * 9 / 16)
+  local width  = math.floor(m.width / m.scale * FLOAT_SHARE)
+  local height = math.floor(width * 9 / 16)
 
-  hl.dispatch(hl.dsp.window.resize({ x = breite, y = hoehe, relative = false }))
+  hl.dispatch(hl.dsp.window.resize({ x = width, y = height, relative = false }))
   hl.dispatch(hl.dsp.window.center())
 end
 
--- Speicher aufräumen, wenn Fenster zugehen
-hl.on("window.close", function(w) schon_gefloatet[w.address] = nil end)
+-- Clean up memory when windows close
+hl.on("window.close", function(w) already_floated[w.address] = nil end)
 
 hl.bind("SUPER + V", toggle_float_16_9)
 

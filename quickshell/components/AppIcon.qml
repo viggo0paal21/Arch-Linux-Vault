@@ -4,7 +4,7 @@ import Quickshell
 import Quickshell.Widgets
 import qs.config
 
-// App-/Tray-Icon. Optional schwarz-weiss. Faellt auf einen Buchstaben zurueck.
+// App/tray icon. Optionally black and white. Falls back to a letter.
 Item {
     id: root
 

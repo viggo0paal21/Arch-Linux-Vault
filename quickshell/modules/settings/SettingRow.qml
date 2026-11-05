@@ -2,8 +2,8 @@ import QtQuick
 import qs.config
 import qs.components
 
-// Eine Zeile im Einstellungs-Panel: eigene Flaeche wie die Suchzeile im Launcher,
-// Text links, Bedienelement rechts, viel Luft drumherum.
+// One row in the settings panel: its own surface like the launcher's search field,
+// text on the left, control on the right, plenty of space around.
 Item {
     id: root
 

@@ -15,12 +15,12 @@
 @define-color accent_fg_color #000000;
 @define-color accent_color #ffffff;
 
-/* Die EINE Ebene, die tönt (Deckkraft hier einstellen) */
+/* The ONE layer that tints (set the opacity here) */
 window.background {
   background-color: rgba(0, 0, 0, 0.8);
 }
 
-/* Alles darüber durchsichtig */
+/* Everything above it transparent */
 headerbar,
 headerbar:backdrop,
 .top-bar,

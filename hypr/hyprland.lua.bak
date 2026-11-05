@@ -1,6 +1,6 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- HYPRLAND CONFIG (Lua)                                 --
--- Doku: https://wiki.hypr.land/Configuring/Start/       --
+-- Docs: https://wiki.hypr.land/Configuring/Start/       --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 
@@ -9,8 +9,8 @@
 ------------------
 
 -- See https://wiki.hypr.land/Configuring/Basics/Monitors/
--- Falls dein Monitor nicht mit seinen vollen Hertz läuft, setze mode fest,
--- z.B. mode = "2560x1440@144" (Werte siehst du mit: hyprctl monitors)
+-- If your monitor doesn't run at its full refresh rate, set the mode explicitly,
+-- e.g. mode = "2560x1440@144" (see the values with: hyprctl monitors)
 hl.monitor({
     output   = "DP-1",
     mode     = "2560x1440@170",
@@ -52,7 +52,7 @@ end)
 -------------------------------
 
 -- See https://wiki.hypr.land/Configuring/Advanced-and-Cool/Environment-variables/
--- Hinweis: Änderungen hier gelten erst nach einem Neustart von Hyprland.
+-- Note: changes here only apply after restarting Hyprland.
 
 hl.env("XCURSOR_SIZE", "24")
 hl.env("HYPRCURSOR_SIZE", "24")
@@ -63,12 +63,12 @@ hl.env("GTK_THEME", "Adwaita:dark")
 hl.env("GTK_APPLICATION_PREFER_DARK_THEME", "1")
 hl.env("ADW_DISABLE_PORTAL", "1")
 hl.env("GDK_WAYLAND_DISABLE", "ext_background_effect_manager_v1")
--- MangoHud als globale Vulkan-Schicht. Das FPS-Limit steht in ~/.config/MangoHud/MangoHud.conf
+-- MangoHud as a global Vulkan layer. The FPS limit is in ~/.config/MangoHud/MangoHud.conf
 hl.env("MANGOHUD", "1")
 
 hl.env("GTK_USE_PORTAL", "1")
 
--- Optional (Low Latency für OpenGL): erst aktivieren, wenn alles andere läuft.
+-- Optional (low latency for OpenGL): only enable once everything else works.
 -- hl.env("__GL_MaxFramesAllowed", "1")
 
 
@@ -103,7 +103,7 @@ hl.config({
         --gaps_out = { top = 0, right = 15, bottom = 15, left = 15 },
         border_size = 1,
 
-        -- Dezentes Grau für das aktive Fenster, inaktive Fenster ohne sichtbaren Rahmen
+        -- Subtle grey for the active window, inactive windows without a visible border
         col = {
             active_border = "rgba(a8a8a8ff)",
             inactive_border = "rgba(00000000)",
@@ -116,13 +116,13 @@ hl.config({
     },
 
     decoration = {
-        -- Komplett eckig
+        -- Fully square
         rounding = 5,
 
         active_opacity   = 1.0,
         inactive_opacity = 1.0,
 
-        -- Schatten deaktivieren für einen flachen, minimalistischen Look
+        -- Shadows off for a flat, minimal look
         shadow = {
             enabled = true,
         },
@@ -139,7 +139,7 @@ hl.config({
     },
 })
 
--- Kurven
+-- Curves
 hl.curve("linear",        { type = "bezier", points = { {0, 0},       {1, 1}       } })
 hl.curve("md3_standard",  { type = "bezier", points = { {0.2, 0},     {0, 1}       } })
 hl.curve("md3_decel",     { type = "bezier", points = { {0.05, 0.7},  {0.1, 1}     } })
@@ -252,12 +252,12 @@ hl.config({
 
 hl.config({
     render = {
-        direct_scanout = true, -- Direct Scanout hier aktivieren
+        direct_scanout = true, -- enable direct scanout here
     },
     misc = {
         force_default_wallpaper = -1,    -- Set to 0 or 1 to disable the anime mascot wallpapers
         disable_hyprland_logo   = false, -- If true disables the random hyprland logo / anime girl background. :(
-        vrr                     = 2,     -- G-Sync/VRR nur für Vollbild-Anwendungen (1 = immer an)
+        vrr                     = 2,     -- G-Sync/VRR only for fullscreen apps (1 = always on)
     },
     cursor = {
         no_break_fs_vrr = 1,
@@ -281,7 +281,7 @@ hl.config({
 
         follow_mouse = 1,
 
-        -- Mausbeschleunigung deaktivieren
+        -- Disable mouse acceleration
         accel_profile = "flat",
         sensitivity   = 0, -- -1.0 - 1.0, 0 means no modification.
 
@@ -317,7 +317,7 @@ local closeWindowBind = hl.bind(mainMod .. " + C", hl.dsp.window.close())
 -- closeWindowBind:set_enabled(false)
 hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'"))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
---siehe zeile 428 --hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
+--see SUPER + V at the end --hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + R", hl.dsp.exec_cmd(menu))
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
 hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))    -- dwindle only
@@ -419,31 +419,31 @@ hl.window_rule({
 ---- SMART BORDERS ----
 ------------------------
 
--- 1. Entfernt den Rand, wenn exakt 1 gekacheltes Fenster auf dem Workspace sichtbar ist
+-- 1. Removes the border when exactly 1 tiled window is visible on the workspace
 hl.window_rule({
     name = "smart-border-single-tiled",
     match = { float = false, workspace = "w[tv1]" },
     border_size = 0,
 })
 
--- 2. WICHTIG: Sorgt dafür, dass frei schwebende Fenster (Floating) IMMER ihren Rand behalten
+-- 2. IMPORTANT: makes sure floating windows ALWAYS keep their border
 hl.window_rule({
     name = "smart-border-floating-override",
     match = { float = true },
     border_size = 1,
 })
 
--- ── Floating-Fenster in 16:9 ──────────────────────
-local FLOAT_ANTEIL   = 0.6    -- Breite = 60 % der Monitorbreite
-local NUR_ERSTES_MAL = true  -- true = danach merkt sich Hyprland deine eigene Größe
+-- ── Floating windows in 16:9 ──────────────────────
+local FLOAT_SHARE     = 0.6    -- width = 60 % of the monitor width
+local ONLY_FIRST_TIME = true  -- true = afterwards Hyprland remembers your own size
 
-local schon_gefloatet = {}
+local already_floated = {}
 
 local function toggle_float_16_9()
   local w = hl.get_active_window()
   if not w then return end
 
-  -- schon floating → zurück ins Tiling
+  -- already floating → back to tiling
   if w.floating then
     hl.dispatch(hl.dsp.window.float({ action = "unset" }))
     return
@@ -451,19 +451,19 @@ local function toggle_float_16_9()
 
   hl.dispatch(hl.dsp.window.float({ action = "set" }))
 
-  if NUR_ERSTES_MAL and schon_gefloatet[w.address] then return end
-  schon_gefloatet[w.address] = true
+  if ONLY_FIRST_TIME and already_floated[w.address] then return end
+  already_floated[w.address] = true
 
   local m      = w.monitor
-  local breite = math.floor(m.width / m.scale * FLOAT_ANTEIL)
-  local hoehe  = math.floor(breite * 9 / 16)
+  local width = math.floor(m.width / m.scale * FLOAT_SHARE)
+  local height  = math.floor(width * 9 / 16)
 
-  hl.dispatch(hl.dsp.window.resize({ x = breite, y = hoehe, relative = false }))
+  hl.dispatch(hl.dsp.window.resize({ x = width, y = height, relative = false }))
   hl.dispatch(hl.dsp.window.center())
 end
 
--- Speicher aufräumen, wenn Fenster zugehen
-hl.on("window.close", function(w) schon_gefloatet[w.address] = nil end)
+-- Clean up memory when windows close
+hl.on("window.close", function(w) already_floated[w.address] = nil end)
 
 hl.bind("SUPER + V", toggle_float_16_9)
 

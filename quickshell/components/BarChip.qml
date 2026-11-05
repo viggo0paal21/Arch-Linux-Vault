@@ -1,7 +1,7 @@
 import QtQuick
 import qs.config
 
-// Klickbarer Bereich in der Leiste. Kinder landen in einer Reihe; "fg" fuer ihre Farbe.
+// Clickable area in the bar. Children are placed in a row; "fg" is their color.
 Item {
     id: root
 

@@ -3,14 +3,14 @@ export MANGOHUD=0
 export DISABLE_LSFGVK=1
 export DISABLE_VKBASALT=1
 unset LD_PRELOAD
-# Animationen nach echter Uhrzeit statt festen Schritten (sonst ungleichmaessig auf NVIDIA/Vulkan)
+# Animations follow the real clock instead of fixed steps (otherwise uneven on NVIDIA/Vulkan)
 export QSG_USE_SIMPLE_ANIMATION_DRIVER=1
-# Harmlose Qt-Warnungen ausblenden, die sonst das Log fluten:
-#  qt.svg*: kaputte SVG-Icons (leere Masken, fehlerhafte Pfade)
-#  qt.qpa.wayland.textinput: Fokuswechsel beim Oeffnen/Schliessen von Panels
+# Hide harmless Qt warnings that would flood the log:
+#  qt.svg*: broken SVG icons (empty masks, invalid paths)
+#  qt.qpa.wayland.textinput: focus changes when opening/closing panels
 export QT_LOGGING_RULES="${QT_LOGGING_RULES:+$QT_LOGGING_RULES;}qt.svg*.warning=false;qt.qpa.wayland.textinput.warning=false"
 export QSG_RHI_BACKEND=vulkan
-# Ausgabe nicht ins Session-Log (~/.local/share/sddm/wayland-session.log): Quickshell beobachtet
-# ~/.local/share fuer die App-Liste und las bei jeder neuen Log-Zeile alle Apps neu ein (~60 ms Haenger).
-# Das eigene Log bleibt: qs log
+# Keep output out of the SDDM session log (~/.local/share/sddm/wayland-session.log).
+# Nothing needs the copy there.
+# Quickshell keeps its own log: qs log
 exec quickshell "$@" >/dev/null 2>&1

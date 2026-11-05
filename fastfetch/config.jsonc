@@ -75,7 +75,7 @@
     {
       "type": "gpu",
       "key": "GPU ",
-      // temp/NVML-Abfrage blockiert auf NVIDIA kurz die Grafikkarte (~70 ms Ruckler in Quickshell)
+      // temp/NVML query briefly blocks the GPU on NVIDIA (~70 ms freeze in Quickshell)
       "temp": false,
       "detectionMethod": "pci",
       "showPeCoreCount": true,

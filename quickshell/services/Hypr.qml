@@ -4,17 +4,17 @@ import QtQuick
 import Quickshell
 import Quickshell.Hyprland
 
-// Hyprland-Befehle, die mit Lua-Config (>= 0.55) und alter Config funktionieren.
+// Hyprland commands that work with the Lua config (>= 0.55) and the old config.
 Singleton {
     id: root
 
     readonly property bool lua: Hyprland.usingLua
 
-    // Fenster auf der aktiven Arbeitsflaeche des fokussierten Monitors, ohne schwebende (floating)
+    // Windows on the active workspace of the focused monitor, without floating ones
     readonly property int focusedTiledCount: root.tiledCount(Hyprland.focusedMonitor)
 
-    // Fenster auf der aktiven Arbeitsflaeche eines Monitors, schwebende (floating) nicht mitgezaehlt.
-    // skipKitty: kitty-Terminals zaehlen auch nicht (Settings > Appearance > Exclude kitty terminal)
+    // Windows on the active workspace of a monitor, floating ones not counted.
+    // skipKitty: kitty terminals don't count either (Settings > Appearance > Exclude kitty terminal)
     function tiledCount(monitor, skipKitty) {
         const ws = monitor ? monitor.activeWorkspace : null;
         if (!ws)
@@ -22,8 +22,8 @@ Singleton {
         let n = 0;
         for (const t of ws.toplevels.values) {
             const o = t.lastIpcObject;
-            // Erst zaehlen, wenn Hyprland gemeldet hat, dass es nicht schwebt. Sonst zaehlt ein
-            // neu geoeffnetes floating Fenster kurz als gekachelt und die Leiste zuckt.
+            // Only count once Hyprland has reported that it isn't floating. Otherwise a newly
+            // opened floating window briefly counts as tiled and the bar twitches.
             if (o && o.floating === false && !(skipKitty && (o.class === "kitty" || o.initialClass === "kitty")))
                 n++;
         }
@@ -37,8 +37,8 @@ Singleton {
 
     Component.onCompleted: root.refresh()
 
-    // Ob ein Fenster schwebt, steht nur in lastIpcObject. Das aktualisiert Hyprland nicht
-    // von selbst, darum bei passenden Ereignissen neu abfragen.
+    // Whether a window floats is only in lastIpcObject. Hyprland doesn't update it
+    // by itself, so query again on matching events.
     Connections {
         target: Hyprland
 

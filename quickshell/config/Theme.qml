@@ -3,29 +3,29 @@ pragma Singleton
 import QtQuick
 import Quickshell
 
-// OLED Schwarz/Weiss. Alles hier ist abgeleitet, eingestellt wird in Config.
+// OLED black/white. Everything here is derived, settings live in Config.
 Singleton {
     id: root
 
-    // "Smooth text" (Settings > Appearance): Schrift auf Bruchteile von Pixeln positionierbar, Bewegungen
-    // ohne Pixelspruenge. Aus = knackscharfe Schrift, Positionen auf ganze Pixel gerundet.
+    // "Smooth text" (Settings > Appearance): text can be placed on fractions of pixels, motion
+    // without pixel steps. Off = crisp text.
     readonly property bool smooth: Config.opts.smoothText
 
-    // Position fuer Bewegungen: immer auf ganze Pixel (kein Jittern, scharfe Schrift in jedem Frame)
+    // Position for motion: always whole pixels (no jitter, sharp text in every frame)
     function px(v) {
         return Math.round(v);
     }
 
-    // Farben: echtes Schwarz als Basis, Graustufen nur fuer Tiefe und Hover
+    // Colors: true black as the base, greys only for depth and hover
     readonly property color bg: "#000000"
     readonly property color layer1: "#000000"
-    // Transparenz (Settings > Appearance): "off" | "popups" | "everywhere"
+    // Transparency (Settings > Appearance): "off" | "popups" | "everywhere"
     readonly property bool glassy: Config.opts.transparency === "popups" || Config.opts.transparency === "everywhere"
-    // Deckkraft der durchsichtigen Flaechen (Settings > Appearance > Opacity), 100 = schwarz
+    // Opacity of the transparent surfaces (Settings > Appearance > Opacity), 100 = black
     readonly property real glassAlpha: Math.max(0, Math.min(100, Config.opts.glassOpacity)) / 100
 
-    // Auf Schwarz sehen die Toenungen exakt aus wie die festen Grautoene,
-    // auf durchsichtigen Flaechen lassen sie den Blur durchscheinen.
+    // On black the tints look exactly like the solid greys,
+    // on transparent surfaces they let the blur shine through.
     readonly property color layer2: glassy ? Qt.rgba(1, 1, 1, 0.05) : "#0d0d0d"
     readonly property color layer3: glassy ? Qt.rgba(1, 1, 1, 0.09) : "#171717"
     readonly property color hover: glassy ? Qt.rgba(1, 1, 1, 0.08) : "#141414"
@@ -38,13 +38,13 @@ Singleton {
     readonly property color accent: "#ffffff"
     readonly property color accentFg: "#000000"
 
-    // Rundungen: leicht, alles skaliert mit einem Wert
+    // Rounding: subtle, everything scales with one value
     readonly property int radius: Config.opts.radius
     readonly property int radiusSm: Math.round(radius * 0.6)
     readonly property int radiusLg: Math.round(radius * 1.4)
 
-    // Schrift (wie die Waybar: Inter 15px Bold, Icons aus JetBrainsMono Nerd Font Propo;
-    // fehlende Zeichen holt Qt automatisch per fontconfig, z. B. aus Symbols Nerd Font)
+    // Font (like the Waybar: Inter 15px bold, icons from JetBrainsMono Nerd Font Propo;
+    // Qt gets missing glyphs automatically via fontconfig, e.g. from Symbols Nerd Font)
     readonly property string font: Config.opts.uiFont
     readonly property string iconFont: Config.opts.uiIconFont
     readonly property int fontSize: Config.opts.uiFontSize
@@ -55,18 +55,18 @@ Singleton {
     readonly property int iconSize: fontSize + 4
     readonly property int barIconSize: fontSize
 
-    // Abstaende
+    // Spacing
     readonly property int barHeight: Config.opts.barHeight
     readonly property int barBottom: (Config.opts.barFloating ? Config.opts.barFloatOffset : 0) + barHeight
     readonly property int gap: 8
     readonly property int pad: 14
 
-    // Animationen
+    // Animations
     readonly property real animScale: Config.opts.animations ? Config.opts.animScale : 0
     readonly property int durFast: Math.round(130 * animScale)
     readonly property int durMed: Math.round(240 * animScale)
     readonly property int durSlow: Math.round(420 * animScale)
-    // Kurven zur Auswahl (Settings > Animations)
+    // Curves to choose from (Settings > Animations)
     readonly property var curveKeys: ["standard", "outCubic", "inCubic", "smoothOut", "md3Decel", "inOutSine", "linear"]
     readonly property var curveNames: ["Standard", "Ease out cubic", "Ease in cubic", "Smooth out", "MD3 decelerate", "Ease in-out", "Linear"]
     readonly property var curvePoints: ({
@@ -83,12 +83,12 @@ Singleton {
         return root.curvePoints[key] || root.curvePoints.standard;
     }
 
-    // Bedienelemente (Hover, Schalter, Regler, Listen): Kurve und Tempo aus Settings > Animations
+    // Controls (hover, switches, sliders, lists): curve and speed from Settings > Animations
     readonly property list<real> curve: root.curveOf(Config.opts.animCtlCurve)
     readonly property int ctlFast: Math.round(durFast * Config.opts.animCtlSpeed)
     readonly property int ctlMed: Math.round(durMed * Config.opts.animCtlSpeed)
-    // Reinkommen: easeOutCubic, Rausgehen: easeInCubic. Gleichmaessige Schritte pro Frame
-    // (die alte M3-Kurve sprang im ersten Frame um >100 px, das wirkte ruckelig).
+    // Coming in: easeOutCubic, going out: easeInCubic. Even steps per frame
+    // (the old M3 curve jumped >100 px in the first frame, which looked choppy).
     readonly property list<real> curveEmph: [0.33, 1.0, 0.68, 1.0, 1.0, 1.0]
     readonly property list<real> curveAccel: [0.32, 0.0, 0.67, 0.0, 1.0, 1.0]
 }

@@ -5,8 +5,8 @@ import Quickshell
 import Quickshell.Io
 import qs.config
 
-// App-Suche fuer den Launcher: Treffer nach Name, Woertern, Stichworten, Unscharf.
-// Haeufig gestartete Apps rutschen nach oben.
+// App search for the launcher: matches by name, words, keywords, fuzzy.
+// Frequently launched apps move up.
 Singleton {
     id: root
 
@@ -92,7 +92,7 @@ Singleton {
             Quickshell.execDetached(["sh", "-c", cmd]);
     }
 
-    // Kleiner Taschenrechner ohne eval: + - * / % ^ ( ) und Kommazahlen
+    // Small calculator without eval: + - * / % ^ ( ) and decimals
     function calc(input) {
         const src = input.replace(/,/g, ".").replace(/\s+/g, "");
         if (src === "" || !/^[0-9+\-*\/%^().]+$/.test(src))

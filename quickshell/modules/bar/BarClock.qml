@@ -3,8 +3,8 @@ import Quickshell
 import qs.config
 import qs.components
 
-// Uhrzeit (optional mit Datum). Sitzt zusammen mit CPU/RAM/Temperatur in einem Kaestchen
-// der Leiste, "fg"/"fgDim" kommen von dort.
+// Time (optionally with date). Sits in one box of the bar together with CPU/RAM/temperature,
+// "fg"/"fgDim" come from there.
 Row {
     id: root
 

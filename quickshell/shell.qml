@@ -1,6 +1,6 @@
 //@ pragma ShellId oled-bw
-// Qt nutzt auf NVIDIA sonst den "basic"-Modus, der Animationen mit festen ~60 Hz rechnet.
-// "threaded" rechnet pro Bildschirm-Frame (170 Hz). Falls sich ein Tray-Menue mal aufhaengt: Zeile entfernen.
+// Otherwise Qt uses the "basic" mode on NVIDIA, which computes animations at a fixed ~60 Hz.
+// "threaded" computes per display frame (170 Hz). If a tray menu ever hangs: remove this line.
 //@ pragma Env QSG_RENDER_LOOP=threaded
 
 import QtQuick
@@ -18,26 +18,26 @@ import qs.modules.osd
 import qs.modules.power
 import qs.modules.settings
 
-// OLED Schwarz/Weiss Quickshell-Setup
-// Start: qs   |   Steuerung per IPC: qs ipc call <ziel> <funktion>
+// OLED black/white Quickshell setup
+// Start: qs   |   control via IPC: qs ipc call <target> <function>
 ShellRoot {
     id: shell
 
-    // Hintergrund (schwarz oder Bild) auf jedem Bildschirm
+    // Background (black or image) on every screen
     Variants {
         model: Config.opts.oledBackground ? Quickshell.screens : []
 
         Wallpaper {}
     }
 
-    // Leiste auf jedem Bildschirm
+    // Bar on every screen
     Variants {
         model: Quickshell.screens
 
         Bar {}
     }
 
-    // Abgerundete Bildschirmecken (optional)
+    // Rounded screen corners (optional)
     Variants {
         model: Config.opts.screenCorners ? Quickshell.screens : []
 

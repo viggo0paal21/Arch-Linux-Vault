@@ -11,7 +11,7 @@ my personal `~/.config` files (Hyprland rice), my zsh setup, maintenance and per
 
 > 🖤 **[Quickshell Guide](Quickshell%20Guide.md)**: my black-and-white Quickshell shell, smooth 170 Hz on NVIDIA (Vulkan, no MangoHud), FPS counter, using the fix with other shells.
 
-> 🩺 **[Quickshell Stutter Guide](Quickshell%20Stutter%20Guide.md)** (Deutsch): how Quickshell stutters and freezes happen, how to measure them and how I fixed each one (NVIDIA/Vulkan, pixel jitter, animation curves, 60–130 ms freezes caused by zsh history in `~`).
+> 🩺 **[Quickshell Stutter Guide](Quickshell%20Stutter%20Guide.md)**: how Quickshell stutters and freezes happen, how to measure them and how I fixed each one (NVIDIA/Vulkan, pixel jitter, animation curves, 60–130 ms freezes caused by zsh history in `~`).
 
 ## Contents
 
@@ -23,7 +23,7 @@ my personal `~/.config` files (Hyprland rice), my zsh setup, maintenance and per
 | [`Performance Optimization.md`](Performance%20Optimization.md) | System tweaks for gaming performance and latency, incl. how to use the GPU scripts below |
 | [`Low Latency Gaming.md`](Low%20Latency%20Gaming.md) | Best display setup with and without tearing, how tearing works on Hyprland |
 | [`Quickshell Guide.md`](Quickshell%20Guide.md) | My Quickshell shell: files, install, why the start script exists, FPS counter, other shells, rollback |
-| [`Quickshell Stutter Guide.md`](Quickshell%20Stutter%20Guide.md) | Why Quickshell stutters/freezes, how to measure it, every fix I used (German) |
+| [`Quickshell Stutter Guide.md`](Quickshell%20Stutter%20Guide.md) | Why Quickshell stutters/freezes, how to measure it, every fix I used |
 
 ### Scripts
 

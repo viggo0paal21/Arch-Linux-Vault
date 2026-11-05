@@ -5,7 +5,7 @@ import qs.config
 import qs.components
 import qs.services
 
-// Arbeitsflaechen als Pillen: aktiv = lang + weiss, belegt = grau, leer = dunkel.
+// Workspaces as pills: active = long + white, occupied = grey, empty = dark.
 Item {
     id: root
 

@@ -4,7 +4,7 @@ import Quickshell.Services.SystemTray
 import qs.config
 import qs.components
 
-// System-Tray. Links: aktivieren, Rechts: eigenes S/W-Menue, Mitte: Zweitaktion.
+// System tray. Left: activate, right: own B/W menu, middle: secondary action.
 Row {
     id: root
 

@@ -357,7 +357,7 @@ NVIDIA-only parts to change after switching to AMD: Settings → *GPU monitor (n
 
 ## 7. Troubleshooting and rollback
 
-For stutter, jitter and short freezes see the **[Quickshell Stutter Guide](Quickshell%20Stutter%20Guide.md)** (German): causes, how to measure them, all fixes.
+For stutter, jitter and short freezes see the **[Quickshell Stutter Guide](Quickshell%20Stutter%20Guide.md)**: causes, how to measure them, all fixes.
 
 | Problem | Fix |
 |---|---|

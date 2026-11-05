@@ -4,7 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// Nachtlicht ueber hyprsunset (optional, "pacman -S hyprsunset").
+// Night light via hyprsunset (optional, "pacman -S hyprsunset").
 Singleton {
     id: root
 

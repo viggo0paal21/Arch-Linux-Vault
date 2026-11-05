@@ -2,7 +2,7 @@ import QtQuick
 import qs.config
 import qs.services
 
-// Flaeche fuer Panels. Faengt Klicks ab, damit Klicks im Panel es nicht schliessen.
+// Surface for panels. Catches clicks so that clicking inside the panel doesn't close it.
 Rectangle {
     color: Glass.popupBg
     radius: Theme.radiusLg

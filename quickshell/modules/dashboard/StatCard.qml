@@ -2,7 +2,7 @@ import QtQuick
 import qs.config
 import qs.components
 
-// Kachel im Systemmonitor: Icon, Titel, grosser Wert, Untertitel, optional Verlauf.
+// Tile in the system monitor: icon, title, big value, subtitle, optional history.
 Rectangle {
     id: root
 

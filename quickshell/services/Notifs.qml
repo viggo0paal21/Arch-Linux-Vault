@@ -5,7 +5,7 @@ import Quickshell
 import Quickshell.Services.Notifications
 import qs.config
 
-// Benachrichtigungs-Daemon (ersetzt dunst/swaync). Verlauf + Popups + Nicht stoeren.
+// Notification daemon (replaces dunst/swaync). History + popups + do not disturb.
 Singleton {
     id: root
 
@@ -20,7 +20,7 @@ Singleton {
         root.popups = root.popups.filter(p => p !== n);
     }
 
-    // Erst ausblenden, dann wirklich schliessen (damit die Animation sauber laeuft)
+    // Fade out first, then really close (so the animation runs cleanly)
     function dismiss(n) {
         if (!n)
             return;

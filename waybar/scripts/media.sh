@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Media-Modul für Waybar: "Media" wenn nichts läuft, sonst "Künstler – Titel".
-# Klassen: idle / playing / paused (für style.css)
+# Media module for Waybar: "Media" when nothing plays, otherwise "Artist – Title".
+# Classes: idle / playing / paused (for style.css)
 
 SEP=$'\x1f'
 
@@ -9,7 +9,7 @@ emit() {
   IFS="$SEP" read -r status artist title <<<"$1"
 
   if [[ -z "$status" || "$status" == "Stopped" || -z "$title" ]]; then
-    jq -cn '{text: "Media", class: "idle", tooltip: "Nichts spielt gerade"}'
+    jq -cn '{text: "Media", class: "idle", tooltip: "Nothing is playing"}'
     return
   fi
 

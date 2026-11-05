@@ -5,7 +5,7 @@ import qs.config
 import qs.components
 import qs.services
 
-// Lautstaerke-Anzeige unten mittig, blendet nach kurzer Zeit aus. Klicks gehen durch.
+// Volume indicator bottom center, fades out after a short time. Clicks go through.
 PanelWindow {
     id: win
 
@@ -41,7 +41,7 @@ PanelWindow {
         }
     }
 
-    // Fenster erst nach dem Ausblenden + einem leeren Frame schliessen
+    // Only close the window after fading out + one empty frame
     Timer {
         id: unmapHold
 

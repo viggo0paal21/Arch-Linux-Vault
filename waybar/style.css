@@ -1,7 +1,7 @@
-/* ~/.config/waybar/style.css  (Auto-Variante)
- * Schwarz bei genau einem Fenster, sonst durchsichtig – mit Fade.
- * Braucht "hyprland/window" in der config.jsonc.
- * Links: Arch, Workspaces, CPU, RAM, Wetter. Rechts: der Rest + Uhr.
+/* ~/.config/waybar/style.css  (auto variant)
+ * Black with exactly one window, transparent otherwise – with a fade.
+ * Needs "hyprland/window" in config.jsonc.
+ * Left: Arch, workspaces, CPU, RAM, weather. Right: the rest + clock.
  */
 
 @define-color bg         #000000;
@@ -12,7 +12,7 @@
 @define-color dot-empty  #222222;
 @define-color pill       #dcdcdc;
 
-/* ---------- Grundlage ---------- */
+/* ---------- Base ---------- */
 * {
   font-family: "Inter", "JetBrainsMono Nerd Font Propo", "Symbols Nerd Font", sans-serif;
   font-size: 15px;
@@ -25,22 +25,22 @@
   text-shadow: none;
 }
 
-/* Standard: durchsichtig (0 Fenster oder 2+ Fenster) */
+/* Default: transparent (0 windows or 2+ windows) */
 window#waybar {
   background-color: rgba(0, 0, 0, 0);
   color: @fg;
-  /* → durchsichtig: startet sehr schnell, läuft weich aus */
+  /* → transparent: starts very fast, eases out softly */
   transition: background-color 0.25s ease-out;
 }
 
-/* Genau ein (gekacheltes) Fenster auf dem Workspace: schwarz */
+/* Exactly one (tiled) window on the workspace: black */
 window#waybar.solo {
   background-color: @bg;
-  /* → schwarz: bleibt wie bisher */
+  /* → black: stays as before */
   transition: background-color 0.2s ease-in-out;
 }
 
-/* Sanftes Einblenden beim Start / nach Style-Reload */
+/* Soft fade-in on start / after a style reload */
 @keyframes fade-in {
   from { opacity: 0; }
   to   { opacity: 1; }
@@ -54,7 +54,7 @@ window#waybar.solo {
 .modules-left  { margin-left: 14px; }
 .modules-right { margin-right: 14px; }
 
-/* ---------- Alle Text-Module ---------- */
+/* ---------- All text modules ---------- */
 #custom-arch,
 #cpu,
 #custom-memory,
@@ -83,7 +83,7 @@ window#waybar.solo {
   color: @fg-hover;
 }
 
-/* Ziffern gleich breit → nichts rutscht, wenn sich Zahlen ändern */
+/* Equal-width digits → nothing shifts when numbers change */
 #cpu,
 #custom-memory,
 #custom-weather,
@@ -93,42 +93,42 @@ window#waybar.solo {
   font-feature-settings: "tnum";
 }
 
-/* ---------- Links neben den Workspaces: CPU / RAM / Wetter ----------
- * Die Workspaces sind fest breit (siehe unten), deshalb schiebt die
- * Pill-Animation hier nichts mehr. Damit auch wechselnde Zahlen nichts
- * verschieben, hat CPU eine feste Mindestbreite (1% und 99% gleich breit).
- * RAM ist durch "tnum" + immer 2 Nachkommastellen von selbst gleich breit.
- * Wetter steht ganz rechts in der Gruppe – dahinter kann nichts rutschen.
+/* ---------- Left, next to the workspaces: CPU / RAM / weather ----------
+ * The workspaces have a fixed width (see below), so the pill animation
+ * doesn't push anything here anymore. So that changing numbers don't
+ * shift anything either, CPU has a fixed min width (1% and 99% equally wide).
+ * RAM keeps its width thanks to "tnum" + always 2 decimals.
+ * Weather is the last item of the group – nothing behind it can shift.
  */
 #cpu {
-  min-width: 58px;           /* Text linksbündig ("align": 0 in der config) */
+  min-width: 58px;           /* text left-aligned ("align": 0 in the config) */
   padding: 0 10px 0 13px;
 }
 
-/* ---------- Arch-Logo ---------- */
+/* ---------- Arch logo ---------- */
 #custom-arch {
   font-size: 18px;
   font-style: normal;
   padding: 0 12px 0 10px;
 }
 
-/* ---------- Workspaces: Punkte + animierte Pill ----------
- * Jeder Workspace hat einen FESTEN Platz (26px). Der Punkt/die Pill wächst
- * nur innerhalb dieses Platzes – dadurch kann sich daneben nie etwas bewegen,
- * egal wie Waybar die Animation timt.
+/* ---------- Workspaces: dots + animated pill ----------
+ * Every workspace has a FIXED slot (26px). The dot/pill only grows
+ * inside that slot – so nothing next to it can ever move,
+ * no matter how Waybar times the animation.
  */
 #workspaces {
   margin: 0 10px 0 4px;
 }
 
-/* Der Button ist nur der unsichtbare, feste Platzhalter */
+/* The button is just the invisible, fixed placeholder */
 #workspaces button,
 #workspaces button:hover,
 #workspaces button.active,
 #workspaces button.active:hover {
-  min-width: 26px;           /* = Breite der Pill */
+  min-width: 26px;           /* = width of the pill */
   min-height: 10px;
-  margin: 13px 0;            /* (36px Höhe - 10px Punkt) / 2 = mittig */
+  margin: 13px 0;            /* (36px height - 10px dot) / 2 = centered */
   padding: 0;
   border: none;
   outline: none;
@@ -139,13 +139,13 @@ window#waybar.solo {
   transition: none;
 }
 
-/* Das Label ist der sichtbare Punkt / die Pill */
+/* The label is the visible dot / pill */
 #workspaces button label {
   font-size: 1px;
-  min-width: 9.5px;          /* Punkt (wird als 10px gezeichnet) */
+  min-width: 9.5px;          /* dot (drawn as 10px) */
   min-height: 10px;
   padding: 0;
-  margin: 0 7.5px;           /* 7.5 + 9.5 + 7.5 = 24.5 → passt mit Rundung sicher in 26 */
+  margin: 0 7.5px;           /* 7.5 + 9.5 + 7.5 = 24.5 → safely fits into 26 with rounding */
   border-radius: 10px;
   background-color: @dot;
   transition: min-width 0.18s cubic-bezier(0.4, 0, 0.2, 1),
@@ -163,8 +163,8 @@ window#waybar.solo {
 
 #workspaces button.active label,
 #workspaces button.active:hover label {
-  min-width: 22.5px;         /* Pill (wird als 23px gezeichnet) */
-  margin: 0 1px;             /* 1 + 22.5 + 1 = 24.5 → passt sicher in 26 */
+  min-width: 22.5px;         /* pill (drawn as 23px) */
+  margin: 0 1px;             /* 1 + 22.5 + 1 = 24.5 → safely fits into 26 */
   background-color: @pill;
 }
 
@@ -177,9 +177,9 @@ window#waybar.solo {
   animation: urgent-pulse 0.8s ease-in-out infinite alternate;
 }
 
-/* ---------- Rechts ---------- */
-/* Die Uhr steht ganz rechts – ihre feste Breite (unten) sorgt dafür,
-   dass die Sekunden links davon nichts verschieben. */
+/* ---------- Right ---------- */
+/* The clock is on the far right – its fixed width (below) makes sure
+   the seconds don't shift anything to the left of it. */
 #pulseaudio.muted,
 #network.disconnected,
 #network.linked,
@@ -204,8 +204,8 @@ window#waybar.solo {
   -gtk-icon-effect: highlight;
 }
 
-/* Uhr mit fester Breite: die Sekunden verschieben nichts links davon.
-   Bewegt sich links noch was → Wert erhöhen; Lücke zu groß → verringern */
+/* Clock with a fixed width: the seconds don't shift anything to its left.
+   Something on the left still moves → increase the value; gap too big → decrease it */
 #custom-clock {
   font-weight: 500;
   min-width: 100px;
@@ -226,12 +226,12 @@ tooltip label {
   padding: 4px 6px;
 }
 
-/* ---------- Umschalter: dynamische Transparenz an/aus ----------
- * Wird von scripts/toggle-transparency.sh (Tastenkombi) umgeschrieben.
- * Muss GANZ UNTEN stehen, damit es die Regeln oben überschreiben kann.
- * Die Datei transparency.css muss existieren, sonst lädt Waybar den Style nicht.
+/* ---------- Toggle: dynamic transparency on/off ----------
+ * Rewritten by scripts/toggle-transparency.sh (keybind).
+ * Has to be at the VERY BOTTOM so it can override the rules above.
+ * transparency.css has to exist, otherwise Waybar won't load the style.
  */
 @import url("transparency.css");
 
-/* Hardened-Modus (SUPER + Bild runter) – muss GANZ UNTEN stehen, nach transparency.css */
+/* Hardened mode (SUPER + Page Down) – has to be at the VERY BOTTOM, after transparency.css */
 @import url("transparency-hardened.css");

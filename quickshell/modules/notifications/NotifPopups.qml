@@ -5,7 +5,7 @@ import qs.config
 import qs.components
 import qs.services
 
-// Popups oben rechts, gleiten von rechts rein und wieder raus.
+// Popups top right, slide in from the right and back out.
 PanelWindow {
     id: win
 
@@ -13,9 +13,9 @@ PanelWindow {
     readonly property bool hasPopups: Notifs.popups.length > 0
     property bool mapped: false
 
-    // Wie die Panels: Das Fenster bleibt dauerhaft bestehen und liegt ohne Popups oberhalb des Bildschirms.
-    // Jedes Mal ein neues Fenster (Vulkan-Swapchain) anzulegen liess Quickshell 60-120 ms haengen.
-    // Ausnahme Vollbild-Spiel: dann ganz weg, sonst blockiert die Overlay-Ebene Direct Scanout.
+    // Like the panels: the window always exists and sits above the screen when there are no popups.
+    // Creating a new window (Vulkan swapchain) every time froze Quickshell for 60-120 ms.
+    // Exception: fullscreen game. Then it's gone completely, otherwise the overlay layer blocks direct scanout.
     readonly property bool fullscreenActive: ToplevelManager.activeToplevel ? ToplevelManager.activeToplevel.fullscreen : false
 
     screen: Ui.focusedScreen()
@@ -38,7 +38,7 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "qs-notifications"
 
-    // Nur die Karten nehmen Klicks an, der Rest ist durchlaessig
+    // Only the cards take clicks, the rest lets them through
     mask: Region {
         item: maskItem
     }
@@ -52,7 +52,7 @@ PanelWindow {
         }
     }
 
-    // Erst schliessen, wenn die letzte Karte rausgeglitten ist
+    // Only close once the last card has slid out
     Timer {
         id: hold
 

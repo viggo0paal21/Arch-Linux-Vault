@@ -3,8 +3,8 @@ import qs.config
 import qs.components
 import qs.services
 
-// Netz, Bluetooth, Lautstaerke, Mikro, Benachrichtigungen. Klick = Kontrollzentrum.
-// Mausrad = Lautstaerke, Mittelklick = stumm.
+// Network, Bluetooth, volume, mic, notifications. Click = control center.
+// Scroll = volume, middle click = mute.
 BarChip {
     id: root
 

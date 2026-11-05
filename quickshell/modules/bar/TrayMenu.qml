@@ -3,7 +3,7 @@ import Quickshell
 import qs.config
 import qs.components
 
-// Tray-Kontextmenue im eigenen Look (statt Qt-Standardmenue). Untermenues per Klick.
+// Tray context menu in the shell's own look (instead of Qt's default menu). Submenus by click.
 PopupWindow {
     id: root
 
@@ -64,7 +64,7 @@ PopupWindow {
             y: 6
             width: parent.width - 12
 
-            // Zurueck aus einem Untermenue
+            // Back out of a submenu
             Rectangle {
                 width: col.width
                 height: 30

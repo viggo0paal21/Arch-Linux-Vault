@@ -4,7 +4,7 @@ import qs.config
 import qs.components
 import qs.services
 
-// Dashboard unter dem Uhr-/System-Kaestchen der Leiste: grosse Uhr, Kalender, Systemmonitor.
+// Dashboard below the bar's clock/system box: big clock, calendar, system monitor.
 OverlayPanel {
     id: panel
 
@@ -29,7 +29,7 @@ OverlayPanel {
         enabled: panel.mapped
     }
 
-    // Gleitet unter der Leiste hervor, rechtsbuendig unter dem Uhr-/System-Kaestchen
+    // Slides out from under the bar, right-aligned below the clock/system box
     DropdownSlot {
         id: slot
 
@@ -54,7 +54,7 @@ OverlayPanel {
                 y: 18
                 spacing: 18
 
-                // Links: Uhr + Kalender
+                // Left: clock + calendar
                 Column {
                     id: leftCol
 
@@ -93,7 +93,7 @@ OverlayPanel {
                     height: Math.max(leftCol.implicitHeight, rightCol.implicitHeight)
                 }
 
-                // Rechts: Systemmonitor
+                // Right: system monitor
                 Column {
                     id: rightCol
 
@@ -125,7 +125,7 @@ OverlayPanel {
                         }
                     }
 
-                    // Arbeitsspeicher
+                    // Memory
                     Rectangle {
                         width: parent.width
                         height: memCol.implicitHeight + 28
@@ -184,7 +184,7 @@ OverlayPanel {
                         }
                     }
 
-                    // Laufwerke
+                    // Drives
                     Rectangle {
                         width: parent.width
                         height: diskCol.implicitHeight + 28

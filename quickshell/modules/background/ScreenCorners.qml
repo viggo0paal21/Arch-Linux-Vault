@@ -3,8 +3,8 @@ import Quickshell
 import Quickshell.Wayland
 import qs.config
 
-// Vier kleine schwarze Ecken pro Bildschirm. Ebene "Top": Vollbild-Spiele liegen darueber,
-// es gibt also keine Ueberlagerung im Spiel (Direct Scanout bleibt moeglich).
+// Four small black corners per screen. Layer "Top": fullscreen games are above it,
+// so nothing overlays the game (direct scanout stays possible).
 Scope {
     id: root
 

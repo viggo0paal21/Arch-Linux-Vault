@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Cava-Visualizer für Waybar: 10 Balken aus ▁▂▃▄▅▆▇█
+# Cava visualizer for Waybar: 10 bars made of ▁▂▃▄▅▆▇█
 
 bars=(▁ ▂ ▃ ▄ ▅ ▆ ▇ █)
 dict="s/;//g;"
@@ -28,7 +28,7 @@ ascii_max_range = 7
 noise_reduction = 77
 EOF
 
-# Alte Instanz (z. B. nach Waybar-Neustart) beenden
+# Stop the old instance (e.g. after a Waybar restart)
 pkill -f "cava -p $conf" 2>/dev/null
 
 cava -p "$conf" | sed -u "$dict"

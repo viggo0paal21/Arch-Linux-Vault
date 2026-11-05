@@ -5,8 +5,8 @@ import Quickshell
 import Quickshell.Hyprland
 import qs.config
 
-// Welches Panel offen ist und auf welchem Bildschirm. Immer nur eins gleichzeitig.
-// Namen: launcher, control, dashboard, power, settings
+// Which panel is open and on which screen. Only one at a time.
+// Names: launcher, control, dashboard, power, settings
 Singleton {
     id: root
 
@@ -14,16 +14,16 @@ Singleton {
     property var panelScreen: null
     property bool caffeine: false
 
-    // Form der Leiste, gesetzt von der Leiste selbst: 0 = angedockt, 1 = schwebend.
-    // barFloat laeuft mit der Animation mit, barFloatTarget ist der Zielzustand.
+    // Shape of the bar, set by the bar itself: 0 = docked, 1 = floating.
+    // barFloat follows the animation, barFloatTarget is the target state.
     property real barFloat: Config.opts.barFloating ? 1 : 0
     property bool barFloatTarget: Config.opts.barFloating
-    // Unterkante der Leiste (Panels klappen darunter auf)
+    // Bottom edge of the bar (panels open below it)
     readonly property real barBottom: Theme.px(Theme.barHeight + Config.opts.barFloatOffset * root.barFloat)
     readonly property int barBottomTarget: Theme.barHeight + (root.barFloatTarget ? Config.opts.barFloatOffset : 0)
 
-    // Rechte Kante des Uhr-/System-Kaestchens in der Leiste, je Bildschirm (Bildschirm-Name -> x).
-    // Das Dashboard klappt genau darunter auf.
+    // Right edge of the clock/system box in the bar, per screen (screen name -> x).
+    // The dashboard opens right below it.
     property var infoChipRight: ({})
 
     function setInfoChipRight(screenName, x) {

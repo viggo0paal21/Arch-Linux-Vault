@@ -1,7 +1,7 @@
 import QtQuick
 import qs.config
 
-// Schnelleinstellungs-Kachel (Icon, Titel, Untertitel). Aktiv = weiss.
+// Quick settings tile (icon, title, subtitle). Active = white.
 Rectangle {
     id: root
 

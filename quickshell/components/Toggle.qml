@@ -1,7 +1,7 @@
 import QtQuick
 import qs.config
 
-// Schalter. Setzt "checked" nicht selbst, sondern meldet toggled().
+// Switch. Doesn't set "checked" itself, it reports toggled().
 Item {
     id: root
 

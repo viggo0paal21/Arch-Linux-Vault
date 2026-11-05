@@ -6,44 +6,44 @@ import qs.config
 import qs.components
 import qs.services
 
-// Leiste oben, eine pro Bildschirm.
+// Top bar, one per screen.
 PanelWindow {
     id: bar
 
     required property var modelData
     readonly property bool floating: Config.opts.barFloating
-    // "Dynamic": genau 1 gekacheltes Fenster = angedockt, sonst schwebend (floating Fenster zaehlen nie)
+    // "Dynamic": exactly 1 tiled window = docked, otherwise floating (floating windows never count)
     readonly property bool dynamic: bar.floating && Config.opts.barFloatingDynamic
     readonly property bool floatingNow: bar.floating && !(bar.dynamic && bar.tiledCount === 1)
-    // EIN Pixelzaehler fuer die ganze Bewegung: Hoehe ueber dem Rand (intOffset) in ganzen Pixeln, der
-    // Seitenabstand wird daraus abgeleitet. So aendern sich Seite und Hoehe immer im selben Frame (gerade
-    // schraeg statt Zickzack) und nichts liegt je zwischen zwei Pixeln (kein Jittern, scharfe Kanten).
+    // ONE pixel counter for the whole motion: height above the edge (offset) in whole pixels, the
+    // side gap is derived from it. That way side and height always change in the same frame (straight
+    // diagonal instead of zigzag) and nothing ever sits between two pixels (no jitter, sharp edges).
     readonly property int offset: Math.round(Config.opts.barFloatOffset * frame.progress)
     readonly property int edge: Config.opts.barFloatOffset > 0 ? Math.round(bar.offset * Theme.gap / Config.opts.barFloatOffset) : Math.round(Theme.gap * frame.progress)
-    // Angedockt optional dicker (Settings > Bar > Bar height > Docked), ebenfalls in ganzen Pixeln
+    // Optionally thicker when docked (Settings > Bar > Bar height > Docked), also in whole pixels
     readonly property int dockExtra: bar.dynamic ? Math.round(Math.max(0, Config.opts.barDockedHeight - Config.opts.barHeight) * (1 - frame.progress)) : 0
     readonly property int bottomEdge: bar.offset + Theme.barHeight + bar.dockExtra
-    // Inhalt mit "Dynamic" fest 1 px tiefer, schwebend wie angedockt
+    // With "Dynamic" the content sits 1 px lower, floating and docked alike
     readonly property int contentShift: bar.dynamic ? 1 : 0
-    // Unterkante der sichtbaren Leiste (fuer das Tray-Menue)
+    // Bottom edge of the visible bar (for the tray menu)
     readonly property int visualBottom: frame.y + frame.height
     readonly property var hyprMonitor: Hyprland.monitorFor(bar.modelData)
     readonly property int itemHeight: Theme.barHeight - 8
 
-    // Fenster auf der aktiven Arbeitsflaeche dieses Monitors.
-    // Keine Fenster = Leiste durchsichtig, ab 1 Fenster = schwarz.
+    // Windows on the active workspace of this monitor.
+    // No windows = transparent bar, 1 or more windows = black.
     readonly property int windowCount: {
         const ws = bar.hyprMonitor ? bar.hyprMonitor.activeWorkspace : null;
         return ws ? ws.toplevels.values.length : 0;
     }
     readonly property bool solid: !Config.opts.barAutoTransparent || bar.windowCount > 0
-    // Fenster ohne schwebende (floating), fuer "Solid bar with windows"
+    // Windows without floating ones, for "Solid bar with windows"
     readonly property int tiledCount: Hypr.tiledCount(bar.hyprMonitor)
-    // Dasselbe fuer die Farbe der Leiste, auf Wunsch ohne kitty (Exclude kitty terminal)
+    // Same for the bar color, optionally without kitty (Exclude kitty terminal)
     readonly property int glassCount: Config.opts.barExcludeKitty ? Hypr.tiledCount(bar.hyprMonitor, true) : bar.tiledCount
-    // "Solid bar with windows": schwarz ab 1 Fenster, mit "Only 1" nur bei genau 1 Fenster
+    // "Solid bar with windows": black from 1 window, with "Only 1" only with exactly 1 window
     readonly property bool solidByWindows: Config.opts.barSolidWithWindows && (Config.opts.barSolidOnlySingle ? bar.glassCount === 1 : bar.glassCount > 0)
-    // 0 = durchsichtig (leere Arbeitsflaeche), Glas = Transparency "Everywhere", sonst schwarz
+    // 0 = transparent (empty workspace), glass = Transparency "Everywhere", otherwise black
     readonly property real bgOpacity: {
         if (!bar.solid)
             return 0;
@@ -52,7 +52,7 @@ PanelWindow {
         return 1;
     }
 
-    // Rechte Kante des Uhr-/System-Kaestchens auf dem Bildschirm. Das Dashboard klappt darunter auf.
+    // Right edge of the clock/system box on screen. The dashboard opens below it.
     readonly property real infoChipRight: frame.x + rightRow.x + infoChip.x + infoChip.width
 
     onInfoChipRightChanged: Ui.setInfoChipRight(bar.modelData.name, bar.infoChipRight)
@@ -60,13 +60,13 @@ PanelWindow {
 
     screen: modelData
     color: "transparent"
-    // Das Fenster selbst bleibt fest, nur die sichtbare Leiste (frame) gleitet darin.
+    // The window itself stays put, only the visible bar (frame) slides inside it.
     implicitHeight: Theme.barHeight + (bar.floating ? Math.max(Theme.gap, Config.opts.barFloatOffset) : 0)
-    // Reservierter Platz oben. Mit "Dynamic" bleibt er immer bei der Leistenhoehe: Den Abstand unter der
-    // schwebenden Leiste macht Hyprland (gaps_out oben 10 + 8 = 18, bei einem Fenster 0 per Smart Gaps).
-    // So bewegt beim Wechsel nur Hyprland die Fenster, in einem Zug, und die Leiste gleitet einfach
-    // darueber. Wuerde Quickshell den Platz umschalten, starten Fenster und Leiste nie exakt gleichzeitig
-    // und dazwischen blitzt kurz eine Linie auf.
+    // Reserved space at the top. With "Dynamic" it always stays at the bar height: the gap below the
+    // floating bar comes from Hyprland (gaps_out top, 0 with a single window via smart gaps).
+    // That way only Hyprland moves the windows when switching, in one go, and the bar simply slides
+    // over them. If Quickshell switched the reserved space, windows and bar would never start at exactly
+    // the same time and a line would flash in between.
     exclusiveZone: Theme.barHeight + (bar.floating && !bar.dynamic ? Config.opts.barFloatOffset : 0)
 
     anchors {
@@ -75,7 +75,7 @@ PanelWindow {
         right: true
     }
 
-    // Klicks nur auf der sichtbaren Leiste, der freie Streifen darunter ist durchlaessig
+    // Clicks only on the visible bar, the free strip below it lets clicks through
     mask: Region {
         item: frame
     }
@@ -88,15 +88,15 @@ PanelWindow {
         window: bar
     }
 
-    // Andock-Animation, Frame fuer Frame selbst gerechnet statt nach der Uhr. Oeffnet oder schliesst ein
-    // Fenster, zeichnet Quickshell manchmal ~70 ms lang nichts (Treiber). Eine normale Animation laeuft
-    // nach der Uhr weiter und die Leiste springt danach 2-3 px auf einmal. Hier zaehlt jeder Frame
-    // hoechstens 1/60 s: Nach so einem Haenger geht es einfach dort weiter, wo die Leiste stand.
+    // Dock animation, computed frame by frame instead of by the clock. When a window opens or closes,
+    // Quickshell may not draw for ~70 ms. A normal animation keeps running by the clock
+    // and the bar then jumps 2-3 px at once. Here every frame counts
+    // at most 1/60 s: after such a freeze it simply continues where the bar was.
     property real dockFrom: 0
     property real dockTo: 0
     property real dockElapsed: 0
 
-    // Wert der Bezier-Kurve (x1, y1, x2, y2) an der Stelle u (0..1)
+    // Value of the bezier curve (x1, y1, x2, y2) at position u (0..1)
     function curveAt(c, u) {
         if (u <= 0)
             return 0;
@@ -117,8 +117,8 @@ PanelWindow {
         return 3 * (1 - t) * (1 - t) * t * y1 + 3 * (1 - t) * t * t * y2 + t * t * t;
     }
 
-    // Startet nur, wenn sich das Ziel wirklich aendert. Qt.callLater fasst alle Fenster-Events eines
-    // Durchlaufs zusammen, ein kurzes Hin und Her der Fensterzahl bricht nichts ab.
+    // Only starts when the target really changes. Qt.callLater merges all window events of one
+    // pass, so a quick back and forth of the window count doesn't interrupt anything.
     function syncDock() {
         const target = bar.floatingNow ? 1 : 0;
         Ui.barFloatTarget = bar.floatingNow;
@@ -153,13 +153,13 @@ PanelWindow {
         }
     }
 
-    // Sichtbare Leiste. Wechselt zwischen angedockt und schwebend genauso schnell wie Hyprlands
-    // Fenster-Animation in hyprland.lua (windows: speed 3 = 300 ms, Kurve smooth_out = easeOutQuint), damit
-    // Leiste und Fenster gleichzeitig ankommen.
+    // Visible bar. Switches between docked and floating as fast as Hyprland's
+    // window animation in hyprland.lua (windows: speed 3 = 300 ms), so that
+    // bar and windows arrive at the same time.
     Item {
         id: frame
 
-        // 0 = angedockt, 1 = schwebend. Wird nur von dockTicker bewegt (siehe syncDock).
+        // 0 = docked, 1 = floating. Only moved by dockTicker (see syncDock).
         property real progress: 0
 
         x: bar.edge
@@ -174,7 +174,7 @@ PanelWindow {
             Ui.barFloatTarget = bar.floatingNow;
         }
 
-        // Hintergrund: alle Kanten auf ganzen Pixeln, immer gleich dick
+        // Background: all edges on whole pixels, always the same thickness
         Rectangle {
             x: 0
             y: 0
@@ -196,7 +196,7 @@ PanelWindow {
                 color: Theme.border
             }
 
-            // Mit "Dynamic" im selben Takt wie das Andocken
+            // With "Dynamic" in sync with the docking
             Behavior on opacity {
                 NumberAnimation {
                     duration: bar.dynamic ? (Config.opts.animations ? Config.opts.barDockDuration : 0) : Theme.durSlow
@@ -206,8 +206,8 @@ PanelWindow {
             }
         }
 
-        // Gruppen-Boxen (Settings > Bar > Group boxes): eigene Flaeche hinter jeder Gruppe,
-        // genau so gross wie die Gruppe selbst (Hover/Aktiv-Flaechen liegen deckungsgleich darauf).
+        // Group boxes (Settings > Bar > Group boxes): a surface behind every group,
+        // exactly as big as the group itself (hover/active surfaces sit exactly on top of it).
         BarBox { row: leftRow; target: archBtn }
         BarBox { row: leftRow; target: wsGroup }
         BarBox { row: rightRow; target: trayGroup }
@@ -215,7 +215,7 @@ PanelWindow {
         BarBox { row: rightRow; target: statusGroup }
         BarBox { row: rightRow; target: powerBtn }
 
-        // Links: Launcher, Arbeitsflaechen, Fenstertitel
+        // Left: launcher, workspaces, window title
         Row {
             id: leftRow
 
@@ -248,8 +248,8 @@ PanelWindow {
         Txt {
             id: windowTitle
 
-            // Nur wenn "Window title" an ist: Sonst rechnet Quickshell bei jeder Titelaenderung (Terminal-Prompt)
-            // trotzdem Text-Layout und Ersatzschriften neu aus, das blockierte die Leiste kurz.
+            // Only when "Window title" is on: otherwise Quickshell redoes text layout and font fallback
+            // on every title change (terminal prompt) for nothing.
             readonly property var toplevel: Config.opts.barShowTitle ? Hyprland.activeToplevel : null
             readonly property string value: (toplevel && toplevel.monitor === bar.hyprMonitor) ? (toplevel.title || "") : ""
 
@@ -263,7 +263,7 @@ PanelWindow {
             color: Theme.fgDim
         }
 
-        // Rechts: Tray, Systemmonitor + Uhr, Status, Power
+        // Right: tray, system monitor + clock, status, power
         Row {
             id: rightRow
 
@@ -281,7 +281,7 @@ PanelWindow {
                 itemSize: bar.itemHeight
             }
 
-            // Ein Kaestchen fuer CPU/RAM/Temperatur und Uhr, oeffnet das Dashboard
+            // One box for CPU/RAM/temperature and clock, opens the dashboard
             BarChip {
                 id: infoChip
 

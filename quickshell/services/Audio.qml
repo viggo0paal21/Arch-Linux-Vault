@@ -5,7 +5,7 @@ import Quickshell
 import Quickshell.Services.Pipewire
 import qs.config
 
-// Lautstaerke/Mikro ueber PipeWire. Meldet Aenderungen fuer das OSD.
+// Volume/mic via PipeWire. Reports changes for the OSD.
 Singleton {
     id: root
 
@@ -75,7 +75,7 @@ Singleton {
         objects: [root.sink, root.source].filter(n => !!n)
     }
 
-    // Beim Start und beim Geraetewechsel kein OSD anzeigen
+    // Don't show the OSD on start and when the device changes
     onSinkChanged: {
         root.settled = false;
         settleTimer.restart();

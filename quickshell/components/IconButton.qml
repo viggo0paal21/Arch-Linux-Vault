@@ -1,7 +1,7 @@
 import QtQuick
 import qs.config
 
-// Runder Icon-Knopf mit optionalem Text. Aktiv = weiss gefuellt.
+// Round icon button with optional text. Active = filled white.
 Item {
     id: root
 

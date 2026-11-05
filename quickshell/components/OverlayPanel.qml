@@ -3,8 +3,8 @@ import Quickshell
 import Quickshell.Wayland
 import qs.config
 
-// Basis fuer alle Panels: Vollbild-Ebene (Klick daneben schliesst),
-// weiches Ein-/Ausblenden, Escape schliesst, Tastatur gehoert dem Panel.
+// Base for all panels: fullscreen layer (clicking outside closes),
+// soft fade in/out, Escape closes, the panel owns the keyboard.
 PanelWindow {
     id: win
 
@@ -13,24 +13,24 @@ PanelWindow {
     property real dimOpacity: 0.5
     property string ns: "qs-panel"
     property int animDuration: Theme.durMed
-    // Gruppe fuer Settings > Animations: "panel" (Dashboard, Control Center) oder "overlay" (Launcher, Settings, Power)
+    // Group for Settings > Animations: "panel" (dashboard, control center) or "overlay" (launcher, settings, power)
     property string animGroup: "overlay"
     readonly property bool panelGroup: win.animGroup === "panel"
     readonly property real animSpeed: win.panelGroup ? Config.opts.animPanelSpeed : Config.opts.animOverlaySpeed
     property bool mapped: false
-    // Geschlossene Panels bleiben unsichtbar gemappt. So muss beim Oeffnen kein neues
-    // Fenster (Wayland-Flaeche + Vulkan-Swapchain) angelegt werden, das gab ~90 ms Ruckler.
-    // Ausnahme: ein Vollbild-Fenster ist aktiv. Dann sind sie ganz weg, sonst wuerde die
-    // Overlay-Ebene Direct Scanout und Tearing in Spielen blockieren.
+    // Closed panels stay mapped but invisible. That way opening doesn't have to create a new
+    // window (Wayland surface + Vulkan swapchain), which caused ~90 ms stutters.
+    // Exception: a fullscreen window is active. Then they're gone completely, otherwise the
+    // overlay layer would block direct scanout and tearing in games.
     readonly property bool fullscreenActive: ToplevelManager.activeToplevel ? ToplevelManager.activeToplevel.fullscreen : false
     readonly property real progress: stage.t
     default property alias content: stage.data
 
     signal dismissed
 
-    // Fenster erst schliessen, wenn die Raus-Animation fertig ist und ein leerer
-    // (transparenter) Frame gezeichnet wurde. So kann eine Hyprland-Layer-Animation
-    // nie ein halbes Panel "mitnehmen".
+    // Only close the window once the out animation is done and an empty
+    // (transparent) frame has been drawn. That way a Hyprland layer animation
+    // can never "take along" half a panel.
     onOpenChanged: {
         openAnim.stop();
         closeAnim.stop();
@@ -48,10 +48,10 @@ PanelWindow {
     visible: win.mapped || !win.fullscreenActive
     color: win.dim ? Qt.rgba(0, 0, 0, win.dimOpacity * stage.t) : "transparent"
 
-    // Geschlossen wird das Fenster komplett nach oben aus dem Bild geschoben (gleiche Groesse, bleibt gemappt).
-    // Lag es unsichtbar ueber dem Bildschirm, hat Hyprland wegen des Blurs bei jedem Workspace-Wechsel fuer
-    // jedes geschlossene Panel den ganzen Bildschirm verwischt (FPS-Einbruch auf ~140). Nur verschieben statt
-    // verkleinern: Eine Groessenaenderung baut die Vulkan-Swapchain neu auf, das gab ~40 ms Lag beim Oeffnen.
+    // When closed, the window is moved completely up off the screen (same size, stays mapped).
+    // When it lay invisible over the screen, Hyprland blurred the whole screen for every closed panel
+    // on every workspace switch (fps dropped to ~140). Only move it instead of
+    // shrinking it: a resize rebuilds the Vulkan swapchain, which caused ~40 ms lag when opening.
     implicitWidth: win.screen ? win.screen.width : 1920
     implicitHeight: win.screen ? win.screen.height : 1080
 
@@ -65,7 +65,7 @@ PanelWindow {
     }
     exclusionMode: ExclusionMode.Ignore
 
-    // Geschlossen: Klicks gehen durch das unsichtbare Panel hindurch
+    // Closed: clicks go through the invisible panel
     mask: Region {
         item: win.open ? stage : null
     }

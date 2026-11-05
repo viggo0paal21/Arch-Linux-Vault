@@ -4,7 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Services.Mpris
 
-// Aktiver Mediaplayer: der spielende, sonst der erste.
+// Active media player: the one playing, otherwise the first one.
 Singleton {
     id: root
 

@@ -1,6 +1,6 @@
 // ~/.config/waybar/config.jsonc
-// Links: Arch-Logo, Workspaces, CPU, RAM, Wetter. Rechts: der Rest + Uhr.
-// Icons brauchen eine Nerd Font (z. B. ttf-jetbrains-mono-nerd).
+// Left: Arch logo, workspaces, CPU, RAM, weather. Right: the rest + clock.
+// Icons need a Nerd Font (e.g. ttf-jetbrains-mono-nerd).
 {
   "layer": "top",
   "position": "top",
@@ -27,13 +27,13 @@
     "custom/clock"
   ],
 
-  // Unsichtbar – liefert nur die Klasse .solo (schwarz bei genau einem Fenster)
+  // Invisible – only provides the .solo class (black with exactly one window)
   "hyprland/window": {
     "format": "",
     "separate-outputs": true
   },
 
-  // ---------- links ----------
+  // ---------- left ----------
   "custom/arch": {
     "format": "",
     "tooltip": false,
@@ -56,7 +56,7 @@
     "tooltip-format": "CPU: {usage}%  ·  {avg_frequency} GHz"
   },
 
-  // Speicher mit zwei Nachkommastellen (z. B. "42.19%")
+  // Memory with two decimals (e.g. "42.19%")
   "custom/memory": {
     "interval": 3,
     "format": " {}",
@@ -64,8 +64,8 @@
     "tooltip": false
   },
 
-  // Wetter: liest nur, was clock.sh sowieso alle 15 Min holt (kein eigenes Skript nötig).
-  // Taucht auf, sobald das erste Wetter geladen ist.
+  // Weather: only reads what clock.sh fetches every 15 min anyway (no separate script needed).
+  // Shows up once the first weather has been loaded.
   "custom/weather": {
     "interval": 60,
     "return-type": "json",
@@ -73,7 +73,7 @@
     "exec": "jq -Rc 'split(\"  \") | {text: (.[0] + \" \" + .[1]), tooltip: .[3]}' \"${XDG_RUNTIME_DIR:-/tmp}/waybar-clock-weather.txt\""
   },
 
-  // ---------- rechts ----------
+  // ---------- right ----------
   "pulseaudio": {
     "format": "{icon} {volume}%",
     "format-bluetooth": "{icon} {volume}%",
@@ -107,7 +107,7 @@
     "tooltip-format-enumerate-connected": "{device_alias}"
   },
 
-  // Auf einem Desktop ohne Akku blendet sich das Modul selbst aus
+  // Hides itself on a desktop without a battery
   "battery": {
     "interval": 30,
     "states": { "warning": 25, "critical": 12 },
@@ -125,7 +125,7 @@
     "show-passive-items": true
   },
 
-  // Nur Uhrzeit – Datum + Wetter kommen beim Hovern als Tooltip
+  // Time only – date + weather show up as a tooltip on hover
   "custom/clock": {
     "exec": "~/.config/waybar/scripts/clock.sh",
     "return-type": "json",

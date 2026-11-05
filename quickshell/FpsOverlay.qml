@@ -6,14 +6,14 @@ import Quickshell.Wayland
 import qs.config
 import qs.services
 
-// Debug: echte Frame-Rate dieses Fensters. Gezaehlt werden tatsaechlich
-// gezeichnete und abgeschickte Frames (frameSwapped), gegen die echte Uhr.
-// Der Strich unten laeuft dauerhaft durch: daran sieht man, ob Bewegung gleichmaessig ist.
-// An/aus: Settings > FPS counter oder qs ipc call fps toggle
+// Debug: real frame rate of this window. Counts frames that were actually
+// drawn and submitted (frameSwapped), against the real clock.
+// The line at the bottom moves constantly: it shows whether motion is even.
+// On/off: Settings > FPS counter or qs ipc call fps toggle
 PanelWindow {
     id: root
 
-    // an/aus ueber Settings > FPS counter (wird gespeichert)
+    // on/off via Settings > FPS counter (saved)
     readonly property bool shown: Config.opts.fpsCounter
     property int frames: 0
     property real prev: 0
@@ -39,7 +39,7 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "qs-fps"
 
-    // Klicks gehen durch das Kaestchen hindurch
+    // Clicks go through the box
     mask: Region {}
 
     Rectangle {
@@ -63,7 +63,7 @@ PanelWindow {
             text: "– fps"
         }
 
-        // laeuft dauerhaft hin und her -> erzwingt jeden Frame ein neues Bild
+        // moves back and forth constantly -> forces a new image every frame
         Rectangle {
             id: sweep
 
@@ -82,7 +82,7 @@ PanelWindow {
         }
     }
 
-    // zaehlt jeden wirklich abgeschickten Frame dieses Fensters
+    // counts every frame of this window that was really submitted
     Connections {
         target: label.Window.window
 
@@ -95,7 +95,7 @@ PanelWindow {
         }
     }
 
-    // rechnet jede Sekunde gegen die echte Uhrzeit ab
+    // settles up every second against the real clock
     Timer {
         interval: 1000
         running: root.shown
@@ -103,7 +103,7 @@ PanelWindow {
         onTriggered: {
             const now = Date.now();
             const dt = now - root.last;
-            // laengste Luecke zwischen zwei Frames in dieser Sekunde (170 Hz = ~6 ms)
+            // longest gap between two frames in this second (170 Hz = ~6 ms)
             label.text = Math.round(root.frames * 1000 / dt) + " fps  ·  max " + Math.round(root.worst) + " ms";
             root.frames = 0;
             root.worst = 0;

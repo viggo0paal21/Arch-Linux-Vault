@@ -2,7 +2,7 @@ import QtQuick
 import qs.config
 import qs.components
 
-// Monatskalender (Woche startet Montag). Heute = weiss gefuellt. Mausrad blaettert.
+// Month calendar (week starts on Monday). Today = filled white. Scroll flips months.
 Item {
     id: root
 

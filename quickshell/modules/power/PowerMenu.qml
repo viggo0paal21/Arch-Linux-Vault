@@ -4,8 +4,8 @@ import qs.config
 import qs.components
 import qs.services
 
-// Power-Menue. Pfeile/Maus waehlen, Enter/Klick bestaetigt.
-// Abmelden, Neustart und Herunterfahren brauchen einen zweiten Klick.
+// Power menu. Arrows/mouse select, Enter/click confirms.
+// Log out, reboot and shut down need a second click.
 OverlayPanel {
     id: panel
 
@@ -106,7 +106,7 @@ OverlayPanel {
     }
 
     Column {
-        // Nur Einblenden + kurzes Gleiten, immer auf ganze Pixel: Text bleibt in jedem Frame scharf
+        // Only fade in + a short slide, always on whole pixels: text stays sharp in every frame
         x: Math.round((parent.width - width) / 2)
         y: Theme.px((parent.height - height) / 2 + 14 * (1 - panel.progress))
         spacing: 22

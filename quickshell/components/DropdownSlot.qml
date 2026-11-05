@@ -2,9 +2,9 @@ import QtQuick
 import qs.config
 import qs.services
 
-// Bereich direkt unter der Leiste. Beim Oeffnen faehrt das ganze Panel unter der
-// Leiste hervor nach unten, beim Schliessen wieder hoch. Der Bereich schneidet an der
-// Leisten-Unterkante ab, dadurch sieht es aus, als kaeme es hinter der Leiste heraus.
+// Area right below the bar. When opening, the whole panel slides down from under
+// the bar, and back up when closing. The area is clipped at the bar's
+// bottom edge, so it looks as if it comes out from behind the bar.
 Item {
     id: root
 
@@ -21,8 +21,8 @@ Item {
     Item {
         id: inner
 
-        // zu: komplett oberhalb (hinter der Leiste), offen: knapp unter der Leiste
-        // auf ganze Pixel runden: Text bleibt beim Gleiten in jedem Frame scharf
+        // closed: completely above (behind the bar), open: just below the bar
+        // round to whole pixels: text stays sharp in every frame while sliding
         y: Theme.px(Theme.gap - root.fullHeight * (1 - root.progress))
         width: parent.width
         height: root.contentHeight

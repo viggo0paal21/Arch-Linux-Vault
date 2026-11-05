@@ -2,7 +2,7 @@ import QtQuick
 import qs.config
 import qs.components
 
-// Schieberegler mit echtem Wertebereich und Anzeige rechts.
+// Slider with a real value range and a readout on the right.
 Item {
     id: root
 

@@ -1,7 +1,7 @@
 import QtQuick
 import qs.config
 
-// Box hinter einer Gruppe in der Leiste (Settings > Bar > Group boxes), genau so gross wie die Gruppe.
+// Box behind a group in the bar (Settings > Bar > Group boxes), exactly as big as the group.
 Rectangle {
     required property Item row
     required property Item target

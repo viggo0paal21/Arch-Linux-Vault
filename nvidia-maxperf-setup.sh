@@ -1,22 +1,22 @@
 #!/bin/bash
-# NVIDIA "Maximale Leistung bevorzugen" für Linux/Wayland
-# Setzt das komplette Setup (neu): Chip + Speicher fest auf Maximum,
-# dauerhaft bei jedem Boot und nach jedem Standby.
-# Ausführen mit: sudo bash nvidia-maxperf-setup.sh
+# NVIDIA "Prefer maximum performance" for Linux/Wayland
+# Sets up everything (again): core + memory locked to maximum,
+# persistent across every boot and after every suspend.
+# Run with: sudo bash nvidia-maxperf-setup.sh
 
 set -e
 
 if [ "$EUID" -ne 0 ]; then
-  echo "Bitte mit sudo ausführen: sudo bash $0"
+  echo "Please run with sudo: sudo bash $0"
   exit 1
 fi
 
-# Deine Maximalwerte (prüfen mit:
+# Your maximum values (check with:
 # nvidia-smi --query-gpu=clocks.max.graphics,clocks.max.memory --format=csv)
 GPU_CLK=2100
 MEM_CLK=7001
 
-echo "==> Persistence-Daemon aktivieren"
+echo "==> Enabling the persistence daemon"
 systemctl enable --now nvidia-persistenced.service
 
 echo "==> Skript /usr/local/bin/nvidia-maxperf.sh schreiben"
@@ -42,12 +42,12 @@ ExecStart=/usr/local/bin/nvidia-maxperf.sh
 WantedBy=multi-user.target suspend.target hibernate.target
 EOF
 
-echo "==> Service aktivieren und ausführen"
+echo "==> Enabling and running the service"
 systemctl daemon-reload
 systemctl enable nvidia-clocks.service
 systemctl restart nvidia-clocks.service
 
 sleep 2
 echo
-echo "==> Aktuelle Takte (Chip ca. 1860-1875 MHz, Speicher 7001 MHz erwartet):"
+echo "==> Current clocks (expected: core about 1860-1875 MHz, memory 7001 MHz):"
 nvidia-smi --query-gpu=pstate,clocks.gr,clocks.mem --format=csv

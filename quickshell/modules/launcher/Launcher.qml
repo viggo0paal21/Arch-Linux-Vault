@@ -4,8 +4,8 @@ import qs.config
 import qs.components
 import qs.services
 
-// App-Launcher. Tippen = suchen, Pfeile/Tab = auswaehlen, Enter = starten.
-// "=" rechnet (Ergebnis landet in der Zwischenablage), ">" fuehrt einen Befehl aus.
+// App launcher. Type = search, arrows/Tab = select, Enter = launch.
+// "=" calculates (result goes to the clipboard), ">" runs a command.
 OverlayPanel {
     id: panel
 
@@ -91,7 +91,7 @@ OverlayPanel {
         readonly property int rowHeight: 52
         readonly property int visibleRows: Math.min(8, Math.max(1, panel.results.length))
 
-        // Nur Einblenden + kurzes Gleiten, immer auf ganze Pixel: Text bleibt in jedem Frame scharf
+        // Only fade in + a short slide, always on whole pixels: text stays sharp in every frame
         x: Math.round((parent.width - width) / 2)
         y: Theme.px(parent.height * 0.16 - 14 * (1 - panel.progress))
         width: Math.min(620, parent.width - 40)
@@ -106,7 +106,7 @@ OverlayPanel {
             }
         }
 
-        // Suchzeile
+        // Search field
         Item {
             id: header
 
