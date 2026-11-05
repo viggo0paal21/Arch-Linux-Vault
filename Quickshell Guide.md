@@ -357,6 +357,8 @@ NVIDIA-only parts to change after switching to AMD: Settings → *GPU monitor (n
 
 ## 7. Troubleshooting and rollback
 
+For stutter, jitter and short freezes see the **[Quickshell Stutter Guide](Quickshell%20Stutter%20Guide.md)** (German): causes, how to measure them, all fixes.
+
 | Problem | Fix |
 |---|---|
 | Shell frozen | `pkill -9 -x 'qs\|quickshell'`, then `setsid -f ~/.local/bin/qs-start >/dev/null 2>&1`. Make sure only one instance runs: `pgrep -ax 'qs\|quickshell'` |
