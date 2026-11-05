@@ -3,7 +3,8 @@
   "logo": {
       //"source": "/home/viggo/.config/fastfetch/lambda.txt",
       //"type": "file", 
-      "source": "/home/viggo/.config/fastfetch/archlogo.txt",
+      //"source": "/home/viggo/.config/fastfetch/archlogo.txt",
+      "source": "/home/viggo/.config/fastfetch/tux3.txt",
       "type": "file",
       "color": {
         "1": "white",

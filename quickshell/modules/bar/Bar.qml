@@ -19,10 +19,20 @@ PanelWindow {
     // side gap is derived from it. That way side and height always change in the same frame (straight
     // diagonal instead of zigzag) and nothing ever sits between two pixels (no jitter, sharp edges).
     readonly property int offset: Math.round(Config.opts.barFloatOffset * frame.progress)
-    readonly property int edge: Config.opts.barFloatOffset > 0 ? Math.round(bar.offset * Theme.gap / Config.opts.barFloatOffset) : Math.round(Theme.gap * frame.progress)
+    readonly property int edge: Config.opts.barFloatOffset > 0 ? Math.round(bar.offset * Config.opts.barFloatSide / Config.opts.barFloatOffset) : Math.round(Config.opts.barFloatSide * frame.progress)
     // Optionally thicker when docked (Settings > Bar > Bar height > Docked), also in whole pixels
     readonly property int dockExtra: bar.dynamic ? Math.round(Math.max(0, Config.opts.barDockedHeight - Config.opts.barHeight) * (1 - frame.progress)) : 0
     readonly property int bottomEdge: bar.offset + Theme.barHeight + bar.dockExtra
+    // "Subpixel glide" (Settings > Bar): only WHILE the dock animation runs. The bar still sits on whole
+    // pixels (above), plus only the leftover to the exact position (glideX/glideY, below 1 px). That leftover is
+    // rendered smoothly by the background (antialiasing) and the content (each side as one image, filtered).
+    // Off or at rest: glideX = glideY = 0, no layer, everything exactly as without the option.
+    readonly property bool glide: Config.opts.barGlide && dockTicker.running
+    readonly property real edgeExact: Config.opts.barFloatSide * frame.progress
+    readonly property real offsetExact: Config.opts.barFloatOffset * frame.progress
+    readonly property real dockExtraExact: bar.dynamic ? Math.max(0, Config.opts.barDockedHeight - Config.opts.barHeight) * (1 - frame.progress) : 0
+    readonly property real glideX: bar.glide ? bar.edgeExact - bar.edge : 0
+    readonly property real glideY: bar.glide ? bar.offsetExact - bar.offset : 0
     // With "Dynamic" the content sits 1 px lower, floating and docked alike
     readonly property int contentShift: bar.dynamic ? 1 : 0
     // Bottom edge of the visible bar (for the tray menu)
@@ -176,14 +186,16 @@ PanelWindow {
 
         // Background: all edges on whole pixels, always the same thickness
         Rectangle {
-            x: 0
-            y: 0
-            width: frame.width
-            height: bar.bottomEdge - bar.offset
+            x: bar.glideX
+            y: bar.glideY
+            width: frame.width - 2 * bar.glideX
+            // Bottom edge stays on whole pixels even with "Subpixel glide": a half-covered pixel row at the bottom
+            // gets no blur from Hyprland (ignore_alpha), so the window shows through darkly = black line.
+            height: bar.glide ? bar.bottomEdge - bar.offsetExact : bar.bottomEdge - bar.offset
             antialiasing: true
             color: Theme.bg
             opacity: bar.bgOpacity
-            radius: Math.round(Theme.radiusLg * frame.progress)
+            radius: bar.glide ? Theme.radiusLg * frame.progress : Math.round(Theme.radiusLg * frame.progress)
             border.width: frame.progress > 0.5 && Config.opts.barBorder ? 1 : 0
             border.color: Theme.border
 
@@ -208,12 +220,12 @@ PanelWindow {
 
         // Group boxes (Settings > Bar > Group boxes): a surface behind every group,
         // exactly as big as the group itself (hover/active surfaces sit exactly on top of it).
-        BarBox { row: leftRow; target: archBtn }
-        BarBox { row: leftRow; target: wsGroup }
-        BarBox { row: rightRow; target: trayGroup }
-        BarBox { row: rightRow; target: infoChip }
-        BarBox { row: rightRow; target: statusGroup }
-        BarBox { row: rightRow; target: powerBtn }
+        BarBox { row: leftRow; target: archBtn; shiftX: bar.glideX; shiftY: bar.glideY }
+        BarBox { row: leftRow; target: wsGroup; shiftX: bar.glideX; shiftY: bar.glideY }
+        BarBox { row: rightRow; target: trayGroup; shiftX: -bar.glideX; shiftY: bar.glideY }
+        BarBox { row: rightRow; target: infoChip; shiftX: -bar.glideX; shiftY: bar.glideY }
+        BarBox { row: rightRow; target: statusGroup; shiftX: -bar.glideX; shiftY: bar.glideY }
+        BarBox { row: rightRow; target: powerBtn; shiftX: -bar.glideX; shiftY: bar.glideY }
 
         // Left: launcher, workspaces, window title
         Row {
@@ -221,17 +233,26 @@ PanelWindow {
 
             anchors.left: parent.left
             anchors.leftMargin: 6
+            // Whole pixels for the image with "Subpixel glide" (see rightRow)
+            width: Math.ceil(implicitWidth)
             anchors.verticalCenter: parent.verticalCenter
             anchors.verticalCenterOffset: bar.contentShift
             spacing: 6
+            // Subpixel glide: moved smoothly by the leftover as one image (only during the animation)
+            layer.enabled: bar.glide
+            layer.smooth: true
+            transform: Translate {
+                x: bar.glideX
+                y: bar.glideY
+            }
 
             IconButton {
                 id: archBtn
 
                 anchors.verticalCenter: parent.verticalCenter
                 size: bar.itemHeight
-                icon: Icons.arch
-                iconSize: Theme.barIconSize + 2
+                icon: Config.opts.launcherIcon === "tux" ? Icons.tux : Icons.arch
+                iconSize: Config.opts.launcherIconSize
                 active: Ui.panel === "launcher"
                 onClicked: Ui.toggle("launcher", bar.screen)
             }
@@ -259,6 +280,12 @@ PanelWindow {
             anchors.verticalCenterOffset: bar.contentShift
             width: Math.max(0, Math.min(implicitWidth, rightRow.x - x - 24))
             visible: Config.opts.barShowTitle && value !== "" && width > 30
+            layer.enabled: bar.glide && visible
+            layer.smooth: true
+            transform: Translate {
+                x: bar.glideX
+                y: bar.glideY
+            }
             text: value
             color: Theme.fgDim
         }
@@ -267,11 +294,20 @@ PanelWindow {
         Row {
             id: rightRow
 
-            anchors.right: parent.right
-            anchors.rightMargin: 6
+            // Position and width on whole pixels. With "Subpixel glide" the row is drawn as an image during the
+            // animation; when it sat between two pixels (width from text widths like "73%"), the image landed
+            // 1 px further right and jumped at the start/end of the animation. This way both paths match exactly.
+            x: Math.round(parent.width - 6 - implicitWidth)
+            width: Math.ceil(implicitWidth)
             anchors.verticalCenter: parent.verticalCenter
             anchors.verticalCenterOffset: bar.contentShift
             spacing: Config.opts.barBoxes ? 6 : 4
+            layer.enabled: bar.glide
+            layer.smooth: true
+            transform: Translate {
+                x: -bar.glideX
+                y: bar.glideY
+            }
 
             Tray {
                 id: trayGroup

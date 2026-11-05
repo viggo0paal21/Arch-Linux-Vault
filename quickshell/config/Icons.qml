@@ -7,6 +7,7 @@ import Quickshell
 // Codepoints checked against nerd-fonts/glyphnames.json.
 Singleton {
     readonly property string arch: String.fromCodePoint(0xF303)
+    readonly property string tux: String.fromCodePoint(0xF31A)
     readonly property string volHigh: String.fromCodePoint(0xF057E)
     readonly property string volMed: String.fromCodePoint(0xF0580)
     readonly property string volLow: String.fromCodePoint(0xF057F)

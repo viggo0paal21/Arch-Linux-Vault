@@ -20,9 +20,13 @@ Singleton {
         barDockDuration: 300,
         smoothText: false,
         barFloatOffset: 10,
+        barFloatSide: 8,
+        barGlide: false,
         barFloating: true,
         barFloatingDynamic: true,
         barBorder: false,
+        launcherIcon: "arch",
+        launcherIconSize: 17,
         barBoxes: false,
         barBoxColor: "#1F1F1F",
         barShowTitle: false,
@@ -102,9 +106,13 @@ Singleton {
             property int barDockDuration: root.defaults.barDockDuration
             property bool smoothText: root.defaults.smoothText
             property int barFloatOffset: root.defaults.barFloatOffset
+            property int barFloatSide: root.defaults.barFloatSide
+            property bool barGlide: root.defaults.barGlide
             property bool barFloating: root.defaults.barFloating
             property bool barFloatingDynamic: root.defaults.barFloatingDynamic
             property bool barBorder: root.defaults.barBorder
+            property string launcherIcon: root.defaults.launcherIcon
+            property int launcherIconSize: root.defaults.launcherIconSize
             property bool barBoxes: root.defaults.barBoxes
             property string barBoxColor: root.defaults.barBoxColor
             property bool barShowTitle: root.defaults.barShowTitle

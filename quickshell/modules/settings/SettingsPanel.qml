@@ -782,6 +782,20 @@ OverlayPanel {
                             }
                         }
 
+                        // On: stepless dock animation (between pixels, like Hyprland windows), content a touch softer
+                        // while moving. Off: whole pixels, always crisp (previous behavior).
+                        SettingRow {
+                            width: parent.width
+                            visible: Config.opts.barFloating
+                            label: "Subpixel glide"
+                            description: "Smoother dock animation that moves between pixels like Hyprland windows. Icons are a touch softer only while moving. Off = whole pixels, always crisp"
+
+                            SwitchCtl {
+                                checked: Config.opts.barGlide
+                                onToggled: Config.opts.barGlide = !Config.opts.barGlide
+                            }
+                        }
+
                         // Height of the floating bar above the top edge, reset to the default
                         SettingRow {
                             width: parent.width
@@ -813,6 +827,182 @@ OverlayPanel {
                                     label: "Reset"
                                     idleColor: Theme.layer3
                                     onClicked: Config.opts.barFloatOffset = Config.defaults.barFloatOffset
+                                }
+                            }
+                        }
+
+                        // Side gap of the floating bar to the screen edge (where it ends left/right)
+                        SettingRow {
+                            width: parent.width
+                            visible: Config.opts.barFloating
+                            label: "Floating side gap"
+                            description: "Where the floating bar ends on the left and right. Match it to your Hyprland gaps_out to line it up with the windows"
+                            controlWidth: 400
+
+                            Row {
+                                spacing: 10
+
+                                RangeControl {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 400 - sideResetBtn.width - 10
+                                    from: 0
+                                    to: 40
+                                    value: Config.opts.barFloatSide
+                                    suffix: " px"
+                                    onEdited: v => Config.opts.barFloatSide = v
+                                }
+
+                                IconButton {
+                                    id: sideResetBtn
+
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    size: 30
+                                    icon: String.fromCodePoint(0xF0450)
+                                    iconSize: Theme.fontSm
+                                    label: "Reset"
+                                    idleColor: Theme.layer3
+                                    onClicked: Config.opts.barFloatSide = Config.defaults.barFloatSide
+                                }
+                            }
+                        }
+
+                        // Launcher icon on the left of the bar: Arch or Tux, as big tiles showing the real icon
+                        SettingRow {
+                            width: parent.width
+                            implicitHeight: 112
+                            label: "Launcher icon"
+                            description: "The icon in the top left corner of the bar"
+                            controlWidth: 2 * 96 + 12
+
+                            Row {
+                                anchors.right: parent.right
+                                spacing: 12
+
+                                Repeater {
+                                    model: [
+                                        { key: "arch", glyph: Icons.arch, name: "Arch" },
+                                        { key: "tux", glyph: Icons.tux, name: "Tux" }
+                                    ]
+
+                                    delegate: Rectangle {
+                                        id: iconTile
+
+                                        required property var modelData
+                                        readonly property bool selected: Config.opts.launcherIcon === modelData.key
+
+                                        width: 96
+                                        height: 84
+                                        radius: Theme.radius
+                                        color: iconTile.selected ? Theme.accent : (iconTileArea.pressed ? Theme.pressed : (iconTileArea.containsMouse ? Theme.hover : Theme.layer3))
+                                        border.width: 1
+                                        border.color: iconTile.selected ? Theme.accent : (iconTileArea.containsMouse ? Theme.fgDim : Theme.borderStrong)
+                                        scale: iconTileArea.pressed ? 0.96 : (iconTileArea.containsMouse && !iconTile.selected ? 1.04 : 1)
+
+                                        Behavior on color {
+                                            CAnim {}
+                                        }
+                                        Behavior on border.color {
+                                            CAnim {}
+                                        }
+                                        Behavior on scale {
+                                            Anim {
+                                                duration: Theme.ctlFast
+                                            }
+                                        }
+
+                                        Column {
+                                            anchors.centerIn: parent
+                                            spacing: 6
+
+                                            Glyph {
+                                                anchors.horizontalCenter: parent.horizontalCenter
+                                                text: iconTile.modelData.glyph
+                                                font.pixelSize: 34
+                                                color: iconTile.selected ? Theme.accentFg : Theme.fg
+                                            }
+
+                                            Txt {
+                                                anchors.horizontalCenter: parent.horizontalCenter
+                                                text: iconTile.modelData.name
+                                                font.pixelSize: Theme.fontSm
+                                                color: iconTile.selected ? Theme.accentFg : Theme.fgDim
+                                            }
+                                        }
+
+                                        // Check mark top right on the active tile
+                                        Rectangle {
+                                            anchors.top: parent.top
+                                            anchors.right: parent.right
+                                            anchors.margins: 6
+                                            width: 18
+                                            height: 18
+                                            radius: 9
+                                            color: Theme.accentFg
+                                            opacity: iconTile.selected ? 1 : 0
+                                            scale: iconTile.selected ? 1 : 0.4
+
+                                            Behavior on opacity {
+                                                Anim {
+                                                    duration: Theme.ctlFast
+                                                }
+                                            }
+                                            Behavior on scale {
+                                                Anim {
+                                                    duration: Theme.ctlMed
+                                                }
+                                            }
+
+                                            Txt {
+                                                anchors.centerIn: parent
+                                                text: "\u2713"
+                                                font.pixelSize: 11
+                                                color: Theme.accent
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            id: iconTileArea
+
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: Config.opts.launcherIcon = iconTile.modelData.key
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Size of the launcher icon on the left of the bar
+                        SettingRow {
+                            width: parent.width
+                            label: "Launcher icon size"
+                            description: "Size of the Arch / Tux icon in the bar"
+                            controlWidth: 400
+
+                            Row {
+                                spacing: 10
+
+                                RangeControl {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 400 - logoSizeResetBtn.width - 10
+                                    from: 10
+                                    to: 26
+                                    value: Config.opts.launcherIconSize
+                                    suffix: " px"
+                                    onEdited: v => Config.opts.launcherIconSize = v
+                                }
+
+                                IconButton {
+                                    id: logoSizeResetBtn
+
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    size: 30
+                                    icon: String.fromCodePoint(0xF0450)
+                                    iconSize: Theme.fontSm
+                                    label: "Reset"
+                                    idleColor: Theme.layer3
+                                    onClicked: Config.opts.launcherIconSize = Config.defaults.launcherIconSize
                                 }
                             }
                         }

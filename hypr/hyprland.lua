@@ -117,6 +117,16 @@ hl.config({
         resize_on_border = true,
         allow_tearing    = true,
         layout           = "dwindle",
+
+        -- Floating windows snap to the same gaps as tiled ones while dragging/resizing:
+        -- to other windows gaps_in (2 x 5 = 10 px), to the screen edge gaps_out (20 below the bar, 10 elsewhere).
+        -- window_gap / monitor_gap = how close (in px) a window has to be before it snaps.
+        snap = {
+            enabled      = true,
+            window_gap   = 15,
+            monitor_gap  = 15,
+            respect_gaps = true,
+        },
     },
 
     decoration = {

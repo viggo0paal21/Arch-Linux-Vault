@@ -10,7 +10,7 @@ Why a Quickshell shell stutters, how to find out **which kind** of stutter it is
 2. [Low FPS on NVIDIA](#2-low-fps-on-nvidia)
 3. [Animations look "interpolated" / wobbly](#3-animations-look-interpolated--wobbly)
 4. [Pixel wobble, zigzag, "snapping in"](#4-pixel-wobble-zigzag-snapping-in)
-5. [Animation snaps or jumps](#5-animation-snaps-or-jumps)
+5. [Animation snaps or jumps](#5-animation-snaps-or-jumps) (incl. optional subpixel glide)
 6. [Freezes on every terminal command (the main cause)](#6-freezes-on-every-terminal-command-the-main-cause)
 7. [Freezes when opening panels, notifications, switching workspaces](#7-freezes-when-opening-panels-notifications-switching-workspaces)
 8. [Other programs that freeze Quickshell](#8-other-programs-that-freeze-quickshell)
@@ -155,6 +155,19 @@ FrameAnimation {
 ```
 
 (`curveAt` evaluates a bezier curve, see `Bar.qml`.)
+
+### 5c. Optional: subpixel glide
+
+Whole pixels are crisp, but a bar that only moves ~10 px moves in ~10 visible steps. That's fine at normal speed, but visible in slow motion. Hyprland draws windows *between* pixels, which is why they look stepless.
+
+**Settings > Bar > Subpixel glide** does the same for the bar, but only while the dock animation runs:
+- The bar keeps its whole-pixel position; only the leftover to the exact position (below 1 px) is added.
+- The background draws that leftover with antialiasing; the left and right content are each rendered as one image (`layer.enabled` + `layer.smooth`) and shifted by it. Since each side is a single image, nothing can wobble against each other.
+- At rest everything is back on whole pixels and crisp. Off = exactly the whole-pixel behavior.
+
+Two traps found by measuring a recording frame by frame:
+- **The right side jumped 1 px at the start and end.** The right row was anchored to the right edge with a fractional width (text widths like "73%"), so it started between two pixels. Drawn as an image it landed 1 px further right than drawn normally. Fix: give both rows a whole-pixel position and width (`x: Math.round(...)`, `width: Math.ceil(implicitWidth)`).
+- **A dark line under the bar while docking.** With the bottom edge between two pixels, the last row is only half covered. Hyprland only blurs behind pixels above `ignore_alpha` (0.5), so that row gets no blur and the window below shows through darkly. Fix: the bottom edge stays on whole pixels even with glide.
 
 ---
 

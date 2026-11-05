@@ -1,0 +1,45 @@
+                                   ..:xxxxxxxxx:.
+                                .xxxxxxxxxxxxxxxxxxx.
+                               :xxxxxxxxxxxxxxxxxxxxxx:.
+                              .xxxxxxxxxxxxxxxxxxxxxxxxxxx:
+                            ::xxxxxxxxxxxxxxxxxxxxxxxxxxxxx:
+                            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxX:
+                            xxxx:::xxxxxxxxxx::::xxxxxxxxxxx:
+                           .xxx:   :::xxxxxx:      :xxxxxxxxx
+                           :xxx  x.   xxxx::  xx.   xxxxxxxxx
+                           :xxx xxx   xxxx:: xxxx   :xxxxxxxx
+                           'xxx 'xx   xxxx::. xx'   xxxxxxxxx
+                            xxx :::::::xx::::::.    xxxxxxxxx
+                            xxx::::::.::::..::::::::xxxxxxxxx
+                            ::x':::::'::::'':::::'':xxxxxxxxxx.
+                            ::xx.::::::::::::::'    xxxxxxxxxxx
+                            ::xx: '::::::::::'      :xxxxxxxxxxxx.
+                           .xxx      '::::''         'xxxxxxxxxxxx.
+                         .xxxxx                        'xxxxxxxxxxx.
+                       .xxxx                              'xxxxxxxxxx.
+                    .xxxxxx:                               xxxxxxxxxxx..
+                   .xxxxxx:'                               xxxxxxxxxxxxx.
+                  .xxxxxxx::::.             .        ..::::_xxxxxxxxxxxxx:.
+                 .xxxxxxxx''       '':::''              '''::xxxxxxxxxxxxxx.
+                 xxxxxxx              :                     '::xxxxxxxxxxxxxx
+                :xxxx::'              :                       'xxxxxxxxxxxxxx::
+              ..xxxxx                 :                        :::xxxxxxxxxxxxxx
+              xxxxx:'                                          :::xxxxxxxxxxxxxx
+              xxxxx                  .                         :::xxxxxxxxxxxxxx.
+          .:xxxxxxx                  :                         :::xxxxxxxxxxxxxx::
+          xxxxxxxxx                  :                         :::xxxxxxxxxxxxxxx:
+          xxxxxxxxx                  :                         :::xxxxxxxxxxxxxxx:
+          ':xxxxxxx                  '                         :::xxxxxxxxxxxxxx:'
+            .:.. xx:.                                         .::xxxxxxxxxxxxxxx'
+          :::::::.'xx::.              :                     .::  xxxxxxxxxxxx'':
+..:::::::::::::::::.'xxxxx.                                 :::::'xxxxxxxxx'::::.
+:::::::::::::::::::::..'xxxxxx                              ::::::.'.xxx.':::::::.
+::::::::::::::::::::::::.'xxxxx:.                           ::::::::.'''::::::::::
+''::::::::::::::::::::::::.'xxx:'                         .':::::::::::::::::::::::...
+   ::::::::::::::::::::::::.''xx                       .::: :::::::::::::::::::::::::::
+..::::::::::::::::::::::::::.. xx                  .::xxxxx :::::::::::::::::::::::::::
+::::::::::::::::::::::::::::::.'xxx...         .:::xxxxxxxx :::::::::::::::::::::::'
+''::::::::::::::::::::::::::::: xxxxxxxxxxxxxxxxxxxxxxxxxxx ::::::::::::::::::::'
+   '::::::::::::::::::::::::::: xxxxxxxxxxxxxxxxxxxxxxxxxxx :::::::::::::::::''
+       ''::::::::::::::::::::::_xxxxxxx::''''::xxxxxxxxxxxx '::::::::::::::'
+             ''':.::::::::::::'                            `._':::::::'''
