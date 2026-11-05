@@ -2,7 +2,7 @@
 
 Why a Quickshell shell stutters, how to find out **which kind** of stutter it is, and how I fixed each one in my shell (`quickshell/`, NVIDIA RTX 3060 Ti, 2560x1440 @ 170 Hz, Hyprland with Lua config).
 
-> Short version: almost every "stutter" is one of three things. **(1)** Quickshell draws too rarely or unevenly (backend, animation timing). **(2)** Quickshell draws evenly, but the motion itself is bad (subpixels, curve, animation restarting). **(3)** Quickshell stops completely for a moment (a freeze) because its main thread is blocked. For (3) the cause in my case was a file in the home folder (see [section 6](#6-freezes-on-every-terminal-command-the-main-cause)).
+> Short version: almost every "stutter" is one of three things. **(1)** Quickshell draws too rarely or unevenly (backend, animation timing). **(2)** Quickshell draws evenly, but the motion itself is bad (subpixels, animation restarting). **(3)** Quickshell stops completely for a moment (a freeze) because its main thread is blocked. For (3) the cause in my case was a file in the home folder (see [section 6](#6-freezes-on-every-terminal-command-the-main-cause)).
 
 ## Contents
 
@@ -10,7 +10,7 @@ Why a Quickshell shell stutters, how to find out **which kind** of stutter it is
 2. [Low FPS on NVIDIA](#2-low-fps-on-nvidia)
 3. [Animations look "interpolated" / wobbly](#3-animations-look-interpolated--wobbly)
 4. [Pixel wobble, zigzag, "snapping in"](#4-pixel-wobble-zigzag-snapping-in)
-5. [Animation snaps, breaks off or stops before the end](#5-animation-snaps-breaks-off-or-stops-before-the-end)
+5. [Animation snaps or jumps](#5-animation-snaps-or-jumps)
 6. [Freezes on every terminal command (the main cause)](#6-freezes-on-every-terminal-command-the-main-cause)
 7. [Freezes when opening panels, notifications, switching workspaces](#7-freezes-when-opening-panels-notifications-switching-workspaces)
 8. [Other programs that freeze Quickshell](#8-other-programs-that-freeze-quickshell)
@@ -109,7 +109,7 @@ Rebuilt this way: workspace pills, switch knob, slider knob, progress bars, laun
 
 ---
 
-## 5. Animation snaps, breaks off or stops before the end
+## 5. Animation snaps or jumps
 
 ### 5a. Two animations on the same value
 
@@ -155,14 +155,6 @@ FrameAnimation {
 ```
 
 (`curveAt` evaluates a bezier curve, see `Bar.qml`.)
-
-### 5c. The curve doesn't suit whole pixels
-
-**Symptom:** the bar is done after ~45 % of the animation time and then stands still while the window keeps gliding. The first steps come milliseconds apart, the last ones only after ~100 ms.
-
-**Cause:** the bar only moves 8–10 px, so only 8–10 pixel steps. "Smooth out" (easeOutQuint) puts almost all of them at the start. Hyprland draws windows on subpixels, which is why the same curve looks smooth there. With whole pixels, the only thing that matters is how evenly the steps are spread over time.
-
-**Fix:** set the bar curve to **"Ease in-out"** (inOutSine): at 300 ms a step comes about every 20–30 ms, a bit slower at the start and end. "Linear" spreads them exactly evenly. The window is still faster than the bar at the start, so when docking it always slides **under** the bar. That's why no line flashes up.
 
 ---
 
@@ -276,5 +268,5 @@ If the shell stutters again, in this order:
 2. **When exactly?** Only when opening the shell's own panels or popups → [section 7](#7-freezes-when-opening-panels-notifications-switching-workspaces). On actions in other programs → 3.
 3. Run `inotifywait -m -e create,delete,move ~` and repeat the action. If something shows up → [section 6](#6-freezes-on-every-terminal-command-the-main-cause).
 4. `qs log --rules "*=true" | tail -3000 | sed 's/^ *[A-Z]* *//' | cut -c1-90 | sort | uniq -c | sort -rn | head` shows which message is being produced in bulk.
-5. Motion looks wrong but no spikes in the counter → measure a video frame by frame → [section 4](#4-pixel-wobble-zigzag-snapping-in)/[5](#5-animation-snaps-breaks-off-or-stops-before-the-end).
+5. Motion looks wrong but no spikes in the counter → measure a video frame by frame → [section 4](#4-pixel-wobble-zigzag-snapping-in)/[5](#5-animation-snaps-or-jumps).
 6. Search the log for `another interceptor` (duplicate `Behavior`).

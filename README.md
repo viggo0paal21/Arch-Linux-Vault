@@ -11,7 +11,7 @@ my personal `~/.config` files (Hyprland rice), my zsh setup, maintenance and per
 
 > 🖤 **[Quickshell Guide](Quickshell%20Guide.md)**: my black-and-white Quickshell shell, smooth 170 Hz on NVIDIA (Vulkan, no MangoHud), FPS counter, using the fix with other shells.
 
-> 🩺 **[Quickshell Stutter Guide](Quickshell%20Stutter%20Guide.md)**: how Quickshell stutters and freezes happen, how to measure them and how I fixed each one (NVIDIA/Vulkan, pixel jitter, animation curves, 60–130 ms freezes caused by zsh history in `~`).
+> 🩺 **[Quickshell Stutter Guide](Quickshell%20Stutter%20Guide.md)**: how Quickshell stutters and freezes happen, how to measure them and how I fixed each one (NVIDIA/Vulkan, pixel jitter, snapping animations, 60–130 ms freezes caused by zsh history in `~`).
 
 ## Contents
 

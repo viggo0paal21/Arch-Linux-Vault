@@ -44,7 +44,7 @@ Singleton {
         barSolidOnlySingle: true,
         barExcludeKitty: true,
         animScale: 0.5,
-        animBarCurve: "inOutSine",
+        animBarCurve: "smoothOut",
         animPanelSpeed: 1,
         animPanelOpen: "outCubic",
         animPanelClose: "inCubic",
