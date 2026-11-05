@@ -13,8 +13,13 @@ PanelWindow {
     readonly property bool hasPopups: Notifs.popups.length > 0
     property bool mapped: false
 
+    // Wie die Panels: Das Fenster bleibt dauerhaft bestehen und liegt ohne Popups oberhalb des Bildschirms.
+    // Jedes Mal ein neues Fenster (Vulkan-Swapchain) anzulegen liess Quickshell 60-120 ms haengen.
+    // Ausnahme Vollbild-Spiel: dann ganz weg, sonst blockiert die Overlay-Ebene Direct Scanout.
+    readonly property bool fullscreenActive: ToplevelManager.activeToplevel ? ToplevelManager.activeToplevel.fullscreen : false
+
     screen: Ui.focusedScreen()
-    visible: win.mapped
+    visible: win.mapped || !win.fullscreenActive
     color: "transparent"
     implicitWidth: 400
     implicitHeight: win.screen ? Math.max(200, win.screen.height - win.topOffset - Theme.gap) : 800
@@ -26,7 +31,7 @@ PanelWindow {
     }
 
     margins {
-        top: win.topOffset
+        top: win.mapped ? win.topOffset : -(win.implicitHeight + 64)
         right: Theme.gap
     }
 

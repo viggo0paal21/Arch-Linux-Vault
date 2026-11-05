@@ -65,12 +65,14 @@ Item {
                 readonly property bool isOccupied: root.occupied[wsId] === true
 
                 anchors.verticalCenter: parent.verticalCenter
-                width: isActive ? 26 : 10
+                property real w: isActive ? 26 : 10
+
+                width: Math.round(w)
                 height: 10
                 radius: 5
                 color: isActive ? Theme.fg : (pillArea.containsMouse ? Theme.fgDim : (isOccupied ? Theme.fgMuted : Theme.layer3))
 
-                Behavior on width {
+                Behavior on w {
                     Anim {
                         duration: Math.round(Theme.durMed * Config.opts.animWsSpeed)
                         easing.bezierCurve: Theme.curveOf(Config.opts.animWsCurve)

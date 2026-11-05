@@ -11,9 +11,9 @@ Singleton {
     // ohne Pixelspruenge. Aus = knackscharfe Schrift, Positionen auf ganze Pixel gerundet.
     readonly property bool smooth: Config.opts.smoothText
 
-    // Position fuer Bewegungen: mit Smooth text genau, sonst auf ganze Pixel (scharfe Schrift in jedem Frame)
+    // Position fuer Bewegungen: immer auf ganze Pixel (kein Jittern, scharfe Schrift in jedem Frame)
     function px(v) {
-        return root.smooth ? v : Math.round(v);
+        return Math.round(v);
     }
 
     // Farben: echtes Schwarz als Basis, Graustufen nur fuer Tiefe und Hover

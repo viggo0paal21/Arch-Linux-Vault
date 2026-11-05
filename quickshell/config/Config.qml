@@ -23,6 +23,8 @@ Singleton {
         barFloating: true,
         barFloatingDynamic: true,
         barBorder: false,
+        barBoxes: false,
+        barBoxColor: "#1F1F1F",
         barShowTitle: false,
         barAutoTransparent: false,
         barShowSysmon: true,
@@ -42,7 +44,7 @@ Singleton {
         barSolidOnlySingle: true,
         barExcludeKitty: true,
         animScale: 0.5,
-        animBarCurve: "smoothOut",
+        animBarCurve: "inOutSine",
         animPanelSpeed: 1,
         animPanelOpen: "outCubic",
         animPanelClose: "inCubic",
@@ -103,6 +105,8 @@ Singleton {
             property bool barFloating: root.defaults.barFloating
             property bool barFloatingDynamic: root.defaults.barFloatingDynamic
             property bool barBorder: root.defaults.barBorder
+            property bool barBoxes: root.defaults.barBoxes
+            property string barBoxColor: root.defaults.barBoxColor
             property bool barShowTitle: root.defaults.barShowTitle
             property bool barAutoTransparent: root.defaults.barAutoTransparent
             property bool barShowSysmon: root.defaults.barShowSysmon

@@ -12,12 +12,14 @@ Rectangle {
     color: Theme.layer3
 
     Rectangle {
-        width: Math.max(root.height, root.width * Math.max(0, Math.min(1, root.value)))
+        property real w: Math.max(root.height, root.width * Math.max(0, Math.min(1, root.value)))
+
+        width: Math.round(w)
         height: parent.height
         radius: parent.radius
         color: Theme.fg
 
-        Behavior on width {
+        Behavior on w {
             Anim {}
         }
     }

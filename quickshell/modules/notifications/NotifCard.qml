@@ -41,8 +41,8 @@ Rectangle {
     // Beim Rein-/Rausgleiten liegen x/y oft zwischen zwei Pixeln, dann flimmert der Text.
     // Der Gegen-Versatz zeichnet die Karte immer auf ganzen Pixeln.
     transform: Translate {
-        x: Theme.smooth ? 0 : Math.round(root.x) - root.x
-        y: Theme.smooth ? 0 : Math.round(root.y) - root.y
+        x: Math.round(root.x) - root.x
+        y: Math.round(root.y) - root.y
     }
 
     Behavior on border.color {

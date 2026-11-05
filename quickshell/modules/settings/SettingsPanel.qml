@@ -819,6 +819,97 @@ OverlayPanel {
 
                         SettingRow {
                             width: parent.width
+                            label: "Group boxes"
+                            description: "Puts every group in the bar (launcher, workspaces, tray, system info, status, power) in its own box"
+
+                            SwitchCtl {
+                                checked: Config.opts.barBoxes
+                                onToggled: Config.opts.barBoxes = !Config.opts.barBoxes
+                            }
+                        }
+
+                        // Boxfarbe: Klick auf die Farbe klappt den Farbwaehler auf
+                        Column {
+                            id: boxColorBlock
+
+                            property bool open: false
+
+                            width: parent.width
+                            visible: Config.opts.barBoxes
+                            spacing: 10
+
+                            SettingRow {
+                                width: parent.width
+                                label: "Box color"
+                                description: "Click the color to open the picker"
+                                controlWidth: 220
+
+                                Row {
+                                    anchors.right: parent.right
+                                    spacing: 10
+
+                                    Rectangle {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        width: 110
+                                        height: 30
+                                        radius: Theme.radiusSm
+                                        color: Config.opts.barBoxColor
+                                        border.width: 1
+                                        border.color: boxColorArea.containsMouse || boxColorBlock.open ? Theme.fgDim : Theme.borderStrong
+
+                                        Txt {
+                                            anchors.centerIn: parent
+                                            text: Config.opts.barBoxColor
+                                            font.pixelSize: Theme.fontSm
+                                            color: (parent.color.r * 0.3 + parent.color.g * 0.59 + parent.color.b * 0.11) * parent.color.a > 0.5 ? "#000000" : "#ffffff"
+                                        }
+
+                                        MouseArea {
+                                            id: boxColorArea
+
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: boxColorBlock.open = !boxColorBlock.open
+                                        }
+                                    }
+
+                                    IconButton {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        size: 30
+                                        icon: String.fromCodePoint(0xF0450)
+                                        iconSize: Theme.fontSm
+                                        label: "Reset"
+                                        idleColor: Theme.layer3
+                                        onClicked: Config.opts.barBoxColor = Config.defaults.barBoxColor
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                width: parent.width
+                                height: boxPicker.implicitHeight + 36
+                                visible: boxColorBlock.open
+                                radius: Theme.radius
+                                color: Theme.layer2
+                                border.width: 1
+                                border.color: Theme.border
+
+                                ColorPicker {
+                                    id: boxPicker
+
+                                    anchors.top: parent.top
+                                    anchors.topMargin: 18
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    width: Math.min(440, parent.width - 36)
+                                    color: Config.opts.barBoxColor
+                                    onPicked: v => Config.opts.barBoxColor = v
+                                }
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
                             label: "Bar border line"
 
                             SwitchCtl {

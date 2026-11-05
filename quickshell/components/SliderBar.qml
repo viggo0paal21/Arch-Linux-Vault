@@ -42,20 +42,23 @@ Item {
         id: knob
 
         anchors.verticalCenter: parent.verticalCenter
-        x: root.shown * (root.width - width)
-        width: area.containsMouse || area.pressed ? 16 : 12
+        property real kx: root.shown * (root.width - width)
+        property real kw: area.containsMouse || area.pressed ? 16 : 12
+
+        x: Math.round(kx)
+        width: Math.round(kw / 2) * 2
         height: width
         radius: width / 2
         color: Theme.fg
         border.width: 3
         border.color: Theme.bg
 
-        Behavior on width {
+        Behavior on kw {
             Anim {
                 duration: Theme.ctlFast
             }
         }
-        Behavior on x {
+        Behavior on kx {
             enabled: !root.dragging
 
             Anim {

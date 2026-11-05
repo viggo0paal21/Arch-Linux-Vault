@@ -1,7 +1,7 @@
 # ~/.zshrc
 
 # --- History (wird zwischen allen Terminals geteilt) ---
-HISTFILE=~/.zsh_history
+HISTFILE=~/.local/state/zsh/history
 HISTSIZE=10000
 SAVEHIST=10000
 setopt SHARE_HISTORY HIST_IGNORE_ALL_DUPS HIST_IGNORE_SPACE

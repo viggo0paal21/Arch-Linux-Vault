@@ -26,13 +26,15 @@ Item {
 
     Rectangle {
         anchors.verticalCenter: parent.verticalCenter
-        x: root.checked ? root.width - width - 4 : 4
+        property real kx: root.checked ? root.width - width - 4 : 4
+
+        x: Math.round(kx)
         width: root.height - 8
         height: width
         radius: width / 2
         color: root.checked ? Theme.accentFg : Theme.fgDim
 
-        Behavior on x {
+        Behavior on kx {
             Anim {
                 duration: Theme.ctlFast
             }

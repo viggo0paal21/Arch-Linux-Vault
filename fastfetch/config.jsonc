@@ -75,10 +75,12 @@
     {
       "type": "gpu",
       "key": "GPU ",
-      "temp": true,
+      // temp/NVML-Abfrage blockiert auf NVIDIA kurz die Grafikkarte (~70 ms Ruckler in Quickshell)
+      "temp": false,
+      "detectionMethod": "pci",
       "showPeCoreCount": true,
       "keyColor": "white",
-      "format": "{1} {2} {4}"
+      "format": "{1} {2}"
     },
     {
       "type": "memory",

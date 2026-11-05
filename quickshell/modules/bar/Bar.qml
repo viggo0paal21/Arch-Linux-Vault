@@ -15,44 +15,16 @@ PanelWindow {
     // "Dynamic": genau 1 gekacheltes Fenster = angedockt, sonst schwebend (floating Fenster zaehlen nie)
     readonly property bool dynamic: bar.floating && Config.opts.barFloatingDynamic
     readonly property bool floatingNow: bar.floating && !(bar.dynamic && bar.tiledCount === 1)
-    // Abstand zum Rand, gleitet mit frame.progress zwischen 0 (angedockt) und Theme.gap (schwebend).
-    // edgeExact ist der genaue Wert fuer den Hintergrund: Bei nur 8 px Weg gaebe es auf ganze Pixel
-    // gerundet nur ~7 sichtbare Schritte. Inhalt und Klickflaeche bleiben auf ganzen Pixeln (scharfe Schrift).
-    readonly property real edgeExact: Theme.gap * frame.progress
-    // Ganze Pixel fuer den Inhalt, in Richtung Ziel gerundet: Der letzte Pixelschritt kommt so noch waehrend
-    // die Leiste sichtbar gleitet (~95 ms) statt einzeln hinterher (~140 ms, wirkte wie "Einklicken").
-    // Der Inhalt ist dabei nie mehr als 1 px vor dem Hintergrund.
-    readonly property int intEdge: bar.floatingNow ? Math.ceil(bar.edgeExact - 0.001) : Math.floor(bar.edgeExact + 0.001)
-    // Mit "Smooth text" gleitet auch der Inhalt genau mit; die Unterkante bleibt trotzdem auf ganzen Pixeln
-    // Seitlich und nach oben aus EINEM Pixelzaehler (intOffset): Liefen beide getrennt gerundet, sprang die
-    // Leiste mal nur seitlich, mal nur hoch und zitterte im Zickzack statt gerade schraeg zu gleiten.
-    readonly property real edge: Theme.smooth ? bar.edgeExact : (Config.opts.barFloatOffset > 0 ? Math.round(bar.intOffset * Theme.gap / Config.opts.barFloatOffset) : bar.intEdge)
-    // Hoehe der schwebenden Leiste ueber dem Bildschirmrand (Settings > Bar > Floating position, Standard 8 px).
-    // Gleitet wie edge, nur mit eigenem Weg; die Seiten bleiben bei Theme.gap.
-    readonly property real offsetExact: Config.opts.barFloatOffset * frame.progress
-    readonly property int intOffset: bar.floatingNow ? Math.ceil(bar.offsetExact - 0.001) : Math.floor(bar.offsetExact + 0.001)
-    readonly property real offset: Theme.smooth ? bar.offsetExact : bar.intOffset
-    // Angedockt ist der Hintergrund unten etwas dicker (Settings > Bar > Bar height > Docked, Standard 2 px)
-    // und liegt damit ueber den obersten Pixelreihen des Fensters. Schliesst man eins von zwei Fenstern,
-    // waechst das andere 18 px nach oben, die Leiste gleitet nur 8 px. Das Fenster kriecht seinen letzten
-    // Pixel noch, wenn die Leiste schon oben ist; ohne die Extra-Pixel blitzt dazwischen das Wallpaper als
-    // Linie. Waechst mit dem Andocken von 0 auf den eingestellten Wert (schwebend 0).
+    // EIN Pixelzaehler fuer die ganze Bewegung: Hoehe ueber dem Rand (intOffset) in ganzen Pixeln, der
+    // Seitenabstand wird daraus abgeleitet. So aendern sich Seite und Hoehe immer im selben Frame (gerade
+    // schraeg statt Zickzack) und nichts liegt je zwischen zwei Pixeln (kein Jittern, scharfe Kanten).
+    readonly property int offset: Math.round(Config.opts.barFloatOffset * frame.progress)
+    readonly property int edge: Config.opts.barFloatOffset > 0 ? Math.round(bar.offset * Theme.gap / Config.opts.barFloatOffset) : Math.round(Theme.gap * frame.progress)
+    // Angedockt optional dicker (Settings > Bar > Bar height > Docked), ebenfalls in ganzen Pixeln
     readonly property int dockExtra: bar.dynamic ? Math.round(Math.max(0, Config.opts.barDockedHeight - Config.opts.barHeight) * (1 - frame.progress)) : 0
-    // Unterkante des Hintergrunds als eine stetige Kurve (Position + Extra-Dicke), auf ganze Pixel nach unten
-    // gerundet: Sobald die Fensterkante die Leiste erreicht hat, kann sie nicht mehr darunter hervorschauen
-    // (vorher sprangen Position und Extra-Dicke getrennt und der Spalt ging fuer einzelne Frames wieder auf).
-    // Die -0.25 lassen sie kurz vor Schluss ankommen statt erst im letzten Frame (kein Nachklicken).
-    readonly property real bottomExact: Theme.barHeight + bar.offsetExact + (bar.dynamic ? Math.max(0, Config.opts.barDockedHeight - Config.opts.barHeight) * (1 - frame.progress) : 0)
-    // Beim Loesen (schwebend werden) im selben Pixelzaehler wie Oberkante und Icons: Sonst kam die Unterkante
-    // einen Frame spaeter an, die Leiste war kurz 1 px duenner und rutschte am Ende 1 px nach unten.
-    // Beim Andocken bleibt die stetige, nach unten gerundete Kurve (verhindert den Spalt zum Fenster).
-    readonly property int bottomY: bar.floatingNow ? bar.intOffset + Theme.barHeight + Math.round((bar.dynamic ? Math.max(0, Config.opts.barDockedHeight - Config.opts.barHeight) : 0) * (1 - frame.progress)) : Math.ceil(bar.bottomExact - 0.25)
-    // Mit "Smooth text" gleitet auch die Unterkante auf Bruchteile von Pixeln (kein Einrasten im letzten Pixel).
-    // Die Extra-Dicke sorgt dafuer, dass sie dabei ueber dem Fenster liegt und nicht ueber einem Spalt.
-    readonly property real bottomEdge: Theme.smooth ? bar.bottomExact : bar.bottomY
-    // Inhalt mit "Dynamic" fest 1 px tiefer, schwebend wie angedockt: So sitzt er in beiden Zustaenden
-    // praktisch mittig und muss beim An-/Abdocken nicht extra um einen Pixel nachrutschen.
-    readonly property real contentShift: bar.dynamic ? 1 : 0
+    readonly property int bottomEdge: bar.offset + Theme.barHeight + bar.dockExtra
+    // Inhalt mit "Dynamic" fest 1 px tiefer, schwebend wie angedockt
+    readonly property int contentShift: bar.dynamic ? 1 : 0
     // Unterkante der sichtbaren Leiste (fuer das Tray-Menue)
     readonly property int visualBottom: frame.y + frame.height
     readonly property var hyprMonitor: Hyprland.monitorFor(bar.modelData)
@@ -116,7 +88,70 @@ PanelWindow {
         window: bar
     }
 
-    onFloatingNowChanged: Ui.barFloatTarget = bar.floatingNow
+    // Andock-Animation, Frame fuer Frame selbst gerechnet statt nach der Uhr. Oeffnet oder schliesst ein
+    // Fenster, zeichnet Quickshell manchmal ~70 ms lang nichts (Treiber). Eine normale Animation laeuft
+    // nach der Uhr weiter und die Leiste springt danach 2-3 px auf einmal. Hier zaehlt jeder Frame
+    // hoechstens 1/60 s: Nach so einem Haenger geht es einfach dort weiter, wo die Leiste stand.
+    property real dockFrom: 0
+    property real dockTo: 0
+    property real dockElapsed: 0
+
+    // Wert der Bezier-Kurve (x1, y1, x2, y2) an der Stelle u (0..1)
+    function curveAt(c, u) {
+        if (u <= 0)
+            return 0;
+        if (u >= 1)
+            return 1;
+        const x1 = c[0], y1 = c[1], x2 = c[2], y2 = c[3];
+        let lo = 0, hi = 1, t = u;
+        for (let i = 0; i < 24; i++) {
+            const x = 3 * (1 - t) * (1 - t) * t * x1 + 3 * (1 - t) * t * t * x2 + t * t * t;
+            if (Math.abs(x - u) < 0.00001)
+                break;
+            if (x < u)
+                lo = t;
+            else
+                hi = t;
+            t = (lo + hi) / 2;
+        }
+        return 3 * (1 - t) * (1 - t) * t * y1 + 3 * (1 - t) * t * t * y2 + t * t * t;
+    }
+
+    // Startet nur, wenn sich das Ziel wirklich aendert. Qt.callLater fasst alle Fenster-Events eines
+    // Durchlaufs zusammen, ein kurzes Hin und Her der Fensterzahl bricht nichts ab.
+    function syncDock() {
+        const target = bar.floatingNow ? 1 : 0;
+        Ui.barFloatTarget = bar.floatingNow;
+        if (dockTicker.running && bar.dockTo === target)
+            return;
+        if (!dockTicker.running && frame.progress === target)
+            return;
+        dockTicker.running = false;
+        if (!Config.opts.animations || Config.opts.barDockDuration <= 0) {
+            frame.progress = target;
+            return;
+        }
+        bar.dockFrom = frame.progress;
+        bar.dockTo = target;
+        bar.dockElapsed = 0;
+        dockTicker.running = true;
+    }
+
+    onFloatingNowChanged: Qt.callLater(bar.syncDock)
+
+    FrameAnimation {
+        id: dockTicker
+
+        running: false
+        onTriggered: {
+            const dt = Math.max(0, Math.min(dockTicker.frameTime, 1 / 60)) * 1000;
+            bar.dockElapsed += dt;
+            const u = Math.min(1, bar.dockElapsed / Math.max(1, Config.opts.barDockDuration));
+            frame.progress = bar.dockFrom + (bar.dockTo - bar.dockFrom) * bar.curveAt(Theme.curveOf(Config.opts.animBarCurve), u);
+            if (u >= 1)
+                dockTicker.running = false;
+        }
+    }
 
     // Sichtbare Leiste. Wechselt zwischen angedockt und schwebend genauso schnell wie Hyprlands
     // Fenster-Animation in hyprland.lua (windows: speed 3 = 300 ms, Kurve smooth_out = easeOutQuint), damit
@@ -124,7 +159,8 @@ PanelWindow {
     Item {
         id: frame
 
-        property real progress: bar.floatingNow ? 1 : 0
+        // 0 = angedockt, 1 = schwebend. Wird nur von dockTicker bewegt (siehe syncDock).
+        property real progress: 0
 
         x: bar.edge
         y: bar.offset
@@ -133,27 +169,13 @@ PanelWindow {
 
         onProgressChanged: Ui.barFloat = frame.progress
         Component.onCompleted: {
+            frame.progress = bar.floatingNow ? 1 : 0;
             Ui.barFloat = frame.progress;
             Ui.barFloatTarget = bar.floatingNow;
         }
 
-        // Dauer: Settings > Bar > Dock animation (Standard 400 ms). Etwas langsamer als die Fenster (300 ms),
-        // damit ein nach oben wachsendes Fenster vor der Leiste ankommt und kein Spalt aufblitzt.
-        Behavior on progress {
-            NumberAnimation {
-                duration: Config.opts.animations ? Config.opts.barDockDuration : 0
-                easing.type: Easing.BezierSpline
-                easing.bezierCurve: Theme.curveOf(Config.opts.animBarCurve)
-            }
-        }
-
-        // Hintergrund: links/rechts auf Sub-Pixel genau (mit Kantenglaettung), damit die Form fluessig gleitet.
-        // Oben/unten auf ganzen Pixeln im Takt des Inhalts: So ist die Leiste in jedem Frame exakt gleich dick
-        // (vorher kroch die Oberkante am Ende noch den letzten Pixel nach und die Leiste wurde sichtbar duenner),
-        // und unten gibt es keine halb bedeckte Pixelreihe ueber dem Fenster.
+        // Hintergrund: alle Kanten auf ganzen Pixeln, immer gleich dick
         Rectangle {
-            // Links/rechts im selben Pixeltakt wie die Icons: Lief der Hintergrund auf Bruchteilen von Pixeln
-            // und die Icons auf ganzen, verschoben sie sich gegeneinander staendig um bis zu 1 px (Wackeln).
             x: 0
             y: 0
             width: frame.width
@@ -161,7 +183,7 @@ PanelWindow {
             antialiasing: true
             color: Theme.bg
             opacity: bar.bgOpacity
-            radius: Theme.radiusLg * frame.progress
+            radius: Math.round(Theme.radiusLg * frame.progress)
             border.width: frame.progress > 0.5 && Config.opts.barBorder ? 1 : 0
             border.color: Theme.border
 
@@ -174,8 +196,7 @@ PanelWindow {
                 color: Theme.border
             }
 
-            // Mit "Dynamic" im selben Takt wie das Andocken (300 ms, md3_decel): Schwarzwerden und
-            // Andocken sind dann eine Bewegung statt schnellem Gleiten mit langsamem Nachblenden.
+            // Mit "Dynamic" im selben Takt wie das Andocken
             Behavior on opacity {
                 NumberAnimation {
                     duration: bar.dynamic ? (Config.opts.animations ? Config.opts.barDockDuration : 0) : Theme.durSlow
@@ -184,6 +205,15 @@ PanelWindow {
                 }
             }
         }
+
+        // Gruppen-Boxen (Settings > Bar > Group boxes): eigene Flaeche hinter jeder Gruppe,
+        // genau so gross wie die Gruppe selbst (Hover/Aktiv-Flaechen liegen deckungsgleich darauf).
+        BarBox { row: leftRow; target: archBtn }
+        BarBox { row: leftRow; target: wsGroup }
+        BarBox { row: rightRow; target: trayGroup }
+        BarBox { row: rightRow; target: infoChip }
+        BarBox { row: rightRow; target: statusGroup }
+        BarBox { row: rightRow; target: powerBtn }
 
         // Links: Launcher, Arbeitsflaechen, Fenstertitel
         Row {
@@ -196,6 +226,8 @@ PanelWindow {
             spacing: 6
 
             IconButton {
+                id: archBtn
+
                 anchors.verticalCenter: parent.verticalCenter
                 size: bar.itemHeight
                 icon: Icons.arch
@@ -205,6 +237,8 @@ PanelWindow {
             }
 
             Workspaces {
+                id: wsGroup
+
                 anchors.verticalCenter: parent.verticalCenter
                 height: bar.itemHeight
                 monitor: bar.hyprMonitor
@@ -214,7 +248,9 @@ PanelWindow {
         Txt {
             id: windowTitle
 
-            readonly property var toplevel: Hyprland.activeToplevel
+            // Nur wenn "Window title" an ist: Sonst rechnet Quickshell bei jeder Titelaenderung (Terminal-Prompt)
+            // trotzdem Text-Layout und Ersatzschriften neu aus, das blockierte die Leiste kurz.
+            readonly property var toplevel: Config.opts.barShowTitle ? Hyprland.activeToplevel : null
             readonly property string value: (toplevel && toplevel.monitor === bar.hyprMonitor) ? (toplevel.title || "") : ""
 
             anchors.left: leftRow.right
@@ -235,9 +271,11 @@ PanelWindow {
             anchors.rightMargin: 6
             anchors.verticalCenter: parent.verticalCenter
             anchors.verticalCenterOffset: bar.contentShift
-            spacing: 4
+            spacing: Config.opts.barBoxes ? 6 : 4
 
             Tray {
+                id: trayGroup
+
                 anchors.verticalCenter: parent.verticalCenter
                 barWindow: bar
                 itemSize: bar.itemHeight
@@ -277,6 +315,8 @@ PanelWindow {
             }
 
             StatusCluster {
+                id: statusGroup
+
                 anchors.verticalCenter: parent.verticalCenter
                 height: bar.itemHeight
                 active: Ui.panel === "control"
@@ -284,6 +324,8 @@ PanelWindow {
             }
 
             IconButton {
+                id: powerBtn
+
                 anchors.verticalCenter: parent.verticalCenter
                 size: bar.itemHeight
                 icon: Icons.power

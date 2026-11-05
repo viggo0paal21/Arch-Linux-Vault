@@ -95,10 +95,12 @@ OverlayPanel {
         x: Math.round((parent.width - width) / 2)
         y: Theme.px(parent.height * 0.16 - 14 * (1 - panel.progress))
         width: Math.min(620, parent.width - 40)
-        height: header.height + list.height + 26
+        property real h: header.height + list.height + 26
+
+        height: Math.round(h)
         opacity: panel.progress
 
-        Behavior on height {
+        Behavior on h {
             Anim {
                 duration: Theme.ctlFast
             }
