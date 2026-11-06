@@ -20,13 +20,14 @@ Row {
         precision: Config.opts.clockSeconds ? SystemClock.Seconds : SystemClock.Minutes
     }
 
-    Txt {
+    // Tabular digits: when the seconds change, nothing else in the bar moves
+    FixedText {
         anchors.verticalCenter: parent.verticalCenter
         text: Qt.formatDateTime(clock.date, root.timeFormat)
         color: root.fg
     }
 
-    Txt {
+    FixedText {
         anchors.verticalCenter: parent.verticalCenter
         visible: Config.opts.barShowDate
         text: clock.date.toLocaleString(Qt.locale("en_US"), "ddd, MMM d")

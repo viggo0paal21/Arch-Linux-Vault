@@ -22,6 +22,7 @@ Singleton {
         barFloatOffset: 10,
         barFloatSide: 10,
         barGlide: true,
+        barShellGlass: true,
         barFloating: true,
         barFloatingDynamic: true,
         barBorder: false,
@@ -108,6 +109,7 @@ Singleton {
             property int barFloatOffset: root.defaults.barFloatOffset
             property int barFloatSide: root.defaults.barFloatSide
             property bool barGlide: root.defaults.barGlide
+            property bool barShellGlass: root.defaults.barShellGlass
             property bool barFloating: root.defaults.barFloating
             property bool barFloatingDynamic: root.defaults.barFloatingDynamic
             property bool barBorder: root.defaults.barBorder

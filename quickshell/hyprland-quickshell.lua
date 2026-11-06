@@ -34,3 +34,7 @@ hl.layer_rule({ match = { namespace = "qs-.*" }, no_anim = true })
 -- hl.layer_rule({ match = { namespace = "qs-.*" }, no_anim = true, blur = true, ignore_alpha = 0.5 })
 -- Bar: only blur the wallpaper, not windows (otherwise a dark edge at the bottom from the window below)
 -- hl.layer_rule({ match = { namespace = "qs-bar" }, xray = true })
+
+-- Bar with "Shell glass" (Settings > Bar, on by default): the bar draws its own glass, so its layer has its own
+-- name without "qs-" and must not get Hyprland blur. Keep this line in both cases.
+hl.layer_rule({ match = { namespace = "qsglass-bar" }, no_anim = true })

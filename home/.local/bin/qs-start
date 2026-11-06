@@ -1,4 +1,12 @@
 #!/usr/bin/env bash
+# Remember the original values before they are overridden for Quickshell itself. Apps started from the
+# launcher get them back in services/Apps.qml (otherwise e.g. games from the launcher run without MangoHud).
+if [ -z "${QS_APP_SAVED+x}" ]; then
+    export QS_APP_SAVED=1
+    for v in MANGOHUD LD_PRELOAD DISABLE_LSFGVK DISABLE_VKBASALT QSG_RHI_BACKEND QSG_USE_SIMPLE_ANIMATION_DRIVER QT_LOGGING_RULES; do
+        if [ -n "${!v+x}" ]; then export "QS_APP_$v=${!v}"; fi
+    done
+fi
 export MANGOHUD=0
 export DISABLE_LSFGVK=1
 export DISABLE_VKBASALT=1

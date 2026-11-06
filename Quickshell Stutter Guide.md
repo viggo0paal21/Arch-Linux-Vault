@@ -10,7 +10,7 @@ Why a Quickshell shell stutters, how to find out **which kind** of stutter it is
 2. [Low FPS on NVIDIA](#2-low-fps-on-nvidia)
 3. [Animations look "interpolated" / wobbly](#3-animations-look-interpolated--wobbly)
 4. [Pixel wobble, zigzag, "snapping in"](#4-pixel-wobble-zigzag-snapping-in)
-5. [Animation snaps or jumps](#5-animation-snaps-or-jumps) (incl. optional subpixel glide)
+5. [Animation snaps or jumps](#5-animation-snaps-or-jumps) (incl. optional subpixel glide and shell glass)
 6. [Freezes on every terminal command (the main cause)](#6-freezes-on-every-terminal-command-the-main-cause)
 7. [Freezes when opening panels, notifications, switching workspaces](#7-freezes-when-opening-panels-notifications-switching-workspaces)
 8. [Other programs that freeze Quickshell](#8-other-programs-that-freeze-quickshell)
@@ -167,7 +167,20 @@ Whole pixels are crisp, but a bar that only moves ~10 px moves in ~10 visible st
 
 Two traps found by measuring a recording frame by frame:
 - **The right side jumped 1 px at the start and end.** The right row was anchored to the right edge with a fractional width (text widths like "73%"), so it started between two pixels. Drawn as an image it landed 1 px further right than drawn normally. Fix: give both rows a whole-pixel position and width (`x: Math.round(...)`, `width: Math.ceil(implicitWidth)`).
-- **A dark line under the bar while docking.** With the bottom edge between two pixels, the last row is only half covered. Hyprland only blurs behind pixels above `ignore_alpha` (0.5), so that row gets no blur and the window below shows through darkly. Fix: the bottom edge stays on whole pixels even with glide.
+- **The bar got 1 px thicker for a moment at the end.** At first the bottom edge stayed on whole pixels while the top edge glided, so the thickness changed by up to 1 px. Fix: the bottom edge glides exactly like the top edge (constant thickness in every frame).
+- **A dark line under the bar while docking.** With the bottom edge between two pixels, the last row is only half covered. Hyprland only blurs behind pixels above `ignore_alpha` (0.5), so that row gets no blur and the window below shows through darkly. Fix: shell glass, see 5d.
+
+### 5d. Shell glass (no dark line, same look as kitty)
+
+**Settings > Bar > Shell glass** lets the bar draw its blurred wallpaper itself (QtQuick.Effects `MultiEffect`) instead of getting Hyprland blur. The bar is then opaque within its shape, so a half-covered edge pixel simply blends with the window below, like Hyprland's own windows. It needs the `qsglass-bar` layer rule from the [Quickshell Guide](Quickshell%20Guide.md).
+
+To make it look exactly like a kitty window (`background_opacity 0.55`), Hyprland's blur was rebuilt from its shaders and checked against a screenshot (average difference 0.3 of 255 levels). Things that mattered:
+- **`decoration:blur:brightness` defaults to 1.0** in current Hyprland (older versions used 0.8172). Assuming 0.8172 made the bar ~15 % darker than kitty.
+- **`MultiEffect` with `blurMax: 32` and `blur: 1.0` loses 4 % of its weight** (it only uses 4 of its 5 blur levels). The glass was only 96 % opaque, the bright wallpaper showed through, and over a window the bottom rows looked darker. `blurMax: 64` uses all levels. An opaque black base under the glass makes sure nothing ever shows through.
+- **Blur the whole wallpaper, not a 45 px strip.** The wallpaper is blurred once at screen size; `blur: 0.85` at `blurMax: 64` comes closest to Hyprland's dual kawase blur (`size 8, passes 2`).
+- Hyprland's contrast (`0.8916`, a gain curve) is approximated as a straight line: `contrast: -0.0595`. Vibrancy has practically no effect on dark colors like these.
+
+Result in the simulation: 0.6 of 255 levels average difference to kitty, no darker rows at the bottom.
 
 ---
 

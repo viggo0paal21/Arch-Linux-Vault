@@ -24,7 +24,7 @@ Row {
             font.pixelSize: Theme.barIconSize
         }
 
-        Txt {
+        FixedText {
             anchors.verticalCenter: parent.verticalCenter
             text: Math.round(SysInfo.cpu * 100) + "%"
             color: root.fg
@@ -42,7 +42,7 @@ Row {
             font.pixelSize: Theme.barIconSize
         }
 
-        Txt {
+        FixedText {
             anchors.verticalCenter: parent.verticalCenter
             text: Math.round(SysInfo.mem * 100) + "%"
             color: root.fg
@@ -61,7 +61,7 @@ Row {
             font.pixelSize: Theme.barIconSize
         }
 
-        Txt {
+        FixedText {
             anchors.verticalCenter: parent.verticalCenter
             text: Math.round(SysInfo.cpuTemp) + "°"
             color: root.fg

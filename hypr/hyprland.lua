@@ -213,6 +213,9 @@ hl.layer_rule({
 
 -- Bar: only blur the wallpaper, not windows (otherwise a dark edge at the bottom from the window below)
 hl.layer_rule({ match = { namespace = "qs-bar" }, xray = true })
+-- Bar with "Shell glass" (Quickshell draws the glass itself): no Hyprland blur, only no layer animation.
+-- Own name without "qs-", so the qs-.* rule (blur, ignore_alpha) doesn't apply.
+hl.layer_rule({ match = { namespace = "qsglass-bar" }, no_anim = true })
 
 --hl.window_rule({
     --name  = "tearing-all",

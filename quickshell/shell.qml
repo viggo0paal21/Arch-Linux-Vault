@@ -31,10 +31,20 @@ ShellRoot {
     }
 
     // Bar on every screen
+    // "Shell glass" (Settings > Bar) recreates the bars, because the layer namespace
+    // (Hyprland rules) can only be set when the window is created.
     Variants {
-        model: Quickshell.screens
+        model: Config.opts.barShellGlass ? [] : Quickshell.screens
 
         Bar {}
+    }
+
+    Variants {
+        model: Config.opts.barShellGlass ? Quickshell.screens : []
+
+        Bar {
+            glassMode: true
+        }
     }
 
     // Rounded screen corners (optional)

@@ -82,14 +82,44 @@ Singleton {
         root.counts = c;
         countsFile.setText(JSON.stringify(c));
         if (entry.runInTerminal)
-            Quickshell.execDetached([Config.opts.terminal, "-e"].concat(Array.from(entry.command)));
+            root.exec([Config.opts.terminal, "-e"].concat(Array.from(entry.command)), entry.workingDirectory);
         else
-            entry.execute();
+            root.exec(Array.from(entry.command), entry.workingDirectory);
     }
 
     function runCommand(cmd) {
         if (cmd.trim() !== "")
-            Quickshell.execDetached(["sh", "-c", cmd]);
+            root.exec(["sh", "-c", cmd], "");
+    }
+
+    // Quickshell itself runs without MangoHud, lsfg-vk and LD_PRELOAD (~/.local/bin/qs-start). Everything the
+    // launcher started used to inherit that: Steam from the launcher, and with it every game, ran without MangoHud
+    // (no FPS limit, no vsync), and so did a terminal from the launcher. qs-start saves the
+    // original values as QS_APP_*, programs started from here get them back.
+    // null = was not set in the session -> remove it for the program.
+    readonly property var appEnv: {
+        if (Quickshell.env("QS_APP_SAVED") == null)
+            return {};
+        const env = {
+            QS_APP_SAVED: null
+        };
+        for (const n of ["MANGOHUD", "LD_PRELOAD", "DISABLE_LSFGVK", "DISABLE_VKBASALT", "QSG_RHI_BACKEND", "QSG_USE_SIMPLE_ANIMATION_DRIVER", "QT_LOGGING_RULES"]) {
+            const v = Quickshell.env("QS_APP_" + n);
+            env[n] = v == null ? null : v;
+            env["QS_APP_" + n] = null;
+        }
+        return env;
+    }
+
+    // Starts a program detached from Quickshell, with the session's normal environment
+    function exec(command, dir) {
+        const ctx = {
+            command: command,
+            environment: root.appEnv
+        };
+        if (dir)
+            ctx.workingDirectory = dir;
+        Quickshell.execDetached(ctx);
     }
 
     // Small calculator without eval: + - * / % ^ ( ) and decimals

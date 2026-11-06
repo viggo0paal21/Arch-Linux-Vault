@@ -2,6 +2,8 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
+import Quickshell.Io
+import QtQuick.Effects
 import qs.config
 import qs.components
 import qs.services
@@ -11,6 +13,10 @@ PanelWindow {
     id: bar
 
     required property var modelData
+    // "Shell glass" (Settings > Bar): the bar draws the blurred wallpaper itself instead of Hyprland blur.
+    // Set by shell.qml when the bar is created (the layer namespace can't be changed later).
+    property bool glassMode: false
+    property string wallpaperFile: ""
     readonly property bool floating: Config.opts.barFloating
     // "Dynamic": exactly 1 tiled window = docked, otherwise floating (floating windows never count)
     readonly property bool dynamic: bar.floating && Config.opts.barFloatingDynamic
@@ -90,7 +96,8 @@ PanelWindow {
         item: frame
     }
 
-    WlrLayershell.namespace: "qs-bar"
+    // qsglass-bar: no Hyprland blur (own layer rule in hyprland.lua), qs-bar: Hyprland blur + xray
+    WlrLayershell.namespace: bar.glassMode ? "qsglass-bar" : "qs-bar"
     WlrLayershell.layer: WlrLayer.Top
 
     IdleInhibitor {
@@ -163,6 +170,123 @@ PanelWindow {
         }
     }
 
+    // ---------- Shell glass ----------
+    // Why: Hyprland only blurs behind bar pixels above ignore_alpha (0.5). When the bottom edge glides smoothly,
+    // the bottom row is only partly covered, gets no blur and the window below shows through darkly
+    // (black line). When the bar draws its glass itself (blurred wallpaper, like xray), it is opaque within its
+    // shape and edge pixels blend normally with the window below, just like Hyprland windows.
+
+    // Wallpaper from waypaper (wallpaper = ..., fill = fill)
+    FileView {
+        id: waypaperConfig
+
+        path: bar.glassMode ? Quickshell.env("HOME") + "/.config/waypaper/config.ini" : ""
+        watchChanges: true
+        printErrors: false
+        onFileChanged: reload()
+        onLoaded: {
+            const m = /^\s*wallpaper\s*=\s*(.+?)\s*$/m.exec(waypaperConfig.text());
+            bar.wallpaperFile = m ? m[1].replace(/^~(?=\/|$)/, Quickshell.env("HOME")) : "";
+        }
+    }
+
+    // Wallpaper at full screen size, exactly as awww shows it (fill = cropped around the center).
+    // The bar window starts at 0,0, so the coordinates match 1:1. The WHOLE image gets blurred
+    // (once when it loads), not just a 45 px high strip.
+    Image {
+        id: wallImg
+
+        visible: false
+        width: bar.screen ? bar.screen.width : bar.width
+        height: bar.screen ? bar.screen.height : bar.height
+        // Scaled down cleanly to screen size while loading (like awww), also saves video memory
+        sourceSize: Qt.size(wallImg.width, wallImg.height)
+        source: bar.glassMode && bar.wallpaperFile !== "" ? "file://" + bar.wallpaperFile : ""
+        fillMode: Image.PreserveAspectCrop
+        asynchronous: true
+        smooth: true
+        layer.enabled: bar.glassMode
+    }
+
+    // Glass like kitty's, recomputed from Hyprland's shaders (decoration:blur default values):
+    // Hyprland = contrast 0.8916 (gain curve) -> dual kawase blur (size 8, passes 2) -> brightness 1.0,
+    // with kitty's 55 % black on top. Same here: blur 0.85 at blurMax 64 comes closest to Hyprland's
+    // blur, the contrast as a straight line (0.9405 x + 0.0298 -> contrast -0.0595), black on top with
+    // the bar's opacity. Difference to kitty in the simulation: 0.6 of 255 levels on average.
+    Item {
+        id: glassSource
+
+        visible: false
+        width: bar.width
+        height: bar.height
+        layer.enabled: bar.glassMode
+
+        // Opaque base: the glass is always 100 % opaque, nothing below ever shows through
+        Rectangle {
+            anchors.fill: parent
+            color: "black"
+        }
+
+        // blurMax has to be above 32: at 32 MultiEffect only uses 4 of 5 blur levels, 4 % of the weight
+        // was missing, the glass was only 96 % opaque and the bright wallpaper or kitty showed through
+        // (that's why the bar's bottom 2 rows were darker over kitty).
+        MultiEffect {
+            width: wallImg.width
+            height: wallImg.height
+            visible: bar.glassMode
+            source: wallImg
+            autoPaddingEnabled: false
+            blurEnabled: bar.glassMode
+            blur: 0.85
+            blurMax: 64
+            contrast: -0.0595
+        }
+
+        // Black with the bar's opacity (Transparency 55 % = kitty background_opacity 0.55)
+        Rectangle {
+            anchors.fill: parent
+            color: "black"
+            opacity: bgRect.opacity
+        }
+    }
+
+    // Shape of the bar (exactly like the background, antialiased) as the mask
+    Item {
+        id: glassMask
+
+        visible: false
+        width: bar.width
+        height: bar.height
+        layer.enabled: bar.glassMode
+
+        Rectangle {
+            x: frame.x + bgRect.x
+            y: frame.y + bgRect.y
+            width: bgRect.width
+            height: bgRect.height
+            radius: bgRect.radius
+            antialiasing: true
+            color: "white"
+        }
+    }
+
+    MultiEffect {
+        x: 0
+        y: 0
+        width: bar.width
+        height: bar.height
+        visible: bar.glassMode
+        source: glassSource
+        autoPaddingEnabled: false
+        maskEnabled: bar.glassMode
+        maskSource: glassMask
+        // Threshold 0.5 + spread 1.0 = smooth transition over the whole edge coverage (no hard cut)
+        maskThresholdMin: 0.5
+        maskSpreadAtMin: 1.0
+        // "Transparent when empty": the glass fades out with the bar
+        opacity: bgRect.opacity >= Theme.glassAlpha ? 1 : bgRect.opacity / Math.max(0.01, Theme.glassAlpha)
+    }
+
     // Visible bar. Switches between docked and floating as fast as Hyprland's
     // window animation in hyprland.lua (windows: speed 3 = 300 ms), so that
     // bar and windows arrive at the same time.
@@ -186,14 +310,18 @@ PanelWindow {
 
         // Background: all edges on whole pixels, always the same thickness
         Rectangle {
+            id: bgRect
+
             x: bar.glideX
             y: bar.glideY
             width: frame.width - 2 * bar.glideX
-            // Bottom edge stays on whole pixels even with "Subpixel glide": a half-covered pixel row at the bottom
-            // gets no blur from Hyprland (ignore_alpha), so the window shows through darkly = black line.
-            height: bar.glide ? bar.bottomEdge - bar.offsetExact : bar.bottomEdge - bar.offset
+            // With "Subpixel glide" the bottom edge glides just like the top edge (exact thickness in every frame).
+            // When it ran on whole pixels, the bar was briefly up to 1 px thicker at the end while the top edge
+            // crept over the last half pixel. At the start/end the values equal the resting ones (no jump).
+            height: bar.glide ? Theme.barHeight + bar.dockExtraExact : bar.bottomEdge - bar.offset
             antialiasing: true
-            color: Theme.bg
+            // With "Shell glass" the glass effect draws the surface (it takes over the opacity)
+            color: bar.glassMode ? "transparent" : Theme.bg
             opacity: bar.bgOpacity
             radius: bar.glide ? Theme.radiusLg * frame.progress : Math.round(Theme.radiusLg * frame.progress)
             border.width: frame.progress > 0.5 && Config.opts.barBorder ? 1 : 0

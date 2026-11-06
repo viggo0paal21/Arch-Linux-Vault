@@ -796,6 +796,18 @@ OverlayPanel {
                             }
                         }
 
+                        // The bar draws its glass itself instead of Hyprland blur (no dark line at gliding edges)
+                        SettingRow {
+                            width: parent.width
+                            label: "Shell glass"
+                            description: "The bar draws its blurred wallpaper itself instead of Hyprland blur. Edges blend cleanly over windows (no dark line with Subpixel glide). Needs the qsglass-bar rule in hyprland.lua"
+
+                            SwitchCtl {
+                                checked: Config.opts.barShellGlass
+                                onToggled: Config.opts.barShellGlass = !Config.opts.barShellGlass
+                            }
+                        }
+
                         // Height of the floating bar above the top edge, reset to the default
                         SettingRow {
                             width: parent.width

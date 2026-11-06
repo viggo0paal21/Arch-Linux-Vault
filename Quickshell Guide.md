@@ -111,6 +111,19 @@ pixels from a few dozen pixels around. A dark translucent window directly under 
 gradient along the bar's bottom edge (it looks like a shadow, but turning off `decoration.shadow` doesn't change it).
 With `xray` the bar blurs only the wallpaper, like tiled windows already do. Popups keep blurring the windows behind them.
 
+**Shell glass** (Settings → Bar, on by default): the bar draws the blurred wallpaper itself instead of getting Hyprland blur.
+Hyprland only blurs behind pixels above `ignore_alpha`, so a half-covered pixel row at a gliding edge got no blur and the window
+below showed through as a dark line. With shell glass the bar is opaque within its shape and its edge pixels blend normally.
+The bar then uses its own layer name without `qs-`, so it needs its own rule (and no blur):
+
+```lua
+hl.layer_rule({ match = { namespace = "qsglass-bar" }, no_anim = true })
+```
+
+The glass is tuned to look like a kitty window with `background_opacity 0.55` (Transparency 55 %) and Hyprland's default
+`decoration:blur` values. The wallpaper path is read from waypaper's `config.ini`. Details in the
+[Quickshell Stutter Guide](Quickshell%20Stutter%20Guide.md#5d-shell-glass-no-dark-line-same-look-as-kitty).
+
 `ignore_alpha`: Hyprland only blurs pixels that are more opaque than this value. With `0.5`, fully transparent areas
 and the dim behind the launcher / settings / power menu stay unblurred, but surfaces need Opacity above 50 % for blur.
 The cards in dimmed panels sit on the dim, so together they are always above 0.5. For the other popups add:
@@ -179,6 +192,9 @@ Fix:
 
 - `QSG_RHI_BACKEND=vulkan`: on Vulkan the threaded render loop is Qt's default and the driver does vsync like in games → stable 170 fps.
 - `MANGOHUD=0`, `unset LD_PRELOAD`, `DISABLE_LSFGVK=1`, `DISABLE_VKBASALT=1`: keeps the game layers out of the shell. Games are unchanged.
+  The scripts first save the original values as `QS_APP_*`, and `services/Apps.qml` gives them back to everything the
+  launcher starts. Without that, Steam started from the launcher (and every game started from it) ran without MangoHud,
+  so without its FPS limit and vsync. After updating the scripts, log out and back in once.
 - Panels stay mapped (see the table in section 1).
 - `QSG_USE_SIMPLE_ANIMATION_DRIVER=1`: animations follow the real clock instead of fixed per-frame steps, so motion
   stays even when single frames arrive a bit early or late.
