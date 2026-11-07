@@ -837,25 +837,13 @@ OverlayPanel {
                             }
                         }
 
-                        // The bar draws its glass itself instead of a Hyprland layer blur (no dark line at gliding edges)
+                        // Who blurs the bar's glass: the bar itself (shell glass, wallpaper file, pixel-exact like kitty)
+                        // or Hyprland (layer blur with xray: any wallpaper program, animated ones too). Switching recreates the
+                        // bar, because Hyprland's rules depend on the layer name.
                         SettingRow {
                             width: parent.width
-                            label: "Shell glass"
-                            description: "The bar draws its glass itself instead of a Hyprland layer blur with ignore_alpha. Edges blend cleanly over windows (no dark line with Subpixel glide). Needs the qsglass-bar rule in hyprland.lua"
-
-                            SwitchCtl {
-                                checked: Config.opts.barShellGlass
-                                onToggled: Config.opts.barShellGlass = !Config.opts.barShellGlass
-                            }
-                        }
-
-                        // Who blurs: the bar itself (wallpaper file, pixel-exact like kitty) or Hyprland
-                        // (the background behind the bar like behind kitty: any wallpaper program, animated ones too)
-                        SettingRow {
-                            width: parent.width
-                            visible: Config.opts.barShellGlass
                             label: "Glass blur"
-                            description: "Own: the bar blurs the wallpaper itself, pixel-exact like kitty (wallpaper from waypaper / awww, static only). Hyprland: Hyprland blurs the background behind the bar like behind kitty, with the values from hyprland.lua (any wallpaper program, animated wallpapers too). Needs xray in the qsglass-bar rule"
+                            description: "Own: the bar blurs the wallpaper itself, pixel-exact like kitty (static wallpaper from waypaper / awww, needs the qsglass-bar rule in hyprland.lua). Hyprland: Hyprland blurs the background behind the bar like behind kitty (any wallpaper program, animated wallpapers too)"
                             controlWidth: 330
 
                             Segmented {
@@ -870,15 +858,15 @@ OverlayPanel {
                                         label: "Hyprland"
                                     }
                                 ]
-                                value: Config.opts.glassBlurSource
-                                onPicked: v => Config.opts.glassBlurSource = v
+                                value: Config.opts.barShellGlass ? "own" : "hyprland"
+                                onPicked: v => Config.opts.barShellGlass = v === "own"
                             }
                         }
 
                         // Glass blur like Hyprland (decoration:blur). Same values as in hyprland.lua = same look as kitty.
                         SettingRow {
                             width: parent.width
-                            visible: Config.opts.barShellGlass && Config.opts.glassBlurSource === "own"
+                            visible: Config.opts.barShellGlass
                             label: "Glass blur values"
                             description: "Same as decoration:blur in hyprland.lua. Use the same values there and here and the bar looks exactly like a blurred window. Read them from Hyprland or reset to Hyprland's defaults"
                             controlWidth: 400
@@ -929,7 +917,7 @@ OverlayPanel {
                                 required property var modelData
 
                                 width: parent ? parent.width : 0
-                                visible: Config.opts.barShellGlass && Config.opts.glassBlurSource === "own"
+                                visible: Config.opts.barShellGlass
                                 label: blurRow.modelData.label
                                 description: blurRow.modelData.desc
                                 controlWidth: 400

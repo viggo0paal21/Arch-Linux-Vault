@@ -118,17 +118,18 @@ below showed through as a dark line. With shell glass the bar is opaque within i
 The bar then uses its own layer name without `qs-`, so it needs its own rule (and no blur):
 
 ```lua
-hl.layer_rule({ match = { namespace = "qsglass-bar" }, no_anim = true, xray = true })
+hl.layer_rule({ match = { namespace = "qsglass-bar" }, no_anim = true })
 ```
 
-**Glass blur** (Settings → Bar, shown with shell glass) picks who blurs:
-- **Own**: the bar blurs the wallpaper file itself (see below). Pixel-exact like kitty, but only for a static wallpaper
-  set through waypaper / awww.
-- **Hyprland**: the bar registers exactly its shape as a blur region (`ext-background-effect`, every frame, also while
-  gliding) and only draws the black on top, like kitty's background. Works with any wallpaper program and with
-  animated wallpapers, with the values from `decoration:blur`. The `xray` in the rule above makes Hyprland blur only the
-  background like behind kitty; without it the blur pulls in the windows below the bar and the bar gets darker towards
-  the bottom. A floating window dragged behind the bar isn't blurred because of that.
+**Glass blur** (Settings → Bar) picks who blurs the bar's glass:
+- **Own** (shell glass, layer `qsglass-bar`): the bar blurs the wallpaper file itself (see below). Pixel-exact like
+  kitty, but only for a static wallpaper set through waypaper / awww.
+- **Hyprland** (layer `qs-bar`): Hyprland's layer blur with `xray` and `ignore_alpha 0.5`, the bar only draws the black
+  on top like kitty's background. Works with any wallpaper program and with animated wallpapers, with the values from
+  `decoration:blur`. While gliding, the glass area stays on whole pixels so every glass pixel is above `ignore_alpha`
+  and gets blurred (no dark line); the content still glides smoothly.
+
+Switching recreates the bar, because Hyprland's rules depend on the layer name.
 
 With **Own**, the glass looks like a kitty window with `background_opacity 0.55` (Transparency 55 %): `components/HyprBlur.qml` runs
 Hyprland's own blur shaders stage by stage. The blur values are in Settings → Bar → Glass blur values ("From Hyprland"
