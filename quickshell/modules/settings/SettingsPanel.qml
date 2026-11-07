@@ -837,11 +837,11 @@ OverlayPanel {
                             }
                         }
 
-                        // The bar draws its glass itself instead of Hyprland blur (no dark line at gliding edges)
+                        // The bar draws its glass itself instead of a Hyprland layer blur (no dark line at gliding edges)
                         SettingRow {
                             width: parent.width
                             label: "Shell glass"
-                            description: "The bar draws its blurred wallpaper itself instead of Hyprland blur. Edges blend cleanly over windows (no dark line with Subpixel glide). Needs the qsglass-bar rule in hyprland.lua"
+                            description: "The bar draws its glass itself instead of a Hyprland layer blur with ignore_alpha. Edges blend cleanly over windows (no dark line with Subpixel glide). Needs the qsglass-bar rule in hyprland.lua"
 
                             SwitchCtl {
                                 checked: Config.opts.barShellGlass
@@ -849,10 +849,36 @@ OverlayPanel {
                             }
                         }
 
-                        // Glass blur like Hyprland (decoration:blur). Same values as in hyprland.lua = same look as kitty.
+                        // Who blurs: the bar itself (wallpaper file, pixel-exact like kitty) or Hyprland
+                        // (the background behind the bar like behind kitty: any wallpaper program, animated ones too)
                         SettingRow {
                             width: parent.width
                             visible: Config.opts.barShellGlass
+                            label: "Glass blur"
+                            description: "Own: the bar blurs the wallpaper itself, pixel-exact like kitty (wallpaper from waypaper / awww, static only). Hyprland: Hyprland blurs the background behind the bar like behind kitty, with the values from hyprland.lua (any wallpaper program, animated wallpapers too). Needs xray in the qsglass-bar rule"
+                            controlWidth: 330
+
+                            Segmented {
+                                width: parent.width
+                                options: [
+                                    {
+                                        value: "own",
+                                        label: "Own"
+                                    },
+                                    {
+                                        value: "hyprland",
+                                        label: "Hyprland"
+                                    }
+                                ]
+                                value: Config.opts.glassBlurSource
+                                onPicked: v => Config.opts.glassBlurSource = v
+                            }
+                        }
+
+                        // Glass blur like Hyprland (decoration:blur). Same values as in hyprland.lua = same look as kitty.
+                        SettingRow {
+                            width: parent.width
+                            visible: Config.opts.barShellGlass && Config.opts.glassBlurSource === "own"
                             label: "Glass blur values"
                             description: "Same as decoration:blur in hyprland.lua. Use the same values there and here and the bar looks exactly like a blurred window. Read them from Hyprland or reset to Hyprland's defaults"
                             controlWidth: 400
@@ -903,7 +929,7 @@ OverlayPanel {
                                 required property var modelData
 
                                 width: parent ? parent.width : 0
-                                visible: Config.opts.barShellGlass
+                                visible: Config.opts.barShellGlass && Config.opts.glassBlurSource === "own"
                                 label: blurRow.modelData.label
                                 description: blurRow.modelData.desc
                                 controlWidth: 400

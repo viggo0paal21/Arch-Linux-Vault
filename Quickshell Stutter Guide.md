@@ -184,6 +184,12 @@ Measured pixel by pixel against a real kitty window: **92.7 % of the pixels are 
 
 What is left: ties exactly between two 8-bit steps (they depend on how the driver compiles each shader) and a small triangle at the right end of the bar, where Hyprland's full-screen quad uses its second triangle and the noise is computed slightly differently.
 
+**Glass blur "Hyprland"** (Settings > Bar > Glass blur) is the alternative for any wallpaper program and animated wallpapers: the bar registers its exact shape as a blur region (`BackgroundEffect.blurRegion`, ext-background-effect-v1) and only draws the black on top. Things that mattered:
+- **The region is set by the bar, not by `ignore_alpha`.** Hyprland can only blur whole pixels, so while gliding a pixel counts once the bar covers at least half of it. Checked frame by frame while docking: no dark or bright line at the edges, the rounded corners stay smooth.
+- **`xray = true` in the `qsglass-bar` rule.** Without it Hyprland blurs everything behind the bar, and the windows a few pixels below get pulled into the blur: the bar got up to 8 of 255 levels darker towards its bottom edge. With `xray` it uses the same background blur as kitty: 91 % of the pixels identical to the own glass, no gradient.
+- **Only the shell-glass bar registers a region.** Registering one at all makes Hyprland ignore the layer rule's `blur` for that surface, which the normal bar (`qs-bar`) relies on.
+- **A blur region outlives a reload.** Quickshell reuses the bar's window on a config reload, and a region registered by an older config stays active until it is set again. That once left a blurred strip above the floating bar. The shell-glass bar now always sets its region (empty when it isn't needed).
+
 ---
 
 ## 6. Freezes on every terminal command (the main cause)

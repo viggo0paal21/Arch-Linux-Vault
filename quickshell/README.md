@@ -8,7 +8,7 @@ Font like the Waybar: Inter 15px bold, icons from JetBrainsMono Nerd Font Propo.
 
 | Part | What it does |
 |---|---|
-| Bar | Arch button (launcher), workspaces as pills, window title, tray with its own B/W menu, CPU/RAM/temp + clock, network/Bluetooth/volume/bell, power. Optional floating bar that docks with a single window (with an optional subpixel glide), optional shell glass (the bar draws its own blur, matching kitty's glass), Arch or Tux launcher icon with adjustable size, optional group boxes with a color picker |
+| Bar | Arch button (launcher), workspaces as pills, window title, tray with its own B/W menu, CPU/RAM/temp + clock, network/Bluetooth/volume/bell, power. Optional floating bar that docks with a single window (with an optional subpixel glide), optional shell glass (looks like kitty's glass: either the bar blurs the wallpaper itself, or Hyprland blurs the background behind it), Arch or Tux launcher icon with adjustable size, optional group boxes with a color picker |
 | Launcher | Fuzzy app search, frequently used apps first, `=` calculator, `>` run a command |
 | Control center | Network, Bluetooth, do not disturb, stay awake, night light, mic, volume/mic sliders, media player, notification history |
 | Dashboard | Big clock, calendar, system monitor (CPU, NVIDIA GPU, RAM, drives, network with history graphs) |

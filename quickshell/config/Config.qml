@@ -23,6 +23,7 @@ Singleton {
         barFloatSide: 10,
         barGlide: true,
         barShellGlass: true,
+        glassBlurSource: "own",
         glassBlurSize: 8,
         glassBlurPasses: 2,
         glassBlurContrast: 0.8916,
@@ -117,6 +118,7 @@ Singleton {
             property int barFloatSide: root.defaults.barFloatSide
             property bool barGlide: root.defaults.barGlide
             property bool barShellGlass: root.defaults.barShellGlass
+            property string glassBlurSource: root.defaults.glassBlurSource
             property int glassBlurSize: root.defaults.glassBlurSize
             property int glassBlurPasses: root.defaults.glassBlurPasses
             property real glassBlurContrast: root.defaults.glassBlurContrast

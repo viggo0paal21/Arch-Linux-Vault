@@ -16,6 +16,10 @@ PanelWindow {
     // "Shell glass" (Settings > Bar): the bar draws the blurred wallpaper itself instead of Hyprland blur.
     // Set by shell.qml when the bar is created (the layer namespace can't be changed later).
     property bool glassMode: false
+    // Glass blur "Hyprland" (Settings > Bar > Glass blur): Hyprland blurs the background behind the bar like
+    // behind kitty (xray in hyprland.lua), the bar only puts the black on top. "Own": the bar blurs the
+    // wallpaper file itself (HyprBlur, below).
+    readonly property bool hyprGlass: bar.glassMode && Config.opts.glassBlurSource === "hyprland"
     property string wallpaperFile: ""
     readonly property bool floating: Config.opts.barFloating
     // "Dynamic": exactly 1 tiled window = docked, otherwise floating (floating windows never count)
@@ -57,8 +61,10 @@ PanelWindow {
     readonly property int tiledCount: Hypr.tiledCount(bar.hyprMonitor)
     // Same for the bar color, optionally without kitty (Exclude kitty terminal)
     readonly property int glassCount: Config.opts.barExcludeKitty ? Hypr.tiledCount(bar.hyprMonitor, true) : bar.tiledCount
-    // "Solid bar with windows": black from 1 window, with "Only 1" only with exactly 1 window
-    readonly property bool solidByWindows: Config.opts.barSolidWithWindows && (Config.opts.barSolidOnlySingle ? bar.glassCount === 1 : bar.glassCount > 0)
+    // "Solid bar with windows": black from 1 window on, with "Only 1" only with exactly 1 window.
+    // "Only 1" counts all windows: from 2 windows on the bar is translucent, even if one of them is kitty.
+    // "Exclude kitty" only means that a single kitty doesn't make the bar black.
+    readonly property bool solidByWindows: Config.opts.barSolidWithWindows && (Config.opts.barSolidOnlySingle ? bar.tiledCount === 1 && bar.glassCount === 1 : bar.glassCount > 0)
     // 0 = transparent (empty workspace), glass = Transparency "Everywhere", otherwise black
     readonly property real bgOpacity: {
         if (!bar.solid)
@@ -72,7 +78,13 @@ PanelWindow {
     readonly property real infoChipRight: frame.x + rightRow.x + infoChip.x + infoChip.width
 
     onInfoChipRightChanged: Ui.setInfoChipRight(bar.modelData.name, bar.infoChipRight)
-    Component.onCompleted: Ui.setInfoChipRight(bar.modelData.name, bar.infoChipRight)
+    Component.onCompleted: {
+        Ui.setInfoChipRight(bar.modelData.name, bar.infoChipRight);
+        // Only the glass bar registers a blur region. Registering alone turns off Hyprland's layer rule
+        // "blur" for this window, and the bar without shell glass needs that rule.
+        if (bar.glassMode)
+            BackgroundEffect.blurRegion = hyprBlurRegion;
+    }
 
     screen: modelData
     color: "transparent"
@@ -94,6 +106,23 @@ PanelWindow {
     // Clicks only on the visible bar, the free strip below it lets clicks through
     mask: Region {
         item: frame
+    }
+
+    // Glass blur "Hyprland": exactly the bar's shape (ext-background-effect). Hyprland only blurs whole pixels,
+    // so while gliding a pixel counts as soon as the bar covers at least half of it.
+    // Fully black (bar with a window) or fully transparent: no blur, that saves Hyprland the work.
+    readonly property real glassLeft: frame.x + bgRect.x
+    readonly property real glassTop: frame.y + bgRect.y
+    readonly property bool hyprBlurOn: bar.hyprGlass && bgRect.opacity > 0 && bgRect.opacity < 0.999
+
+    Region {
+        id: hyprBlurRegion
+
+        x: bar.hyprBlurOn ? Math.round(bar.glassLeft) : 0
+        y: bar.hyprBlurOn ? Math.round(bar.glassTop) : 0
+        width: bar.hyprBlurOn ? Math.round(bar.glassLeft + bgRect.width) - Math.round(bar.glassLeft) : 0
+        height: bar.hyprBlurOn ? Math.round(bar.glassTop + bgRect.height) - Math.round(bar.glassTop) : 0
+        radius: bar.hyprBlurOn ? Math.round(bgRect.radius) : 0
     }
 
     // qsglass-bar: no Hyprland blur (own layer rule in hyprland.lua), qs-bar: Hyprland blur + xray
@@ -401,7 +430,7 @@ PanelWindow {
         y: 0
         width: bar.width
         height: bar.height
-        visible: bar.glassMode
+        visible: bar.glassMode && !bar.hyprGlass
         source: glassSource
         autoPaddingEnabled: false
         maskEnabled: bar.glassMode
@@ -446,8 +475,9 @@ PanelWindow {
             // crept over the last half pixel. At the start/end the values equal the resting ones (no jump).
             height: bar.glide ? Theme.barHeight + bar.dockExtraExact : bar.bottomEdge - bar.offset
             antialiasing: true
-            // With "Shell glass" the glass effect draws the surface (it takes over the opacity)
-            color: bar.glassMode ? "transparent" : Theme.bg
+            // With "Shell glass" (Own) the glass effect draws the area (it takes over the opacity).
+            // With "Hyprland" this is the black on top of Hyprland's blur, like kitty's background.
+            color: bar.glassMode && !bar.hyprGlass ? "transparent" : Theme.bg
             opacity: bar.bgOpacity
             radius: bar.glide ? Theme.radiusLg * frame.progress : Math.round(Theme.radiusLg * frame.progress)
             border.width: frame.progress > 0.5 && Config.opts.barBorder ? 1 : 0
