@@ -91,4 +91,7 @@ Singleton {
     // (the old M3 curve jumped >100 px in the first frame, which looked choppy).
     readonly property list<real> curveEmph: [0.33, 1.0, 0.68, 1.0, 1.0, 1.0]
     readonly property list<real> curveAccel: [0.32, 0.0, 0.67, 0.0, 1.0, 1.0]
+    // Like the bar (Smooth out, decelerating evenly): motion outside the bar (switches,
+    // sliders, meters, OSD, tab switch, launcher height)
+    readonly property list<real> curveSmooth: root.curveOf("smoothOut")
 }

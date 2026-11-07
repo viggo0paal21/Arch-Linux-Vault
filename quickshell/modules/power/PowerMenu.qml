@@ -106,11 +106,14 @@ OverlayPanel {
     }
 
     Column {
-        // Only fade in + a short slide, always on whole pixels: text stays sharp in every frame
+        // Fade in + short glide, subpixel like the bar: drawn as a texture while moving (text stays sharp),
+        // at rest on whole pixels without a texture
         x: Math.round((parent.width - width) / 2)
-        y: Theme.px((parent.height - height) / 2 + 14 * (1 - panel.progress))
+        y: Math.round((parent.height - height) / 2) + 14 * (1 - panel.progress)
         spacing: 22
         opacity: panel.progress
+        layer.enabled: panel.progress > 0 && panel.progress < 1
+        layer.smooth: true
 
         Row {
             anchors.horizontalCenter: parent.horizontalCenter

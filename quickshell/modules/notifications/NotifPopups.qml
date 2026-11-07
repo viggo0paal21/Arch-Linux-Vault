@@ -105,6 +105,7 @@ PanelWindow {
                     property: "x"
                     to: 72
                     duration: Math.round(Theme.durMed * Config.opts.animNotifSpeed)
+                    easing.bezierCurve: Theme.curveOf(Config.opts.animNotifCurve)
                 }
                 Anim {
                     property: "opacity"
@@ -118,6 +119,7 @@ PanelWindow {
             Anim {
                 property: "y"
                 duration: Math.round(Theme.durMed * Config.opts.animNotifSpeed)
+                easing.bezierCurve: Theme.curveOf(Config.opts.animNotifCurve)
             }
         }
 

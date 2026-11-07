@@ -68,7 +68,8 @@ PanelWindow {
         property real t: win.shown ? 1 : 0
 
         anchors.horizontalCenter: parent.horizontalCenter
-        y: Theme.px(8 + 12 * (1 - t))
+        // Glides subpixel like the bar: as a texture while moving (text sharp), on whole pixels at rest
+        y: 8 + 12 * (1 - t)
         width: parent.width
         height: 48
         radius: height / 2
@@ -76,10 +77,13 @@ PanelWindow {
         border.width: 1
         border.color: Theme.borderStrong
         opacity: t
+        layer.enabled: t > 0 && t < 1
+        layer.smooth: true
 
         Behavior on t {
             Anim {
                 duration: Math.round(Theme.durMed * Config.opts.animOsdSpeed)
+                easing.bezierCurve: Theme.curveSmooth
             }
         }
 

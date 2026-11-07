@@ -28,7 +28,8 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         property real kx: root.checked ? root.width - width - 4 : 4
 
-        x: Math.round(kx)
+        // subpixel like the bar
+        x: kx
         width: root.height - 8
         height: width
         radius: width / 2
@@ -37,6 +38,7 @@ Item {
         Behavior on kx {
             Anim {
                 duration: Theme.ctlFast
+                easing.bezierCurve: Theme.curveSmooth
             }
         }
         Behavior on color {

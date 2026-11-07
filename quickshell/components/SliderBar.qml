@@ -45,8 +45,9 @@ Item {
         property real kx: root.shown * (root.width - width)
         property real kw: area.containsMouse || area.pressed ? 16 : 12
 
-        x: Math.round(kx)
-        width: Math.round(kw / 2) * 2
+        // subpixel like the bar
+        x: kx
+        width: kw
         height: width
         radius: width / 2
         color: Theme.fg
@@ -56,6 +57,7 @@ Item {
         Behavior on kw {
             Anim {
                 duration: Theme.ctlFast
+                easing.bezierCurve: Theme.curveSmooth
             }
         }
         Behavior on kx {
@@ -63,6 +65,7 @@ Item {
 
             Anim {
                 duration: Theme.ctlFast
+                easing.bezierCurve: Theme.curveSmooth
             }
         }
     }

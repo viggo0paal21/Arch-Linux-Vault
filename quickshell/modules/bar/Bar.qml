@@ -34,12 +34,18 @@ PanelWindow {
     // rendered smoothly by the background (antialiasing) and the content (each side as one image, filtered).
     // Off or at rest: glideX = glideY = 0, no layer, everything exactly as without the option.
     readonly property bool glide: Config.opts.barGlide && dockTicker.running
-    // The glass area itself only glides between two pixels with the own glass (shell glass). With Hyprland's
-    // blur it stays on whole pixels: Hyprland only blurs pixels above ignore_alpha 0.5, a half covered
-    // edge pixel got no blur and the window below showed through dark (dark line while docking).
-    // On whole pixels every glass pixel has the full opacity (55 %) and gets blurred, in the same frame as
-    // the bar itself. The content (logo, workspaces, clock ...) still glides smoothly.
-    readonly property bool bgGlide: bar.glide && bar.glassMode
+    // The glass surface glides between pixels with both blur types, just like the content. With Hyprland's
+    // blur (Glass blur: Hyprland) the barshape shader draws it instead of a rectangle: Hyprland only blurs
+    // pixels above ignore_alpha 0.5; a half-covered edge pixel over a window would get no blur and the
+    // window would show through darkened (dark line). At the top (only wallpaper behind) normal antialiasing; in the
+    // rows where a window can be under the bar, an edge pixel is either full glass (blurred) or
+    // stays just below the threshold, in a fixed pattern (see edgeDither and shaders/barshape.frag).
+    // On whole pixels (at rest) this is exactly the same as a rectangle.
+    readonly property bool bgGlide: bar.glide
+    // Pattern only while a window can be under the bottom edge: the whole time while docking (the window comes up),
+    // only at the start while undocking (after that only wallpaper is under the edge, where
+    // normal antialiasing is more accurate).
+    readonly property bool edgeDither: dockTicker.running && (bar.dockTo === 0 || bar.dockElapsed < 0.1 * Config.opts.barDockDuration)
     readonly property real edgeExact: Config.opts.barFloatSide * frame.progress
     readonly property real offsetExact: Config.opts.barFloatOffset * frame.progress
     readonly property real dockExtraExact: bar.dynamic ? Math.max(0, Config.opts.barDockedHeight - Config.opts.barHeight) * (1 - frame.progress) : 0
@@ -454,13 +460,34 @@ PanelWindow {
             // crept over the last half pixel. At the start/end the values equal the resting ones (no jump).
             height: bar.bgGlide ? Theme.barHeight + bar.dockExtraExact : bar.bottomEdge - bar.offset
             antialiasing: true
-            // With "Shell glass" (Own) the glass effect draws the area (it takes over the opacity).
-            // With Hyprland's blur this is the black on top of the blur, like kitty's background.
-            color: bar.glassMode ? "transparent" : Theme.bg
+            // With "Own" the glass effect draws the surface (it takes over the opacity), with Hyprland's blur
+            // the shader below (black over the blur like kitty). The rectangle itself only carries shape,
+            // opacity and border.
+            color: "transparent"
             opacity: bar.bgOpacity
             radius: bar.bgGlide ? Theme.radiusLg * frame.progress : Math.round(Theme.radiusLg * frame.progress)
             border.width: frame.progress > 0.5 && Config.opts.barBorder ? 1 : 0
             border.color: Theme.border
+
+            // Surface for Hyprland's blur. Sits on whole pixels (1 px margin around the bar), the shape comes in exactly
+            // as numbers, so every edge can lie between two pixels.
+            ShaderEffect {
+                readonly property int pad: 1
+                property vector4d rect: Qt.vector4d(bgRect.x + pad, bgRect.y + pad, bgRect.x + bgRect.width + pad, bgRect.y + bgRect.height + pad)
+                property vector2d itemSize: Qt.vector2d(width, height)
+                property vector2d origin: Qt.vector2d(frame.x - pad, frame.y - pad)
+                property real radius: bgRect.radius
+                property real zoneY: bar.exclusiveZone
+                property real dither: bar.edgeDither ? 1 : 0
+                property color fill: Theme.bg
+
+                x: -bgRect.x - pad
+                y: -bgRect.y - pad
+                width: frame.width + 2 * pad
+                height: Theme.barHeight + Math.max(0, Config.opts.barDockedHeight - Config.opts.barHeight) + 2 * pad + 2
+                visible: !bar.glassMode
+                fragmentShader: glassBlur.shader("barshape")
+            }
 
             Rectangle {
                 anchors.left: parent.left

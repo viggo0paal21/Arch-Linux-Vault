@@ -14,13 +14,16 @@ Rectangle {
     Rectangle {
         property real w: Math.max(root.height, root.width * Math.max(0, Math.min(1, root.value)))
 
-        width: Math.round(w)
+        // subpixel like the bar
+        width: w
         height: parent.height
         radius: parent.radius
         color: Theme.fg
 
         Behavior on w {
-            Anim {}
+            Anim {
+                easing.bezierCurve: Theme.curveSmooth
+            }
         }
     }
 }

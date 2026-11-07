@@ -21,10 +21,13 @@ Item {
     Item {
         id: inner
 
-        // closed: completely above (behind the bar), open: just below the bar
-        // round to whole pixels: text stays sharp in every frame while sliding
-        y: Theme.px(Theme.gap - root.fullHeight * (1 - root.progress))
+        // closed: fully above (behind the bar), open: just below the bar.
+        // Glides between pixels like the bar: while moving, the content is drawn once
+        // sharply into a texture and that is moved smoothly. At rest it sits on whole pixels without a texture.
+        y: Theme.gap - root.fullHeight * (1 - root.progress)
         width: parent.width
         height: root.contentHeight
+        layer.enabled: root.progress > 0 && root.progress < 1
+        layer.smooth: true
     }
 }

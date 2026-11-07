@@ -234,12 +234,15 @@ OverlayPanel {
 
         readonly property int tabHeight: 56
 
-        // Only fade in + a short slide, always on whole pixels: text stays sharp in every frame
+        // Fade in + short glide, subpixel like the bar: drawn as a texture while moving (text stays sharp),
+        // at rest on whole pixels without a texture
         x: Math.round((parent.width - width) / 2)
-        y: Theme.px((parent.height - height) / 2 + 12 * (1 - panel.progress))
+        y: Math.round((parent.height - height) / 2) + 12 * (1 - panel.progress)
         width: Math.min(940, parent.width - 80)
         height: Math.min(700, parent.height - 140)
         opacity: panel.progress
+        layer.enabled: panel.progress > 0 && panel.progress < 1
+        layer.smooth: true
         focus: true
 
         Keys.onTabPressed: panel.switchTab(1)
@@ -455,8 +458,12 @@ OverlayPanel {
                     width: flick.width
                     height: [pageAppearance, pageBar, pageBehavior, pageCommands][panel.tab].implicitHeight
 
+                    // Tab switch: glides subpixel, as a texture meanwhile (text sharp)
+                    layer.enabled: tabIn.running
+                    layer.smooth: true
+
                     transform: Translate {
-                        y: Theme.px(pages.shift)
+                        y: pages.shift
                     }
 
                     // ----- Appearance -----
@@ -1627,7 +1634,8 @@ OverlayPanel {
                 from: 0
                 to: 1
                 duration: Theme.ctlMed
-                easing.type: Easing.OutCubic
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Theme.curveSmooth
             }
 
             NumberAnimation {
@@ -1636,7 +1644,8 @@ OverlayPanel {
                 from: 10
                 to: 0
                 duration: Theme.ctlMed
-                easing.type: Easing.OutCubic
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Theme.curveSmooth
             }
         }
     }

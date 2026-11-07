@@ -38,11 +38,17 @@ Rectangle {
     border.color: root.critical ? Theme.fg : (hover.hovered ? Theme.borderStrong : Theme.border)
     clip: true
 
-    // While sliding in/out, x/y often sit between two pixels and the text shimmers.
-    // The counter offset always draws the card on whole pixels.
+    // While sliding in/out, x/y lie between two pixels. The card is then drawn sharply into a texture once
+    // and that texture is moved subpixel, like the bar. At rest it sits on whole pixels without a texture
+    // (the counter offset then evens out remainders below one pixel).
+    readonly property bool gliding: root.popup && (root.x !== 0 || root.opacity < 1 || root.y !== Math.round(root.y))
+
+    layer.enabled: root.gliding
+    layer.smooth: true
+
     transform: Translate {
-        x: Math.round(root.x) - root.x
-        y: Math.round(root.y) - root.y
+        x: root.gliding ? 0 : Math.round(root.x) - root.x
+        y: root.gliding ? 0 : Math.round(root.y) - root.y
     }
 
     Behavior on border.color {

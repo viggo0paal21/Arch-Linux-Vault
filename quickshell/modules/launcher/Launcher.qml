@@ -91,18 +91,22 @@ OverlayPanel {
         readonly property int rowHeight: 52
         readonly property int visibleRows: Math.min(8, Math.max(1, panel.results.length))
 
-        // Only fade in + a short slide, always on whole pixels: text stays sharp in every frame
+        // Fade in + short glide, subpixel like the bar: drawn as a texture while moving (text stays sharp),
+        // at rest on whole pixels without a texture
         x: Math.round((parent.width - width) / 2)
-        y: Theme.px(parent.height * 0.16 - 14 * (1 - panel.progress))
+        y: Math.round(parent.height * 0.16) - 14 * (1 - panel.progress)
         width: Math.min(620, parent.width - 40)
         property real h: header.height + list.height + 26
 
-        height: Math.round(h)
+        height: h
         opacity: panel.progress
+        layer.enabled: panel.progress > 0 && panel.progress < 1
+        layer.smooth: true
 
         Behavior on h {
             Anim {
                 duration: Theme.ctlFast
+                easing.bezierCurve: Theme.curveSmooth
             }
         }
 
