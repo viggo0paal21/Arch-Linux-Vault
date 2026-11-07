@@ -172,15 +172,17 @@ Two traps found by measuring a recording frame by frame:
 
 ### 5d. Shell glass (no dark line, same look as kitty)
 
-**Settings > Bar > Shell glass** lets the bar draw its blurred wallpaper itself (QtQuick.Effects `MultiEffect`) instead of getting Hyprland blur. The bar is then opaque within its shape, so a half-covered edge pixel simply blends with the window below, like Hyprland's own windows. It needs the `qsglass-bar` layer rule from the [Quickshell Guide](Quickshell%20Guide.md).
+**Settings > Bar > Shell glass** lets the bar draw its blurred wallpaper itself instead of getting Hyprland blur. The bar is then opaque within its shape, so a half-covered edge pixel simply blends with the window below, like Hyprland's own windows. It needs the `qsglass-bar` layer rule from the [Quickshell Guide](Quickshell%20Guide.md).
 
-To make it look exactly like a kitty window (`background_opacity 0.55`), Hyprland's blur was rebuilt from its shaders and checked against a screenshot (average difference 0.3 of 255 levels). Things that mattered:
+To make it look exactly like a kitty window (`background_opacity 0.55`), `components/HyprBlur.qml` runs Hyprland's own blur shaders (`shaders/hypr*.frag`) stage by stage: contrast curve, `passes` x halve with vibrancy, `passes` x double, noise. Every stage is its own 8-bit texture like Hyprland's buffers. Only a strip at the top is computed, and only when the wallpaper or a blur value changes, so it costs nothing per frame. The values are in Settings > Bar > Glass blur values.
+
+Measured pixel by pixel against a real kitty window: **92.7 % of the pixels are identical**, the rest is off by 1 of 255 levels (rarely 2), on average 0.03 levels. Things that mattered:
+- **The wallpaper itself.** Qt decodes JPEGs with libjpeg, awww with zune-jpeg, and awww scales with fast_image_resize (integer math, vertical pass first). That was most of the difference. `tools/glasswall` (`qs-glasswall`) uses the same crates and versions as awww 0.12.1 and writes the top strip as an image; its output is identical to awww's. Without it the bar falls back to decoding the wallpaper itself.
+- **How the GPU rounds.** On NVIDIA, writing to an 8-bit texture keeps only 12 bits of the value, so it rounds up only from about x.56 instead of x.5. Hyprland's blur buffers do the same, so the stages stay as they are. Hyprland's final output rounds correctly though, and the black on top (kitty's background) was blended by Qt, which made the bar up to 0.06 levels darker per pixel. `shaders/hyprdim.frag` now computes it and rounds exactly.
+- **The noise pattern.** The noise hash reacts to the smallest float step of its input. Hyprland gets it from the GPU's interpolation: (pixel + 0.5) x float(1 / size), rounded toward zero. `hyprfinish.frag` builds exactly that with integer math.
 - **`decoration:blur:brightness` defaults to 1.0** in current Hyprland (older versions used 0.8172). Assuming 0.8172 made the bar ~15 % darker than kitty.
-- **`MultiEffect` with `blurMax: 32` and `blur: 1.0` loses 4 % of its weight** (it only uses 4 of its 5 blur levels). The glass was only 96 % opaque, the bright wallpaper showed through, and over a window the bottom rows looked darker. `blurMax: 64` uses all levels. An opaque black base under the glass makes sure nothing ever shows through.
-- **Blur the whole wallpaper, not a 45 px strip.** The wallpaper is blurred once at screen size; `blur: 0.85` at `blurMax: 64` comes closest to Hyprland's dual kawase blur (`size 8, passes 2`).
-- Hyprland's contrast (`0.8916`, a gain curve) is approximated as a straight line: `contrast: -0.0595`. Vibrancy has practically no effect on dark colors like these.
 
-Result in the simulation: 0.6 of 255 levels average difference to kitty, no darker rows at the bottom.
+What is left: ties exactly between two 8-bit steps (they depend on how the driver compiles each shader) and a small triangle at the right end of the bar, where Hyprland's full-screen quad uses its second triangle and the noise is computed slightly differently.
 
 ---
 

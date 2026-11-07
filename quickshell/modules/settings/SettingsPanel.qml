@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import qs.config
 import qs.components
 import qs.services
@@ -40,6 +41,46 @@ OverlayPanel {
     ]
 
     // All animation values back to the defaults
+    // Glass blur: read the values from Hyprland (Settings > Bar > Glass blur values > From Hyprland)
+    readonly property var glassBlurKeys: ["glassBlurSize", "glassBlurPasses", "glassBlurContrast", "glassBlurBrightness", "glassBlurVibrancy", "glassBlurVibrancyDarkness", "glassBlurNoise"]
+
+    function applyHyprBlurLine(line) {
+        const i = line.indexOf(" ");
+        if (i < 0)
+            return;
+        const name = line.slice(0, i);
+        let j;
+        try {
+            j = JSON.parse(line.slice(i + 1));
+        } catch (e) {
+            return;
+        }
+        const v = j.int !== undefined ? j.int : (j.float !== undefined ? j.float : j.value);
+        if (typeof v !== "number")
+            return;
+        const keys = {
+            size: ["glassBlurSize", 0, 100],
+            passes: ["glassBlurPasses", 1, 8],
+            contrast: ["glassBlurContrast", 0, 2],
+            brightness: ["glassBlurBrightness", 0, 2],
+            vibrancy: ["glassBlurVibrancy", 0, 1],
+            vibrancy_darkness: ["glassBlurVibrancyDarkness", 0, 1],
+            noise: ["glassBlurNoise", 0, 1]
+        };
+        const k = keys[name];
+        if (k)
+            Config.opts[k[0]] = Math.max(k[1], Math.min(k[2], v));
+    }
+
+    Process {
+        id: hyprBlurReader
+
+        command: ["sh", "-c", "for o in size passes contrast brightness vibrancy vibrancy_darkness noise; do printf '%s ' \"$o\"; hyprctl -j getoption decoration:blur:$o | tr -d '\\n'; echo; done"]
+        stdout: SplitParser {
+            onRead: line => panel.applyHyprBlurLine(line)
+        }
+    }
+
     function resetAnimations() {
         const d = Config.defaults;
         const keys = ["animations", "animScale", "barDockDuration", "animBarCurve", "animPanelSpeed", "animPanelOpen", "animPanelClose", "animOverlaySpeed", "animOverlayOpen", "animOverlayClose", "animNotifSpeed", "animNotifCurve", "animOsdSpeed", "animWsSpeed", "animWsCurve", "animCtlSpeed", "animCtlCurve"];
@@ -805,6 +846,94 @@ OverlayPanel {
                             SwitchCtl {
                                 checked: Config.opts.barShellGlass
                                 onToggled: Config.opts.barShellGlass = !Config.opts.barShellGlass
+                            }
+                        }
+
+                        // Glass blur like Hyprland (decoration:blur). Same values as in hyprland.lua = same look as kitty.
+                        SettingRow {
+                            width: parent.width
+                            visible: Config.opts.barShellGlass
+                            label: "Glass blur values"
+                            description: "Same as decoration:blur in hyprland.lua. Use the same values there and here and the bar looks exactly like a blurred window. Read them from Hyprland or reset to Hyprland's defaults"
+                            controlWidth: 400
+
+                            Row {
+                                anchors.right: parent.right
+                                spacing: 10
+
+                                IconButton {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    size: 30
+                                    icon: String.fromCodePoint(0xF04E6)
+                                    iconSize: Theme.fontSm
+                                    label: "From Hyprland"
+                                    idleColor: Theme.layer3
+                                    onClicked: hyprBlurReader.running = true
+                                }
+
+                                IconButton {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    size: 30
+                                    icon: String.fromCodePoint(0xF0450)
+                                    iconSize: Theme.fontSm
+                                    label: "Defaults"
+                                    idleColor: Theme.layer3
+                                    onClicked: {
+                                        for (const k of panel.glassBlurKeys)
+                                            Config.opts[k] = Config.defaults[k];
+                                    }
+                                }
+                            }
+                        }
+
+                        Repeater {
+                            model: [
+                                { key: "glassBlurSize", label: "Glass blur size", desc: "decoration:blur:size, how far the blur reaches", from: 0, to: 100, step: 1, dec: 0 },
+                                { key: "glassBlurPasses", label: "Glass blur passes", desc: "decoration:blur:passes. Hyprland uses 1 to 8", from: 1, to: 8, step: 1, dec: 0 },
+                                { key: "glassBlurContrast", label: "Glass contrast", desc: "decoration:blur:contrast", from: 0, to: 2, step: 0.0001, dec: 4 },
+                                { key: "glassBlurBrightness", label: "Glass brightness", desc: "decoration:blur:brightness", from: 0, to: 2, step: 0.0001, dec: 4 },
+                                { key: "glassBlurVibrancy", label: "Glass vibrancy", desc: "decoration:blur:vibrancy, makes the colors more saturated", from: 0, to: 1, step: 0.0001, dec: 4 },
+                                { key: "glassBlurVibrancyDarkness", label: "Glass vibrancy darkness", desc: "decoration:blur:vibrancy_darkness, vibrancy on dark colors", from: 0, to: 1, step: 0.0001, dec: 4 },
+                                { key: "glassBlurNoise", label: "Glass noise", desc: "decoration:blur:noise", from: 0, to: 1, step: 0.0001, dec: 4 }
+                            ]
+
+                            delegate: SettingRow {
+                                id: blurRow
+
+                                required property var modelData
+
+                                width: parent ? parent.width : 0
+                                visible: Config.opts.barShellGlass
+                                label: blurRow.modelData.label
+                                description: blurRow.modelData.desc
+                                controlWidth: 400
+
+                                Row {
+                                    spacing: 10
+
+                                    RangeControl {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        width: 400 - blurReset.width - 10
+                                        from: blurRow.modelData.from
+                                        to: blurRow.modelData.to
+                                        stepSize: blurRow.modelData.step
+                                        decimals: blurRow.modelData.dec
+                                        value: Config.opts[blurRow.modelData.key]
+                                        onEdited: v => Config.opts[blurRow.modelData.key] = v
+                                    }
+
+                                    IconButton {
+                                        id: blurReset
+
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        size: 30
+                                        icon: String.fromCodePoint(0xF0450)
+                                        iconSize: Theme.fontSm
+                                        label: "Reset"
+                                        idleColor: Theme.layer3
+                                        onClicked: Config.opts[blurRow.modelData.key] = Config.defaults[blurRow.modelData.key]
+                                    }
+                                }
                             }
                         }
 

@@ -30,6 +30,15 @@ cp -r quickshell ~/.config/quickshell
 
 Back up an existing `~/.config/quickshell` first. Full steps (start script, settings, NVIDIA): [Quickshell Guide](../Quickshell%20Guide.md).
 
+For the shell glass (Settings → Bar), build the small wallpaper helper once (needs `rust`). Without it the bar falls back
+to decoding the wallpaper itself, which looks very slightly different from awww:
+
+```bash
+cargo build --release --locked --manifest-path ~/.config/quickshell/tools/glasswall/Cargo.toml \
+    --target-dir ~/.cache/quickshell/glasswall-target
+install -Dm755 ~/.cache/quickshell/glasswall-target/release/qs-glasswall ~/.local/bin/qs-glasswall
+```
+
 Then copy the contents of `hyprland-quickshell.lua` into your `~/.config/hypr/hyprland.lua`
 and remove waybar, dunst and swaybg from the autostart (only one notification daemon can run).
 
@@ -74,6 +83,8 @@ config/                Config (saved settings), Theme (colors/sizes), Icons
 services/              Audio, network, Bluetooth, system monitor, notifications, media, apps
 components/            Building blocks (buttons, sliders, switches, cards, panel base, color picker)
 modules/               Bar, launcher, control center, dashboard, popups, OSD, power, settings
+shaders/               Hyprland's blur shaders for the shell glass (.frag source + compiled .frag.qsb)
+tools/glasswall/       qs-glasswall: the wallpaper exactly as awww shows it, for the shell glass (Rust)
 ```
 
 Settings are stored in `~/.local/state/quickshell/by-shell/oled-bw/settings.json`.

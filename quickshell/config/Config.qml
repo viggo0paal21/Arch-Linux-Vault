@@ -23,6 +23,13 @@ Singleton {
         barFloatSide: 10,
         barGlide: true,
         barShellGlass: true,
+        glassBlurSize: 8,
+        glassBlurPasses: 2,
+        glassBlurContrast: 0.8916,
+        glassBlurBrightness: 1.0,
+        glassBlurVibrancy: 0.1696,
+        glassBlurVibrancyDarkness: 0.0,
+        glassBlurNoise: 0.0117,
         barFloating: true,
         barFloatingDynamic: true,
         barBorder: false,
@@ -110,6 +117,13 @@ Singleton {
             property int barFloatSide: root.defaults.barFloatSide
             property bool barGlide: root.defaults.barGlide
             property bool barShellGlass: root.defaults.barShellGlass
+            property int glassBlurSize: root.defaults.glassBlurSize
+            property int glassBlurPasses: root.defaults.glassBlurPasses
+            property real glassBlurContrast: root.defaults.glassBlurContrast
+            property real glassBlurBrightness: root.defaults.glassBlurBrightness
+            property real glassBlurVibrancy: root.defaults.glassBlurVibrancy
+            property real glassBlurVibrancyDarkness: root.defaults.glassBlurVibrancyDarkness
+            property real glassBlurNoise: root.defaults.glassBlurNoise
             property bool barFloating: root.defaults.barFloating
             property bool barFloatingDynamic: root.defaults.barFloatingDynamic
             property bool barBorder: root.defaults.barBorder

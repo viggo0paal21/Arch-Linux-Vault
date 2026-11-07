@@ -1,0 +1,19 @@
+[package]
+name = "qs-glasswall"
+version = "0.1.0"
+edition = "2021"
+description = "Top strip of the wallpaper exactly as awww shows it, for the bar's Shell glass"
+publish = false
+
+# Same crate versions as awww 0.12.1 (its Cargo.lock), so the pixels come out identical to the wallpaper
+# Hyprland blurs. image-webp, png, zune-core and zune-jpeg are listed only to pin these versions.
+[dependencies]
+image = { version = "=0.25.10", default-features = false, features = ["bmp", "gif", "jpeg", "png", "webp"] }
+zune-jpeg = "=0.5.15"
+zune-core = "=0.5.1"
+image-webp = "=0.2.4"
+png = "=0.18.1"
+fast_image_resize = "=6.0.0"
+
+[profile.release]
+opt-level = 3

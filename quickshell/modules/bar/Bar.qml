@@ -190,29 +190,160 @@ PanelWindow {
         }
     }
 
-    // Wallpaper at full screen size, exactly as awww shows it (fill = cropped around the center).
-    // The bar window starts at 0,0, so the coordinates match 1:1. The WHOLE image gets blurred
-    // (once when it loads), not just a 45 px high strip.
+    // ---------- Glass exactly like kitty: Hyprland's own blur ----------
+    // Behind kitty Hyprland (decoration:blur) does: contrast curve -> dual kawase blur (halve passes times with
+    // vibrancy, double passes times) -> noise, then kitty puts 55 % black on top. components/HyprBlur.qml
+    // recomputes that with Hyprland's shaders 1:1. The values are in Settings > Bar (same as in hyprland.lua).
+    // It starts from the wallpaper exactly as awww shows it (qs-glasswall, below).
+    // Only a strip at the top is computed, and only when the wallpaper or a value changes. After that they are
+    // finished images: it costs nothing per frame.
+    readonly property real screenW: bar.screen ? bar.screen.width : bar.width
+    readonly property real screenH: bar.screen ? bar.screen.height : bar.height
+    readonly property int glassPasses: Math.max(1, Math.min(8, Config.opts.glassBlurPasses))
+    // Strip = bar window + as far as the blur reaches (2 x size x (2^passes - 1) + margin), divisible by 2^passes
+    // so every stage has whole pixels. At most the whole screen.
+    readonly property int glassStripHeight: {
+        const step = Math.pow(2, bar.glassPasses);
+        const reach = 2 * Math.max(1, Config.opts.glassBlurSize) * (step - 1) + 2 * step + 8;
+        const want = Math.ceil((bar.height + reach) / step) * step;
+        return Math.min(want, Math.round(bar.screenH));
+    }
+
+    // Wallpaper exactly as awww shows it: qs-glasswall (source in tools/glasswall, same Rust crates as awww
+    // 0.12.1) decodes and scales it like awww and writes the strip at the top as an image. Qt decodes JPEGs slightly
+    // differently (libjpeg instead of zune-jpeg), that was most of the difference to kitty.
+    // Only runs when the wallpaper, the screen or the strip height changes (about 0.1 s, in the background).
+    // If the program is missing or fails, the bar computes the wallpaper itself (wallFull, below).
+    readonly property string glassWallTool: Quickshell.env("HOME") + "/.local/bin/qs-glasswall"
+    readonly property string glassWallOut: (Quickshell.env("XDG_CACHE_HOME") || Quickshell.env("HOME") + "/.cache") + "/quickshell/glass/" + bar.modelData.name + ".ppm"
+    readonly property string glassWallKey: bar.glassMode && bar.wallpaperFile !== "" ? [bar.wallpaperFile, bar.screenW, bar.screenH, bar.glassStripHeight].join("|") : ""
+    // "" = still running, "exact" = image from qs-glasswall, "fallback" = compute it itself
+    property string glassWallState: ""
+    property int glassWallRun: 0
+
+    onGlassWallKeyChanged: glassWallDelay.restart()
+
+    // Wait briefly until size and values are set at startup (otherwise several runs in a row)
+    Timer {
+        id: glassWallDelay
+
+        interval: 50
+        onTriggered: {
+            if (bar.glassWallKey === "")
+                return;
+            if (glassWallProc.running) {
+                glassWallDelay.restart();
+                return;
+            }
+            glassWallProc.running = true;
+        }
+    }
+
+    Process {
+        id: glassWallProc
+
+        // Through sh, so a missing program cleanly ends up as an error (exit code 127)
+        command: ["sh", "-c", "mkdir -p \"$(dirname \"$5\")\" && exec \"$0\" \"$@\"", bar.glassWallTool, bar.wallpaperFile, String(Math.round(bar.screenW)), String(Math.round(bar.screenH)), String(bar.glassStripHeight), bar.glassWallOut]
+        onExited: code => {
+            if (code === 0) {
+                bar.glassWallRun++;
+                bar.glassWallState = "exact";
+            } else {
+                bar.glassWallState = "fallback";
+            }
+        }
+    }
+
     Image {
-        id: wallImg
+        id: wallExact
 
         visible: false
-        width: bar.screen ? bar.screen.width : bar.width
-        height: bar.screen ? bar.screen.height : bar.height
-        // Scaled down cleanly to screen size while loading (like awww), also saves video memory
-        sourceSize: Qt.size(wallImg.width, wallImg.height)
-        source: bar.glassMode && bar.wallpaperFile !== "" ? "file://" + bar.wallpaperFile : ""
-        fillMode: Image.PreserveAspectCrop
+        source: bar.glassWallState === "exact" ? "file://" + bar.glassWallOut + "?n=" + bar.glassWallRun : ""
         asynchronous: true
-        smooth: true
+        cache: false
+        // Keep the old image while reloading until the new one is ready (no black flash)
+        retainWhileLoading: true
+        smooth: false
         layer.enabled: bar.glassMode
     }
 
-    // Glass like kitty's, recomputed from Hyprland's shaders (decoration:blur default values):
-    // Hyprland = contrast 0.8916 (gain curve) -> dual kawase blur (size 8, passes 2) -> brightness 1.0,
-    // with kitty's 55 % black on top. Same here: blur 0.85 at blurMax 64 comes closest to Hyprland's
-    // blur, the contrast as a straight line (0.9405 x + 0.0298 -> contrast -0.0595), black on top with
-    // the bar's opacity. Difference to kitty in the simulation: 0.6 of 255 levels on average.
+    // Computed by the bar itself (only without qs-glasswall): wallpaper at its original size, exactly the pixels from the file.
+    // Scaled down in the shader like awww does it (Lanczos3, cropped centered).
+    // The bar window starts at 0,0, so the coordinates match 1:1. Only the strip at the top is needed.
+    Image {
+        id: wallFull
+
+        visible: false
+        source: bar.glassMode && bar.glassWallState === "fallback" && bar.wallpaperFile !== "" ? "file://" + bar.wallpaperFile : ""
+        asynchronous: true
+        cache: false
+        // As a layer at its original size (pixels 1:1): this way the shader reliably gets every new image
+        layer.enabled: bar.glassMode
+    }
+
+    readonly property real wallW: wallFull.status === Image.Ready ? wallFull.implicitWidth : 0
+    readonly property real wallH: wallFull.status === Image.Ready ? wallFull.implicitHeight : 0
+    // awww "fill": scale so the screen is filled, crop the rest centered
+    readonly property real wallZoom: bar.wallW > 0 ? Math.max(bar.screenW / bar.wallW, bar.screenH / bar.wallH) : 1
+    readonly property real wallLeft: (bar.wallW - bar.screenW / bar.wallZoom) / 2
+    readonly property real wallTop: (bar.wallH - bar.screenH / bar.wallZoom) / 2
+    readonly property real wallSupport: 3 * Math.max(1 / bar.wallZoom, 1)
+    // Only the image rows the strip at the top needs
+    readonly property int wallRowStart: Math.max(0, Math.floor(bar.wallTop - bar.wallSupport) - 1)
+    readonly property int wallRowEnd: Math.min(bar.wallH, Math.ceil(bar.wallTop + bar.glassStripHeight / bar.wallZoom + bar.wallSupport) + 2)
+
+    // awww step 1: scale horizontally (only the rows that are needed)
+    ShaderEffect {
+        id: wallResizeH
+
+        property var source: wallFull
+        property vector2d dstSize: Qt.vector2d(width, height)
+        property real vertical: 0
+        property real zoom: bar.wallZoom
+        property real offset: bar.wallLeft
+        property real rowStart: bar.wallRowStart
+
+        visible: false
+        width: bar.width
+        height: Math.max(1, bar.wallRowEnd - bar.wallRowStart)
+        layer.enabled: bar.glassMode
+        fragmentShader: bar.glassMode ? glassBlur.shader("hyprresample") : ""
+    }
+
+    // awww step 2: scale vertically. Result = the strip at the top, exactly as awww shows it
+    ShaderEffect {
+        id: wallStrip
+
+        property var source: wallResizeH
+        property vector2d dstSize: Qt.vector2d(width, height)
+        property real vertical: 1
+        property real zoom: bar.wallZoom
+        property real offset: bar.wallTop - bar.wallRowStart
+        property real rowStart: 0
+
+        visible: false
+        width: bar.width
+        height: bar.glassStripHeight
+        layer.enabled: bar.glassMode
+        layer.smooth: true
+        fragmentShader: bar.glassMode ? glassBlur.shader("hyprresample") : ""
+    }
+
+    HyprBlur {
+        id: glassBlur
+
+        source: bar.glassWallState === "exact" ? wallExact : wallStrip
+        active: bar.glassMode
+        screenSize: Qt.vector2d(bar.screenW, bar.screenH)
+        noise: Config.opts.glassBlurNoise
+        size: Config.opts.glassBlurSize
+        passes: Config.opts.glassBlurPasses
+        contrast: Config.opts.glassBlurContrast
+        brightness: Config.opts.glassBlurBrightness
+        vibrancy: Config.opts.glassBlurVibrancy
+        vibrancyDarkness: Config.opts.glassBlurVibrancyDarkness
+    }
+
     Item {
         id: glassSource
 
@@ -227,26 +358,21 @@ PanelWindow {
             color: "black"
         }
 
-        // blurMax has to be above 32: at 32 MultiEffect only uses 4 of 5 blur levels, 4 % of the weight
-        // was missing, the glass was only 96 % opaque and the bright wallpaper or kitty showed through
-        // (that's why the bar's bottom 2 rows were darker over kitty).
-        MultiEffect {
-            width: wallImg.width
-            height: wallImg.height
-            visible: bar.glassMode
-            source: wallImg
-            autoPaddingEnabled: false
-            blurEnabled: bar.glassMode
-            blur: 0.85
-            blurMax: 64
-            contrast: -0.0595
-        }
+        // On top the black with the bar's opacity (Transparency 55 % = kitty background_opacity 0.55),
+        // computed and rounded to 8 bits the way Hyprland puts kitty's background over the blur. Blended by Qt
+        // it would come out darker: the driver writes 8-bit textures rounding up only from x.56 on.
+        // Deliberately without its own layer: inside an invisible layer Qt hides a child that has its own layer
+        // (that was the cause of the black bar).
+        ShaderEffect {
+            id: glassDim
 
-        // Black with the bar's opacity (Transparency 55 % = kitty background_opacity 0.55)
-        Rectangle {
-            anchors.fill: parent
-            color: "black"
-            opacity: bgRect.opacity
+            property var source: glassBlur.output
+            property real dim: bgRect.opacity
+
+            width: glassBlur.width
+            height: glassBlur.height
+            visible: bar.glassMode
+            fragmentShader: bar.glassMode ? glassBlur.shader("hyprdim") : ""
         }
     }
 

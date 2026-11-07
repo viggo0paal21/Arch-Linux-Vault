@@ -35,6 +35,7 @@ Changes made for smooth 170 Hz (all inside `quickshell/`):
 | `FpsOverlay.qml`, `config/Config.qml`, `modules/settings/SettingsPanel.qml` | FPS counter, switchable in Settings → Behavior → **FPS counter** |
 | `services/Glass.qml`, `components/Segmented.qml`, `config/Theme.qml`, `services/Hypr.qml` | Transparency with blur, see below |
 | `modules/bar/Bar.qml`, `services/Ui.qml`, `modules/bar/TrayMenu.qml` + the panels | Dynamic floating bar, see below |
+| `components/HyprBlur.qml`, `shaders/`, `tools/glasswall/` | Shell glass: Hyprland's blur rebuilt stage by stage, see below |
 
 ### Transparency (Settings → Appearance → Transparency)
 
@@ -120,8 +121,11 @@ The bar then uses its own layer name without `qs-`, so it needs its own rule (an
 hl.layer_rule({ match = { namespace = "qsglass-bar" }, no_anim = true })
 ```
 
-The glass is tuned to look like a kitty window with `background_opacity 0.55` (Transparency 55 %) and Hyprland's default
-`decoration:blur` values. The wallpaper path is read from waypaper's `config.ini`. Details in the
+The glass looks like a kitty window with `background_opacity 0.55` (Transparency 55 %): `components/HyprBlur.qml` runs
+Hyprland's own blur shaders stage by stage. The blur values are in Settings → Bar → Glass blur values ("From Hyprland"
+reads them from `hyprctl`). The wallpaper path is read from waypaper's `config.ini`, and `qs-glasswall` decodes and scales it
+exactly like awww (build it once, see section 2). Measured against a real kitty window, 92.7 % of the pixels are identical
+and the rest is off by 1 of 255 levels. Details in the
 [Quickshell Stutter Guide](Quickshell%20Stutter%20Guide.md#5d-shell-glass-no-dark-line-same-look-as-kitty).
 
 `ignore_alpha`: Hyprland only blurs pixels that are more opaque than this value. With `0.5`, fully transparent areas
@@ -152,6 +156,11 @@ chmod +x ~/.local/bin/qs-start ~/.local/bin/qs ~/.local/bin/quickshell
 cp home/.local/state/quickshell/by-shell/oled-bw/settings.json ~/.local/state/quickshell/by-shell/oled-bw/
 mkdir -p ~/.local/share/dbus-1/services
 cp home/.local/share/dbus-1/services/org.freedesktop.Notifications.service ~/.local/share/dbus-1/services/
+
+# shell glass: the wallpaper helper (needs rust; without it the bar decodes the wallpaper itself)
+cargo build --release --locked --manifest-path ~/.config/quickshell/tools/glasswall/Cargo.toml \
+    --target-dir ~/.cache/quickshell/glasswall-target
+install -Dm755 ~/.cache/quickshell/glasswall-target/release/qs-glasswall ~/.local/bin/qs-glasswall
 ```
 
 Log out and back in. Then check:
