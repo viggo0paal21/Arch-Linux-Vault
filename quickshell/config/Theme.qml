@@ -35,8 +35,9 @@ Singleton {
     readonly property color fg: "#ffffff"
     readonly property color fgDim: "#a8a8a8"
     readonly property color fgMuted: "#5c5c5c"
-    readonly property color accent: "#ffffff"
-    readonly property color accentFg: "#000000"
+    // Accent: white with black text, with "Wallpaper colors" in the color of the wallpaper (see WallColors)
+    readonly property color accent: WallColors.accent
+    readonly property color accentFg: WallColors.accentFg
 
     // Rounding: subtle, everything scales with one value
     readonly property int radius: Config.opts.radius

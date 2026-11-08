@@ -7,7 +7,7 @@ Canvas {
 
     property var values: []
     property real max: 1
-    property color stroke: Theme.fg
+    property color stroke: Theme.accent
     property int capacity: 60
 
     implicitHeight: 42
@@ -42,8 +42,8 @@ Canvas {
         ctx.lineTo(offset, height);
         ctx.closePath();
         const grad = ctx.createLinearGradient(0, 0, 0, height);
-        grad.addColorStop(0, Qt.rgba(1, 1, 1, 0.18));
-        grad.addColorStop(1, Qt.rgba(1, 1, 1, 0.0));
+        grad.addColorStop(0, Qt.rgba(root.stroke.r, root.stroke.g, root.stroke.b, 0.18));
+        grad.addColorStop(1, Qt.rgba(root.stroke.r, root.stroke.g, root.stroke.b, 0.0));
         ctx.fillStyle = grad;
         ctx.fill();
     }

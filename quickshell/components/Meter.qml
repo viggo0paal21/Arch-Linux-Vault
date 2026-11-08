@@ -18,7 +18,7 @@ Rectangle {
         width: w
         height: parent.height
         radius: parent.radius
-        color: Theme.fg
+        color: Theme.accent
 
         Behavior on w {
             Anim {

@@ -71,6 +71,8 @@ Singleton {
         animCtlSpeed: 1,
         animCtlCurve: "standard",
         monochromeIcons: false,
+        wallColors: false,
+        wallColorStyle: "tonal",
         dnd: false,
         notifTimeout: 5,
         osdEnabled: true,
@@ -165,6 +167,8 @@ Singleton {
             property real animCtlSpeed: root.defaults.animCtlSpeed
             property string animCtlCurve: root.defaults.animCtlCurve
             property bool monochromeIcons: root.defaults.monochromeIcons
+            property bool wallColors: root.defaults.wallColors
+            property string wallColorStyle: root.defaults.wallColorStyle
             property bool dnd: root.defaults.dnd
             property int notifTimeout: root.defaults.notifTimeout
             property bool osdEnabled: root.defaults.osdEnabled

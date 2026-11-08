@@ -86,4 +86,8 @@ Singleton {
     readonly property string dockTop: String.fromCodePoint(0xF1513) // md-dock_top
     readonly property string cogOutline: String.fromCodePoint(0xF08BB) // md-cog_outline
     readonly property string consoleLine: String.fromCodePoint(0xF07B7) // md-console_line
+    // Settings > Wallpaper
+    readonly property string image: String.fromCodePoint(0xF0976) // md-image_outline
+    readonly property string shuffle: String.fromCodePoint(0xF049F) // md-shuffle_variant
+    readonly property string refresh: String.fromCodePoint(0xF0450) // md-refresh
 }

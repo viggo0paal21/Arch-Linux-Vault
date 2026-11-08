@@ -35,7 +35,7 @@ Rectangle {
     radius: Theme.radiusLg
     color: root.popup ? Glass.popupBg : Theme.layer2
     border.width: 1
-    border.color: root.critical ? Theme.fg : (hover.hovered ? Theme.borderStrong : Theme.border)
+    border.color: root.critical ? Theme.accent : (hover.hovered ? Theme.borderStrong : Theme.border)
     clip: true
 
     // While sliding in/out, x/y lie between two pixels. The card is then drawn sharply into a texture once

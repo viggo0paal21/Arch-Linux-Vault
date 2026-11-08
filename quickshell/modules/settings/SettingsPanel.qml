@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Widgets
 import qs.config
 import qs.components
 import qs.services
@@ -17,6 +18,11 @@ OverlayPanel {
             name: "Appearance",
             hint: "Transparency, corners, fonts, icons",
             icon: Icons.palette
+        },
+        {
+            name: "Wallpaper",
+            hint: "Pick your wallpaper, with previews",
+            icon: Icons.image
         },
         {
             name: "Bar",
@@ -456,7 +462,7 @@ OverlayPanel {
                     property real shift: 0
 
                     width: flick.width
-                    height: [pageAppearance, pageBar, pageBehavior, pageCommands][panel.tab].implicitHeight
+                    height: [pageAppearance, pageWallpaper, pageBar, pageBehavior, pageCommands, pageAnimations][panel.tab].implicitHeight
 
                     // Tab switch: glides subpixel, as a texture meanwhile (text sharp)
                     layer.enabled: tabIn.running
@@ -674,6 +680,96 @@ OverlayPanel {
 
                         SettingRow {
                             width: parent.width
+                            label: "Wallpaper colors"
+                            description: "Buttons, switches, sliders and highlights take the colors of your wallpaper, like Caelestia. Black & white wallpapers stay black & white"
+
+                            SwitchCtl {
+                                checked: Config.opts.wallColors
+                                onToggled: Config.opts.wallColors = !Config.opts.wallColors
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            visible: Config.opts.wallColors
+                            label: "Color style"
+                            description: "Tonal: calm, like Material You. Vibrant: strong. Exact: as colorful as the wallpaper itself"
+                            controlWidth: 330
+
+                            Segmented {
+                                width: parent.width
+                                options: [
+                                    {
+                                        value: "tonal",
+                                        label: "Tonal"
+                                    },
+                                    {
+                                        value: "vibrant",
+                                        label: "Vibrant"
+                                    },
+                                    {
+                                        value: "exact",
+                                        label: "Exact"
+                                    }
+                                ]
+                                value: Config.opts.wallColorStyle
+                                onPicked: v => Config.opts.wallColorStyle = v
+                            }
+                        }
+
+                        // Preview: the accent (with text on it) and the 16 colors of the image
+                        SettingRow {
+                            width: parent.width
+                            visible: Config.opts.wallColors
+                            label: "Palette"
+                            description: WallColors.file !== "" ? WallColors.file.replace(/^.*\//, "") : "No wallpaper found (waypaper / awww)"
+                            controlWidth: 360
+
+                            Row {
+                                anchors.right: parent.right
+                                spacing: 6
+
+                                // Accent with the text color on it
+                                Rectangle {
+                                    width: 44
+                                    height: 22
+                                    radius: Theme.radiusSm
+                                    color: Theme.accent
+
+                                    Glyph {
+                                        anchors.centerIn: parent
+                                        text: Icons.check
+                                        color: Theme.accentFg
+                                        font.pixelSize: 14
+                                    }
+                                }
+
+                                Item {
+                                    width: 4
+                                    height: 1
+                                }
+
+                                Row {
+                                    spacing: 2
+
+                                    Repeater {
+                                        model: WallColors.sourceColors
+
+                                        Rectangle {
+                                            required property color modelData
+
+                                            width: 8
+                                            height: 22
+                                            radius: 2
+                                            color: modelData
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
                             label: "OLED background"
                             description: "True black wallpaper (turn off swaybg/hyprpaper)"
 
@@ -708,13 +804,441 @@ OverlayPanel {
                         }
                     }
 
+                    // ----- Wallpaper -----
+                    // The current image large at the top, below it search, sorting, random and all images from the
+                    // waypaper folder as tiles. A click sets the image (waypaper/awww, see services/Walls.qml).
+                    // Tiles and thumbnails only exist while the tab is open.
+                    Column {
+                        id: pageWallpaper
+
+                        readonly property bool live: panel.tab === 1 && panel.progress > 0
+
+                        width: parent.width
+                        spacing: 12
+                        visible: panel.tab === 1
+
+                        onLiveChanged: Walls.wanted = live
+
+                        // Large preview of the current image, changes with a fade
+                        ClippingRectangle {
+                            id: hero
+
+                            readonly property string file: Walls.current
+                            readonly property string thumb: {
+                                if (hero.file === "")
+                                    return "";
+                                const i = Walls.model.indexOf("file://" + hero.file);
+                                return Walls.thumbFor(hero.file, i >= 0 ? Walls.model.get(i, "fileModified") : 0, 1280);
+                            }
+                            property int front: 0
+
+                            function show() {
+                                const back = hero.front === 0 ? heroB : heroA;
+                                back.source = "";
+                                back.source = "file://" + hero.thumb;
+                            }
+
+                            function request() {
+                                if (hero.thumb === "" || !pageWallpaper.live)
+                                    return;
+                                if (Walls.isReady(hero.thumb))
+                                    hero.show();
+                                else
+                                    Walls.ensure([[hero.file, hero.thumb]], 1280, 720);
+                            }
+
+                            width: parent.width
+                            height: Math.round(width * 0.42)
+                            radius: Theme.radiusLg
+                            color: Theme.layer2
+                            onThumbChanged: hero.request()
+
+                            Connections {
+                                target: pageWallpaper
+
+                                function onLiveChanged() {
+                                    hero.request();
+                                }
+                            }
+
+                            Connections {
+                                target: Walls
+
+                                function onThumbReady(t) {
+                                    if (t === hero.thumb)
+                                        hero.show();
+                                }
+                            }
+
+                            Image {
+                                id: heroA
+
+                                anchors.fill: parent
+                                fillMode: Image.PreserveAspectCrop
+                                asynchronous: true
+                                cache: false
+                                opacity: hero.front === 0 && status === Image.Ready ? 1 : 0
+                                onStatusChanged: {
+                                    if (status === Image.Ready && hero.front !== 0)
+                                        hero.front = 0;
+                                }
+
+                                Behavior on opacity {
+                                    Anim {
+                                        duration: Theme.durSlow
+                                        easing.bezierCurve: Theme.curveSmooth
+                                    }
+                                }
+                            }
+
+                            Image {
+                                id: heroB
+
+                                anchors.fill: parent
+                                fillMode: Image.PreserveAspectCrop
+                                asynchronous: true
+                                cache: false
+                                opacity: hero.front === 1 && status === Image.Ready ? 1 : 0
+                                onStatusChanged: {
+                                    if (status === Image.Ready && hero.front !== 1)
+                                        hero.front = 1;
+                                }
+
+                                Behavior on opacity {
+                                    Anim {
+                                        duration: Theme.durSlow
+                                        easing.bezierCurve: Theme.curveSmooth
+                                    }
+                                }
+                            }
+
+                            // Dark gradient at the bottom with the name and (with Wallpaper colors) the accent color
+                            Rectangle {
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.bottom: parent.bottom
+                                height: 96
+                                gradient: Gradient {
+                                    GradientStop {
+                                        position: 0
+                                        color: "transparent"
+                                    }
+                                    GradientStop {
+                                        position: 1
+                                        color: Qt.rgba(0, 0, 0, 0.8)
+                                    }
+                                }
+                            }
+
+                            Column {
+                                anchors.left: parent.left
+                                anchors.leftMargin: 18
+                                anchors.right: heroPalette.left
+                                anchors.rightMargin: 16
+                                anchors.bottom: parent.bottom
+                                anchors.bottomMargin: 14
+                                spacing: 2
+
+                                Txt {
+                                    text: "CURRENT WALLPAPER"
+                                    color: Theme.fgDim
+                                    font.pixelSize: Theme.fontSm - 1
+                                    font.letterSpacing: 1.2
+                                }
+
+                                Txt {
+                                    width: parent.width
+                                    text: hero.file !== "" ? Walls.fileName(hero.file) : "No wallpaper set"
+                                    font.pixelSize: Theme.fontLg
+                                    font.weight: Theme.weightStrong
+                                    elide: Text.ElideMiddle
+                                }
+                            }
+
+                            Row {
+                                id: heroPalette
+
+                                anchors.right: parent.right
+                                anchors.rightMargin: 18
+                                anchors.bottom: parent.bottom
+                                anchors.bottomMargin: 18
+                                spacing: 6
+                                visible: Config.opts.wallColors
+
+                                Rectangle {
+                                    width: 16
+                                    height: 16
+                                    radius: 8
+                                    color: Theme.accent
+                                    border.width: 1
+                                    border.color: Qt.rgba(0, 0, 0, 0.4)
+                                }
+                            }
+                        }
+
+                        // Search, sorting, random
+                        Item {
+                            width: parent.width
+                            height: 38
+
+                            InputField {
+                                id: wallSearch
+
+                                anchors.left: parent.left
+                                anchors.right: wallSort.left
+                                anchors.rightMargin: 10
+                                height: parent.height
+                                placeholder: "Search " + Walls.model.count + " wallpapers"
+                            }
+
+                            Segmented {
+                                id: wallSort
+
+                                anchors.right: wallShuffle.left
+                                anchors.rightMargin: 10
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: 190
+                                options: [
+                                    {
+                                        value: "time",
+                                        label: "Newest"
+                                    },
+                                    {
+                                        value: "name",
+                                        label: "Name"
+                                    }
+                                ]
+                                value: Walls.sortBy
+                                onPicked: v => Walls.sortBy = v
+                            }
+
+                            IconButton {
+                                id: wallShuffle
+
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                size: 38
+                                icon: Icons.shuffle
+                                idleColor: Theme.layer2
+                                onClicked: Walls.random()
+                            }
+                        }
+
+                        Grid {
+                            id: wallGrid
+
+                            readonly property real cellW: Math.floor((width - spacing * (columns - 1)) / columns)
+                            readonly property string query: wallSearch.input.text.trim().toLowerCase()
+
+                            width: parent.width
+                            columns: 3
+                            spacing: 10
+
+                            Repeater {
+                                model: pageWallpaper.live ? Walls.model : null
+
+                                delegate: Item {
+                                    id: tile
+
+                                    required property string filePath
+                                    required property string fileName
+                                    required property var fileModified
+                                    readonly property string thumb: Walls.thumbFor(filePath, fileModified, Walls.tileW)
+                                    readonly property bool current: filePath === Walls.current
+                                    readonly property bool busy: filePath === Walls.pending
+
+                                    function load() {
+                                        img.source = "";
+                                        img.source = "file://" + tile.thumb;
+                                    }
+
+                                    visible: wallGrid.query === "" || fileName.toLowerCase().indexOf(wallGrid.query) >= 0
+                                    width: wallGrid.cellW
+                                    height: Math.round(width * 9 / 16)
+                                    Component.onCompleted: {
+                                        if (Walls.isReady(tile.thumb))
+                                            tile.load();
+                                    }
+
+                                    Connections {
+                                        target: Walls
+
+                                        function onThumbReady(t) {
+                                            if (t === tile.thumb)
+                                                tile.load();
+                                        }
+                                    }
+
+                                    ClippingRectangle {
+                                        anchors.fill: parent
+                                        radius: Theme.radius
+                                        color: Theme.layer3
+
+                                        Image {
+                                            id: img
+
+                                            width: parent.width
+                                            height: parent.height
+                                            fillMode: Image.PreserveAspectCrop
+                                            asynchronous: true
+                                            cache: false
+                                            scale: tileArea.containsMouse ? 1.06 : 1
+                                            opacity: status === Image.Ready ? 1 : 0
+
+                                            Behavior on opacity {
+                                                Anim {
+                                                    duration: Theme.durMed
+                                                }
+                                            }
+
+                                            Behavior on scale {
+                                                Anim {
+                                                    duration: Theme.durMed
+                                                    easing.bezierCurve: Theme.curveSmooth
+                                                }
+                                            }
+                                        }
+
+                                        // Name on hover
+                                        Rectangle {
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.bottom: parent.bottom
+                                            height: 46
+                                            opacity: tileArea.containsMouse ? 1 : 0
+                                            gradient: Gradient {
+                                                GradientStop {
+                                                    position: 0
+                                                    color: "transparent"
+                                                }
+                                                GradientStop {
+                                                    position: 1
+                                                    color: Qt.rgba(0, 0, 0, 0.8)
+                                                }
+                                            }
+
+                                            Behavior on opacity {
+                                                Anim {
+                                                    duration: Theme.ctlFast
+                                                }
+                                            }
+
+                                            Txt {
+                                                anchors.left: parent.left
+                                                anchors.leftMargin: 10
+                                                anchors.right: parent.right
+                                                anchors.rightMargin: 10
+                                                anchors.bottom: parent.bottom
+                                                anchors.bottomMargin: 7
+                                                text: tile.fileName.replace(/\.[^.]+$/, "")
+                                                font.pixelSize: Theme.fontSm
+                                                elide: Text.ElideRight
+                                            }
+                                        }
+
+                                        // Being set right now
+                                        Rectangle {
+                                            anchors.fill: parent
+                                            color: Qt.rgba(0, 0, 0, 0.45)
+                                            opacity: tile.busy ? 1 : 0
+
+                                            Behavior on opacity {
+                                                Anim {
+                                                    duration: Theme.ctlFast
+                                                }
+                                            }
+
+                                            Glyph {
+                                                anchors.centerIn: parent
+                                                text: Icons.refresh
+                                                color: Theme.fg
+
+                                                RotationAnimation on rotation {
+                                                    running: tile.busy
+                                                    loops: Animation.Infinite
+                                                    from: 0
+                                                    to: 360
+                                                    duration: 900
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    // Border: current image in the accent color, brighter on hover
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        radius: Theme.radius
+                                        color: "transparent"
+                                        border.width: tile.current ? 2 : 1
+                                        border.color: tile.current ? Theme.accent : (tileArea.containsMouse ? Theme.fgMuted : Theme.border)
+
+                                        Behavior on border.color {
+                                            CAnim {}
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        anchors.top: parent.top
+                                        anchors.right: parent.right
+                                        anchors.margins: 8
+                                        width: 22
+                                        height: 22
+                                        radius: 11
+                                        color: Theme.accent
+                                        scale: tile.current ? 1 : 0.5
+                                        opacity: tile.current ? 1 : 0
+
+                                        Behavior on opacity {
+                                            Anim {
+                                                duration: Theme.ctlFast
+                                            }
+                                        }
+
+                                        Behavior on scale {
+                                            Anim {
+                                                duration: Theme.ctlMed
+                                                easing.bezierCurve: Theme.curveSmooth
+                                            }
+                                        }
+
+                                        Glyph {
+                                            anchors.centerIn: parent
+                                            text: Icons.check
+                                            color: Theme.accentFg
+                                            font.pixelSize: 14
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        id: tileArea
+
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: Walls.set(tile.filePath)
+                                    }
+                                }
+                            }
+                        }
+
+                        Txt {
+                            width: parent.width
+                            text: Walls.model.count === 0 ? "No images in " + Walls.folder + " (folder from waypaper)" : Walls.model.count + " wallpapers in " + Walls.folder.replace(Quickshell.env("HOME"), "~") + " · set with " + "waypaper / awww"
+                            color: Theme.fgMuted
+                            font.pixelSize: Theme.fontSm
+                            horizontalAlignment: Text.AlignHCenter
+                            topPadding: 4
+                            bottomPadding: 8
+                        }
+                    }
+
                     // ----- Bar -----
                     Column {
                         id: pageBar
 
                         width: parent.width
                         spacing: 10
-                        visible: panel.tab === 1
+                        visible: panel.tab === 2
 
                         // Thickness docked (top, moves both) and floating (bottom, floating only). Reset = defaults
                         SettingRow {
@@ -1352,7 +1876,7 @@ OverlayPanel {
 
                         width: parent.width
                         spacing: 10
-                        visible: panel.tab === 2
+                        visible: panel.tab === 3
 
                         SettingRow {
                             width: parent.width
@@ -1431,7 +1955,7 @@ OverlayPanel {
 
                         width: parent.width
                         spacing: 10
-                        visible: panel.tab === 3
+                        visible: panel.tab === 4
 
                         SettingRow {
                             width: parent.width
@@ -1466,7 +1990,7 @@ OverlayPanel {
 
                         width: parent.width
                         spacing: 10
-                        visible: panel.tab === 4
+                        visible: panel.tab === 5
 
                         SettingRow {
                             width: parent.width

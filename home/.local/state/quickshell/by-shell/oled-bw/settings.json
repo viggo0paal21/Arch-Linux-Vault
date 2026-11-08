@@ -66,6 +66,8 @@
     "uiFontWeight": 700,
     "uiIconFont": "JetBrainsMono Nerd Font Propo",
     "volumeStep": 5,
+    "wallColorStyle": "tonal",
+    "wallColors": true,
     "wallpaper": "",
     "workspaceCount": 1
 }

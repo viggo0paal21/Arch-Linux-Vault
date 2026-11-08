@@ -16,6 +16,8 @@ Font like the Waybar: Inter 15px bold, icons from JetBrainsMono Nerd Font Propo.
 | OSD | Volume indicator bottom center |
 | Power menu | Lock, suspend, log out, reboot, shut down (dangerous ones need a confirmation) |
 | Settings | Everything changeable live and saved (radius, bar, font, transparency, animations, …) |
+| Wallpaper (Settings tab) | Pick the wallpaper from previews: the current one large on top, all images of the waypaper folder as tiles (newest first or by name, search, random). A click sets it via `waypaper --wallpaper` (its awww backend, fill mode and transition). Thumbnails are made once with `vipsthumbnail` (ImageMagick as fallback) into `~/.cache/quickshell/wallthumbs` |
+| Wallpaper colors | Optional (Settings → Appearance): everything that is highlighted in white (buttons, switches, sliders, active workspace, graphs, selection) takes the color of the wallpaper, like Caelestia. Styles Tonal / Vibrant / Exact. Detected automatically on every wallpaper change (awww cache file, `awww query`, waypaper). Black-and-white wallpapers stay black and white, text and surfaces always stay black and white |
 | Background | OLED black or your own image, optional rounded screen corners |
 
 Every monitor gets its own bar.

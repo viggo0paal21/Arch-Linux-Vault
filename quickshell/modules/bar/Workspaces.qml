@@ -70,7 +70,7 @@ Item {
                 width: Math.round(w)
                 height: 10
                 radius: 5
-                color: isActive ? Theme.fg : (pillArea.containsMouse ? Theme.fgDim : (isOccupied ? Theme.fgMuted : Theme.layer3))
+                color: isActive ? Theme.accent : (pillArea.containsMouse ? Theme.fgDim : (isOccupied ? Theme.fgMuted : Theme.layer3))
 
                 Behavior on w {
                     Anim {

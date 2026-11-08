@@ -34,7 +34,7 @@ Item {
             width: knob.x + knob.width / 2
             height: parent.height
             radius: parent.radius
-            color: Theme.fg
+            color: Theme.accent
         }
     }
 
@@ -50,7 +50,7 @@ Item {
         width: kw
         height: width
         radius: width / 2
-        color: Theme.fg
+        color: Theme.accent
         border.width: 3
         border.color: Theme.bg
 

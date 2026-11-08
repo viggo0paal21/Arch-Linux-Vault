@@ -37,8 +37,8 @@ Rectangle {
         clip: true
         text: root.text
         color: Theme.fg
-        selectionColor: Theme.fg
-        selectedTextColor: Theme.bg
+        selectionColor: Theme.accent
+        selectedTextColor: Theme.accentFg
         font.family: Theme.font
         font.pixelSize: Theme.fontSize
         font.weight: Theme.weight
