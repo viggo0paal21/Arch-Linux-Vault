@@ -181,3 +181,49 @@ tooltip {
 * {
     -gtk-secondary-caret-color: #ffffff;
 }
+
+/* ============================================================
+   nwg-dock-hyprland (Quickshell look)
+   This file takes precedence over the dock's own style.css, so the
+   dock rules live here. Normal windows have the .csd class and stay
+   black; only undecorated layer windows (dock, hotspot) become
+   transparent.
+   ============================================================ */
+window.background:not(.csd):not(.solid-csd):not(.popup) {
+    background-color: transparent;
+    background-image: none;
+}
+
+#hotspot-box,
+#detector-box {
+    background-color: transparent;
+}
+
+#box {
+    background-color: rgba(0, 0, 0, 0.55);
+    border-radius: 7px;
+    padding: 2px 12px;
+}
+
+#box button {
+    background-color: transparent;
+    background-image: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 5px;
+    box-shadow: none;
+    padding: 3px 10px;
+    margin: 0 4px;
+}
+
+#box button:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+#box button:active {
+    background-color: rgba(255, 255, 255, 0.13);
+}
+
+#box #active {
+    border-bottom: 2px solid #ffffff;
+}

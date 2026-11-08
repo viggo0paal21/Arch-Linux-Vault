@@ -103,7 +103,7 @@ hl.config({
         gaps_in  = 5,
         -- top: 10 + 10 for the floating Quickshell bar ("Dynamic" only reserves the bar height,
         -- the gap below it comes from Hyprland).
-        gaps_out = { top = 20, right = 10, bottom = 10, left = 10 },
+        gaps_out = { top = 19, right = 10, bottom = 10, left = 10 },
         --gaps_out = { top = 0, right = 15, bottom = 15, left = 15 },
         border_size = 1,
 
@@ -131,7 +131,7 @@ hl.config({
 
     decoration = {
         -- Fully square
-        rounding = 8,
+        rounding = 10,
 
         active_opacity   = 1.0,
         inactive_opacity = 1.0,
@@ -193,6 +193,9 @@ hl.animation({ leaf = "workspaces",    enabled = true, speed = 4,   bezier = "me
 hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 3, bezier = "md3_decel", style = "slidevert" })
 
 hl.layer_rule({ match = { namespace = "qs-.*" }, no_anim = true, blur = true, ignore_alpha = 0.5 }) 
+-- nwg-dock (qs-dock): same blur as the shell, the Hyprland animation stays on.
+-- ignore_alpha 0.5: only the glass (0.55) is blurred, not the transparent margin / hotspot.
+hl.layer_rule({ match = { namespace = "nwg-dock" }, blur = true, ignore_alpha = 0.5 })
 -- Popups without a dimmed background (dashboard, control center, notifications, OSD):
 -- blur even below 50 % opacity (the slider goes down to 25 %). Settings, launcher and power menu stay at 0.5,
 -- otherwise their dimmed background would be blurred too. Their cards sit on the dimming, so they are always above 0.5.
