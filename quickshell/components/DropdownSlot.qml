@@ -14,7 +14,9 @@ Item {
 
     readonly property real fullHeight: root.contentHeight + Theme.gap + 2
 
-    y: Ui.barBottom
+    // Closed: fixed target value instead of the running dock animation. Otherwise the invisibly mapped
+    // fullscreen panel redraws on every frame of the docking (stutter when switching workspaces / opening windows).
+    y: root.progress > 0 ? Ui.barBottom : Ui.barBottomTarget
     height: root.fullHeight
     clip: true
 

@@ -85,7 +85,12 @@ PanelWindow {
     // Right edge of the clock/system box on screen. The dashboard opens below it.
     readonly property real infoChipRight: frame.x + rightRow.x + infoChip.x + infoChip.width
 
-    onInfoChipRightChanged: Ui.setInfoChipRight(bar.modelData.name, bar.infoChipRight)
+    // While docking, only pass it on when the dashboard is open. Otherwise the closed,
+    // invisibly mapped dashboard window redraws every frame. dockTicker sets the final value when it stops.
+    onInfoChipRightChanged: {
+        if (!dockTicker.running || Ui.panel === "dashboard")
+            Ui.setInfoChipRight(bar.modelData.name, bar.infoChipRight);
+    }
     Component.onCompleted: Ui.setInfoChipRight(bar.modelData.name, bar.infoChipRight)
 
     screen: modelData
@@ -174,6 +179,10 @@ PanelWindow {
         id: dockTicker
 
         running: false
+        onRunningChanged: {
+            if (!dockTicker.running)
+                Ui.setInfoChipRight(bar.modelData.name, bar.infoChipRight);
+        }
         onTriggered: {
             const dt = Math.max(0, Math.min(dockTicker.frameTime, 1 / 60)) * 1000;
             bar.dockElapsed += dt;
@@ -529,7 +538,10 @@ PanelWindow {
             anchors.verticalCenterOffset: bar.contentShift
             spacing: 6
             // Subpixel glide: moved smoothly by the leftover as one image (only during the animation)
-            layer.enabled: bar.glide
+            // Kept as a layer permanently (while Subpixel glide is on), not only when the animation starts: creating the layer
+            // every time and throwing it away at the end cost a stutter at the start/end.
+            // Pixel-identical at rest (whole pixels, offset 0), see the comment at rightRow.
+            layer.enabled: Config.opts.barGlide
             layer.smooth: true
             transform: Translate {
                 x: bar.glideX
@@ -570,7 +582,7 @@ PanelWindow {
             anchors.verticalCenterOffset: bar.contentShift
             width: Math.max(0, Math.min(implicitWidth, rightRow.x - x - 24))
             visible: Config.opts.barShowTitle && value !== "" && width > 30
-            layer.enabled: bar.glide && visible
+            layer.enabled: Config.opts.barGlide && visible
             layer.smooth: true
             transform: Translate {
                 x: bar.glideX
@@ -592,7 +604,10 @@ PanelWindow {
             anchors.verticalCenter: parent.verticalCenter
             anchors.verticalCenterOffset: bar.contentShift
             spacing: Config.opts.barBoxes ? 6 : 4
-            layer.enabled: bar.glide
+            // Kept as a layer permanently (while Subpixel glide is on), not only when the animation starts: creating the layer
+            // every time and throwing it away at the end cost a stutter at the start/end.
+            // Pixel-identical at rest (whole pixels, offset 0), see the comment at rightRow.
+            layer.enabled: Config.opts.barGlide
             layer.smooth: true
             transform: Translate {
                 x: -bar.glideX

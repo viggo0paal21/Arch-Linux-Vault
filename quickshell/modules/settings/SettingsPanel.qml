@@ -692,6 +692,18 @@ OverlayPanel {
                         SettingRow {
                             width: parent.width
                             visible: Config.opts.wallColors
+                            label: "Black & white with 1 window"
+                            description: "Same rule as the dynamic bar: exactly 1 tiled window = normal black & white. No windows, 2 or more, or only floating ones = wallpaper colors"
+
+                            SwitchCtl {
+                                checked: Config.opts.wallColorsDynamic
+                                onToggled: Config.opts.wallColorsDynamic = !Config.opts.wallColorsDynamic
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            visible: Config.opts.wallColors
                             label: "Color style"
                             description: "Tonal: calm, like Material You. Vibrant: strong. Exact: as colorful as the wallpaper itself"
                             controlWidth: 330
@@ -832,10 +844,28 @@ OverlayPanel {
                             }
                             property int front: 0
 
+                            // Real crossfade: the new image is on top and fades in over the old one, the old one stays
+                            // fully visible below it (two opposite fades would let the background
+                            // show through). Duration and curve like the awww fade, ends together with it.
+                            property Item incoming: null
+
                             function show() {
-                                const back = hero.front === 0 ? heroB : heroA;
-                                back.source = "";
-                                back.source = "file://" + hero.thumb;
+                                const inc = hero.front === 0 ? heroB : heroA;
+                                const old = inc === heroA ? heroB : heroA;
+                                heroFade.stop();
+                                inc.opacity = 0;
+                                inc.z = 1;
+                                old.z = 0;
+                                hero.incoming = inc;
+                                inc.source = "";
+                                inc.source = "file://" + hero.thumb;
+                            }
+
+                            function fadeIn(img) {
+                                heroFade.target = img;
+                                heroFade.duration = Config.opts.animations ? Math.max(400, WallColors.wallFadeMs - (Date.now() - WallColors.changedAt)) : 0;
+                                heroFade.start();
+                                hero.front = img === heroA ? 0 : 1;
                             }
 
                             function request() {
@@ -870,6 +900,16 @@ OverlayPanel {
                                 }
                             }
 
+                            NumberAnimation {
+                                id: heroFade
+
+                                property: "opacity"
+                                from: 0
+                                to: 1
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: WallColors.wallFadeCurve
+                            }
+
                             Image {
                                 id: heroA
 
@@ -877,17 +917,9 @@ OverlayPanel {
                                 fillMode: Image.PreserveAspectCrop
                                 asynchronous: true
                                 cache: false
-                                opacity: hero.front === 0 && status === Image.Ready ? 1 : 0
                                 onStatusChanged: {
-                                    if (status === Image.Ready && hero.front !== 0)
-                                        hero.front = 0;
-                                }
-
-                                Behavior on opacity {
-                                    Anim {
-                                        duration: Theme.durSlow
-                                        easing.bezierCurve: Theme.curveSmooth
-                                    }
+                                    if (status === Image.Ready && hero.incoming === heroA)
+                                        hero.fadeIn(heroA);
                                 }
                             }
 
@@ -898,17 +930,10 @@ OverlayPanel {
                                 fillMode: Image.PreserveAspectCrop
                                 asynchronous: true
                                 cache: false
-                                opacity: hero.front === 1 && status === Image.Ready ? 1 : 0
+                                opacity: 0
                                 onStatusChanged: {
-                                    if (status === Image.Ready && hero.front !== 1)
-                                        hero.front = 1;
-                                }
-
-                                Behavior on opacity {
-                                    Anim {
-                                        duration: Theme.durSlow
-                                        easing.bezierCurve: Theme.curveSmooth
-                                    }
+                                    if (status === Image.Ready && hero.incoming === heroB)
+                                        hero.fadeIn(heroB);
                                 }
                             }
 
@@ -918,6 +943,7 @@ OverlayPanel {
                                 anchors.right: parent.right
                                 anchors.bottom: parent.bottom
                                 height: 96
+                                z: 2
                                 gradient: Gradient {
                                     GradientStop {
                                         position: 0
@@ -935,6 +961,7 @@ OverlayPanel {
                                 anchors.leftMargin: 18
                                 anchors.right: heroPalette.left
                                 anchors.rightMargin: 16
+                                z: 2
                                 anchors.bottom: parent.bottom
                                 anchors.bottomMargin: 14
                                 spacing: 2
@@ -957,6 +984,8 @@ OverlayPanel {
 
                             Row {
                                 id: heroPalette
+
+                                z: 2
 
                                 anchors.right: parent.right
                                 anchors.rightMargin: 18

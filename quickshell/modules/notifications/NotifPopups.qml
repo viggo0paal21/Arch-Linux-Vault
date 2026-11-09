@@ -22,7 +22,10 @@ PanelWindow {
     visible: win.mapped || !win.fullscreenActive
     color: "transparent"
     implicitWidth: 400
-    implicitHeight: win.screen ? Math.max(200, win.screen.height - win.topOffset - Theme.gap) : 800
+    // Fixed height (space below the floating bar), NOT bound to the current dock position: otherwise
+    // the window changes its size on every dock/undock and Quickshell rebuilds the Vulkan swapchain
+    // (~20 ms stutter). The position (margins.top) still follows the bar.
+    implicitHeight: win.screen ? Math.max(200, win.screen.height - Theme.barBottom - 2 * Theme.gap) : 800
     exclusionMode: ExclusionMode.Ignore
 
     anchors {

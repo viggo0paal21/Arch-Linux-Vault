@@ -73,6 +73,7 @@ Singleton {
         monochromeIcons: false,
         wallColors: false,
         wallColorStyle: "tonal",
+        wallColorsDynamic: false,
         dnd: false,
         notifTimeout: 5,
         osdEnabled: true,
@@ -169,6 +170,7 @@ Singleton {
             property bool monochromeIcons: root.defaults.monochromeIcons
             property bool wallColors: root.defaults.wallColors
             property string wallColorStyle: root.defaults.wallColorStyle
+            property bool wallColorsDynamic: root.defaults.wallColorsDynamic
             property bool dnd: root.defaults.dnd
             property int notifTimeout: root.defaults.notifTimeout
             property bool osdEnabled: root.defaults.osdEnabled

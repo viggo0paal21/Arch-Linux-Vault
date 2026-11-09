@@ -11,6 +11,8 @@ Singleton {
     id: root
 
     property string panel: ""
+
+    onPanelChanged: WallColors.live = root.panel !== ""
     property var panelScreen: null
     property bool caffeine: false
 

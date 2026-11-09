@@ -36,8 +36,12 @@ Singleton {
     readonly property color fgDim: "#a8a8a8"
     readonly property color fgMuted: "#5c5c5c"
     // Accent: white with black text, with "Wallpaper colors" in the color of the wallpaper (see WallColors)
-    readonly property color accent: WallColors.accent
-    readonly property color accentFg: WallColors.accentFg
+    // Closed panels take the fixed target value (no redraw per frame), open ones the fade
+    readonly property color accent: WallColors.live ? WallColors.accent : WallColors.accentStatic
+    readonly property color accentFg: WallColors.live ? WallColors.accentFg : WallColors.accentFgStatic
+    // Always the running fade: for parts that are always visible (workspaces in the bar)
+    readonly property color accentLive: WallColors.accent
+    readonly property color accentFgLive: WallColors.accentFg
 
     // Rounding: subtle, everything scales with one value
     readonly property int radius: Config.opts.radius
