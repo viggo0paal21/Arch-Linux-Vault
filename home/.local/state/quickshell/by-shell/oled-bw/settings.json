@@ -57,6 +57,7 @@
     "osdEnabled": true,
     "popupsSolidWithWindows": false,
     "radius": 7,
+    "renderBackend": "opengl",
     "screenCorners": false,
     "smoothText": false,
     "terminal": "kitty",

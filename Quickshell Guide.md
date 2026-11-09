@@ -18,7 +18,8 @@ smooth animations at the full **170 Hz** on an NVIDIA card. It replaces Waybar, 
 | File | Goes to | What it is |
 |---|---|---|
 | [`quickshell/`](quickshell) | `~/.config/quickshell/` | The shell itself (bar, launcher, control center, dashboard, notifications, OSD, power menu, settings) |
-| [`home/.local/bin/qs-start`](home/.local/bin/qs-start) | `~/.local/bin/` | Start script used by Hyprland's autostart: Vulkan, wall-clock animations, without MangoHud / lsfg-vk / vkBasalt |
+| [`home/.local/bin/qs-start`](home/.local/bin/qs-start) | `~/.local/bin/` | Start script used by Hyprland's autostart: Vulkan (or OpenGL, see `quickshell/render-env.sh`), wall-clock animations, without MangoHud / lsfg-vk / vkBasalt |
+| [`home/.local/bin/qs-restart`](home/.local/bin/qs-restart) | `~/.local/bin/` | Restarts the shell cleanly (used by Settings → Behavior → Renderer) |
 | [`home/.local/bin/qs`](home/.local/bin/qs), [`quickshell`](home/.local/bin/quickshell) | `~/.local/bin/` | Wrappers: same fix for **every** `qs` / `quickshell` call, any config |
 | [`home/.local/share/dbus-1/services/org.freedesktop.Notifications.service`](home/.local/share/dbus-1/services/org.freedesktop.Notifications.service) | `~/.local/share/dbus-1/services/` | Stops swaync / dunst / mako from being auto-started by D-Bus and taking the notification server away from Quickshell (see section 7) |
 | [`home/.local/state/quickshell/by-shell/oled-bw/settings.json`](home/.local/state/quickshell/by-shell/oled-bw/settings.json) | `~/.local/state/quickshell/by-shell/oled-bw/` | My saved shell settings (radius, bar, font, animation speed, transparency, FPS counter, ...) |
@@ -224,9 +225,31 @@ Result: constant **170 fps**, longest gap between two frames **~7 ms**, also whi
 |---|---|
 | Default (basic loop on NVIDIA) | animations at ~60 Hz |
 | `QSG_RENDER_LOOP=threaded` | exactly 85 fps |
-| + `__GL_SYNC_TO_VBLANK=0` | 85 fps |
+| + `__GL_SYNC_TO_VBLANK=0` (back then, with other problems still in place) | 85 fps |
 | `QSG_NO_VSYNC=1` + driver vsync | once 170, not reproducible, back to 85 |
 | **Vulkan** | **stable 170 fps, max 7 ms** |
+| **OpenGL now: threaded + `__GL_SYNC_TO_VBLANK=0`** (measured again with the finished shell) | **stable 170 fps, max 9 ms** |
+
+### OpenGL as an option (Settings → Behavior → Renderer)
+
+Vulkan stays the default. **Renderer → OpenGL** saves `"renderBackend": "opengl"` and restarts the shell
+(`~/.local/bin/qs-restart`); `qs-start` and both wrappers read the choice from `~/.config/quickshell/render-env.sh`
+and set `QSG_RHI_BACKEND` accordingly (Qt can only pick the backend at startup).
+
+- **Half frame rate (85 fps):** the NVIDIA driver waits for the vblank inside every `eglSwapBuffers`, and on Wayland
+  Qt additionally waits for Hyprland's frame callback before swapping, so every frame took two refreshes.
+  `//@ pragma Env __GL_SYNC_TO_VBLANK=0` in `shell.qml` removes the driver's wait; Hyprland's frame callbacks still pace
+  the shell (no tearing). As a pragma it only applies to Quickshell itself: programs started from the launcher get the
+  original environment and keep their vsync. With Vulkan it has no effect.
+- **Shaders:** on Wayland Qt uses OpenGL **ES**. The `.qsb` files only contained GLSL 330/440, so every custom shader
+  failed (`No GLSL shader code found`, `fragment shader input qt_TexCoord0 ... has no matching output`). They are now
+  also built for GLSL ES and GLSL 150 from the same `.frag` sources (the SPIR-V for Vulkan is byte-identical), e.g.
+  `qsb --glsl "100es,120,150" --hlsl 50 --msl 12 -o x.frag.qsb x.frag`.
+  `barshape`, `hyprfinish` and `hyprresample` use integer math and need ES 3.00 (`--glsl "150,300es"`). GLSL ES requires
+  both stages in the same version and Qt's built-in vertex shader only exists as ES 1.00, so these three get a
+  pass-through vertex shader (`shaders/*.vert`) with the same uniform block, used only when the backend is OpenGL.
+- Checked frame by frame: the bar looks identical under Vulkan and OpenGL (Hyprland blur and shell glass), no shader
+  warnings, 170 fps with 4 animating windows and while opening/closing panels.
 
 ## 4. Measuring the frame rate
 
@@ -399,7 +422,7 @@ For stutter, jitter and short freezes see the **[Quickshell Stutter Guide](Quick
 | Shell frozen | `pkill -9 -x 'qs\|quickshell'`, then `setsid -f ~/.local/bin/qs-start >/dev/null 2>&1`. Make sure only one instance runs: `pgrep -ax 'qs\|quickshell'` |
 | Animations look like frame generation (wobbly, jagged edges, uneven motion) | `QSG_USE_SIMPLE_ANIMATION_DRIVER=1` missing: check `tr '\0' '\n' < /proc/$(pgrep -xo 'qs\|quickshell')/environ \| grep SIMPLE`. It has to be in `qs-start` and both wrappers |
 | No blur behind transparent surfaces | The `qs-.*` layer rule needs `blur = true`, and `ignore_alpha` must be below the Opacity value (section 1) |
-| Problems with Vulkan | Remove the `QSG_RHI_BACKEND=vulkan` line from `qs-start` and the wrappers (OpenGL, ~60 Hz animations, but stable) |
+| Problems with Vulkan | Settings → Behavior → Renderer → **OpenGL** (restarts the shell, also 170 fps on NVIDIA, see section 3) |
 | `qt.qpa.wayland.textinput: ... disableSurface ... but 0x0 is focused` when opening or closing a panel | Harmless: panels take the keyboard while open (Esc, typing in the launcher). When they release it, Qt's text-input bookkeeping (for input methods) has already moved on and warns. Typing still works. Hidden by the start script and wrappers with `qt.qpa.wayland.textinput.warning=false` |
 | No notifications / `Could not register notification server` | Another daemon owns the notification server. Find it with `busctl --user status org.freedesktop.Notifications \| grep -E '^(PID\|Comm)='`, kill it, restart Quickshell. To stop D-Bus from auto-starting swaync / dunst / mako again (e.g. when an app sends a notification while Quickshell is down), install the override file from section 1 and reload D-Bus: `busctl --user call org.freedesktop.DBus /org/freedesktop/DBus org.freedesktop.DBus ReloadConfig` |
 | Short freezes (~60 ms) whenever you run a command in a terminal, open/close kitty or focus a window; the FPS counter jumps to 60–130 ms | Quickshell's app list (`DesktopEntries`, used by the launcher) watches the `applications` folders **and all their parent folders**, including your home folder. Any file created, deleted or renamed directly in `~` triggers a full rescan of every `.desktop` file 100 ms later. zsh does exactly that on every command (`~/.zsh_history` lock file + rename). Fix: move the history out of `~`: `mkdir -p ~/.local/state/zsh && mv ~/.zsh_history ~/.local/state/zsh/history`, set `HISTFILE=~/.local/state/zsh/history` in `~/.zshrc`, close all terminals. Check with `inotifywait -m -e create,delete,move ~` that nothing else writes to `~` all the time |

@@ -7,7 +7,9 @@ if [ -z "${QS_APP_SAVED+x}" ]; then
         if [ -n "${!v+x}" ]; then export "QS_APP_$v=${!v}"; fi
     done
 fi
-export MANGOHUD=0 DISABLE_LSFGVK=1 DISABLE_VKBASALT=1 QSG_RHI_BACKEND=vulkan
+export MANGOHUD=0 DISABLE_LSFGVK=1 DISABLE_VKBASALT=1
+# Vulkan or OpenGL (Settings > Behavior > Renderer), see ~/.config/quickshell/render-env.sh
+[ -f "$HOME/.config/quickshell/render-env.sh" ] && . "$HOME/.config/quickshell/render-env.sh" || export QSG_RHI_BACKEND=vulkan
 unset LD_PRELOAD
 # Animations follow the real clock instead of fixed steps (otherwise uneven on NVIDIA/Vulkan)
 export QSG_USE_SIMPLE_ANIMATION_DRIVER=1

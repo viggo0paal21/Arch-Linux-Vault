@@ -1966,6 +1966,39 @@ OverlayPanel {
                             }
                         }
 
+                        // Vulkan or OpenGL. Can only be chosen at startup: switching saves the choice and
+                        // restarts Quickshell (~/.local/bin/qs-restart, which reads it via ~/.config/quickshell/render-env.sh).
+                        SettingRow {
+                            readonly property string running: Quickshell.env("QSG_RHI_BACKEND") === "opengl" ? "OpenGL" : "Vulkan"
+
+                            width: parent.width
+                            label: "Renderer"
+                            description: "Switching restarts the shell · running: " + running
+                            controlWidth: 220
+
+                            Segmented {
+                                width: parent.width
+                                options: [
+                                    {
+                                        value: "vulkan",
+                                        label: "Vulkan"
+                                    },
+                                    {
+                                        value: "opengl",
+                                        label: "OpenGL"
+                                    }
+                                ]
+                                value: Config.opts.renderBackend
+                                onPicked: v => {
+                                    if (v === Config.opts.renderBackend)
+                                        return;
+                                    Config.opts.renderBackend = v;
+                                    // Wait briefly until the setting is saved, then restart
+                                    Quickshell.execDetached(["sh", "-c", "sleep 0.6; r=\"$HOME/.local/bin/qs-restart\"; [ -x \"$r\" ] && exec \"$r\"; pkill -x quickshell; sleep 1; setsid -f \"$HOME/.local/bin/qs-start\" >/dev/null 2>&1 </dev/null"]);
+                                }
+                            }
+                        }
+
                         SettingRow {
                             width: parent.width
                             label: "FPS counter"

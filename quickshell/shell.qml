@@ -2,6 +2,11 @@
 // Otherwise Qt uses the "basic" mode on NVIDIA, which computes animations at a fixed ~60 Hz.
 // "threaded" computes per display frame (170 Hz). If a tray menu ever hangs: remove this line.
 //@ pragma Env QSG_RENDER_LOOP=threaded
+// Only for OpenGL (Settings > Behavior > Renderer), no effect with Vulkan: the NVIDIA driver waits for the vblank
+// itself on every eglSwapBuffers, and on Wayland Qt additionally waits for Hyprland's frame callback.
+// Together every frame took two refreshes (exactly 85 instead of 170 fps). Without the wait in the driver only
+// Hyprland paces the frames: 170 fps. Only applies to Quickshell itself, launched programs (games) keep their vsync.
+//@ pragma Env __GL_SYNC_TO_VBLANK=0
 
 import QtQuick
 import Quickshell

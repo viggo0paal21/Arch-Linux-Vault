@@ -330,6 +330,7 @@ PanelWindow {
         width: bar.width
         height: Math.max(1, bar.wallRowEnd - bar.wallRowStart)
         layer.enabled: bar.glassMode
+        vertexShader: bar.glassMode ? glassBlur.vshader("hyprresample") : ""
         fragmentShader: bar.glassMode ? glassBlur.shader("hyprresample") : ""
     }
 
@@ -349,6 +350,7 @@ PanelWindow {
         height: bar.glassStripHeight
         layer.enabled: bar.glassMode
         layer.smooth: true
+        vertexShader: bar.glassMode ? glassBlur.vshader("hyprresample") : ""
         fragmentShader: bar.glassMode ? glassBlur.shader("hyprresample") : ""
     }
 
@@ -495,6 +497,7 @@ PanelWindow {
                 width: frame.width + 2 * pad
                 height: Theme.barHeight + Math.max(0, Config.opts.barDockedHeight - Config.opts.barHeight) + 2 * pad + 2
                 visible: !bar.glassMode
+                vertexShader: glassBlur.vshader("barshape")
                 fragmentShader: glassBlur.shader("barshape")
             }
 

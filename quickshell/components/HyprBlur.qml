@@ -38,6 +38,15 @@ Item {
         return "file://" + Quickshell.shellDir + "/shaders/" + name + ".frag.qsb?v=" + root.shaderVersion;
     }
 
+    // Own vertex shader only for OpenGL (barshape, hyprfinish, hyprresample): OpenGL ES needs both stages in the same
+    // GLSL version, Qt's built-in vertex shader only exists as ES 1.00, and these shaders need ES 3.00
+    // (integer math). With Vulkan the built-in one stays (empty value), nothing changes there.
+    readonly property bool openGL: Quickshell.env("QSG_RHI_BACKEND") === "opengl"
+
+    function vshader(name) {
+        return root.openGL ? "file://" + Quickshell.shellDir + "/shaders/" + name + ".vert.qsb?v=" + root.shaderVersion : "";
+    }
+
     visible: false
     width: root.source ? root.source.width : 0
     height: root.source ? root.source.height : 0
@@ -341,6 +350,7 @@ Item {
         height: root.height
         layer.enabled: root.active
         layer.smooth: true
+        vertexShader: root.active ? root.vshader("hyprfinish") : ""
         fragmentShader: root.active ? root.shader("hyprfinish") : ""
     }
 }
