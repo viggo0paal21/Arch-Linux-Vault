@@ -75,6 +75,7 @@ Singleton {
         wallColorStyle: "tonal",
         wallColorsDynamic: false,
         renderBackend: "vulkan",
+        hyprDynamic: false,
         dnd: false,
         notifTimeout: 5,
         osdEnabled: true,
@@ -172,6 +173,8 @@ Singleton {
             property bool wallColors: root.defaults.wallColors
             property string wallColorStyle: root.defaults.wallColorStyle
             property bool wallColorsDynamic: root.defaults.wallColorsDynamic
+            // Settings > Bar > "Dynamic Hyprland integration": hyprland.lua reads the value when it loads (see the top of that file)
+            property bool hyprDynamic: root.defaults.hyprDynamic
             // Renderer (Settings > Behavior): "vulkan" or "opengl", applies from the next start (render-env.sh)
             property string renderBackend: root.defaults.renderBackend
             property bool dnd: root.defaults.dnd

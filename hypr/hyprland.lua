@@ -4,6 +4,28 @@
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 
+------------------------------------------
+---- DYNAMIC HYPRLAND INTEGRATION (QS) ----
+------------------------------------------
+
+-- Quickshell: Settings > Bar > "Dynamic Hyprland integration" ("hyprDynamic" in the Quickshell settings).
+-- On: smart gaps, smart borders and a square single window, rounding 10, top gap 19 px (room for the bar).
+-- Off: all of that gone, the Quickshell bar handles the look with 1 window (docks, turns black).
+--      Rounding 5, top gap 10 px.
+-- Quickshell runs "hyprctl reload" after switching. If the file is missing or anything goes wrong: off.
+local function qs_dynamic()
+    local ok, on = pcall(function()
+        local f = io.open(os.getenv("HOME") .. "/.local/state/quickshell/by-shell/oled-bw/settings.json", "r")
+        if not f then return false end
+        local text = f:read("*a")
+        f:close()
+        return text:match('"hyprDynamic"%s*:%s*true') ~= nil
+    end)
+    return ok and on
+end
+local QS_DYNAMIC = qs_dynamic()
+
+
 ------------------
 ---- MONITORS ----
 ------------------
@@ -103,7 +125,8 @@ hl.config({
         gaps_in  = 5,
         -- top: 10 + 10 for the floating Quickshell bar ("Dynamic" only reserves the bar height,
         -- the gap below it comes from Hyprland).
-        gaps_out = { top = 19, right = 10, bottom = 10, left = 10 },
+        -- Dynamic Hyprland integration on: top 19, off: 10 (see the top of this file)
+        gaps_out = { top = QS_DYNAMIC and 19 or 10, right = 10, bottom = 10, left = 10 },
         --gaps_out = { top = 0, right = 15, bottom = 15, left = 15 },
         border_size = 1,
 
@@ -131,7 +154,8 @@ hl.config({
 
     decoration = {
         -- Fully square
-        rounding = 10,
+        -- Dynamic Hyprland integration on: 10, off: 5 (see the top of this file)
+        rounding = QS_DYNAMIC and 10 or 5,
 
         active_opacity   = 1.0,
         inactive_opacity = 1.0,
@@ -142,7 +166,7 @@ hl.config({
         },
 
         blur = {
-                enabled = true,
+                enabled = false,
                 size = 8,
                 passes = 2,
         },
@@ -249,23 +273,25 @@ hl.window_rule({
 -- Ref https://wiki.hypr.land/Configuring/Basics/Workspace-Rules/
 -- "Smart gaps" / "No gaps when only"
 
-hl.workspace_rule({ workspace = "w[tv1]", gaps_out = 0, gaps_in = 0 })
-hl.workspace_rule({ workspace = "f[1]",    gaps_out = 0, gaps_in = 0 })
+-- Only with "Dynamic Hyprland integration" (see the top of this file)
+if QS_DYNAMIC then
+    hl.workspace_rule({ workspace = "w[tv1]", gaps_out = 0, gaps_in = 0 })
+    hl.workspace_rule({ workspace = "f[1]",    gaps_out = 0, gaps_in = 0 })
 
-hl.window_rule({
-    name  = "no-gaps-wtv1",
-    match = { float = false, workspace = "w[tv1]" },
-    -- border_size = 0 is already set in "smart-border-single-tiled" further down, don't set it twice here
-    --border_size = 0,
-    rounding    = 0,
-})
+    hl.window_rule({
+        name  = "no-gaps-wtv1",
+        match = { float = false, workspace = "w[tv1]" },
+        -- border_size = 0 is already set in "smart-border-single-tiled" further down, don't set it twice here
+        rounding    = 0,
+    })
 
-hl.window_rule({
-    name  = "no-gaps-f1",
-    match = { float = false, workspace = "f[1]" },
-    border_size = 0,
-    rounding    = 0,
-})
+    hl.window_rule({
+        name  = "no-gaps-f1",
+        match = { float = false, workspace = "f[1]" },
+        border_size = 0,
+        rounding    = 0,
+    })
+end
 
 -- See https://wiki.hypr.land/Configuring/Layouts/Dwindle-Layout/ for more
 hl.config({
@@ -470,11 +496,14 @@ hl.window_rule({
 ------------------------
 
 -- 1. Removes the border when exactly 1 tiled window is visible on the workspace
-hl.window_rule({
-    name = "smart-border-single-tiled",
-    match = { float = false, workspace = "w[tv1]" },
-    border_size = 0,
-})
+--    (only with "Dynamic Hyprland integration", see the top of this file)
+if QS_DYNAMIC then
+    hl.window_rule({
+        name = "smart-border-single-tiled",
+        match = { float = false, workspace = "w[tv1]" },
+        border_size = 0,
+    })
+end
 
 -- 2. IMPORTANT: makes sure floating windows ALWAYS keep their border
 hl.window_rule({

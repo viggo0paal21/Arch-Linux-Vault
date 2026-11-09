@@ -1383,6 +1383,24 @@ OverlayPanel {
                             }
                         }
 
+                        // On: Hyprland with smart gaps, smart borders and a square single window, rounding 10, top gap 19 px.
+                        // Off: all of that gone (the bar handles 1 window), rounding 5, top gap 10 px.
+                        // hyprland.lua reads "hyprDynamic" when it loads, so "hyprctl reload" after switching.
+                        SettingRow {
+                            width: parent.width
+                            label: "Dynamic Hyprland integration"
+                            description: Config.opts.hyprDynamic ? "Hyprland's smart gaps and borders: a single window fills the screen without border and rounding. Rounding 10, top gap 19" : "Hyprland skips smart gaps, smart borders and square single windows, the bar handles 1 window. Rounding 5, top gap 10"
+
+                            SwitchCtl {
+                                checked: Config.opts.hyprDynamic
+                                onToggled: {
+                                    Config.opts.hyprDynamic = !Config.opts.hyprDynamic;
+                                    // Wait briefly until the setting is saved, then reload Hyprland
+                                    Quickshell.execDetached(["sh", "-c", "sleep 0.5; hyprctl reload >/dev/null 2>&1"]);
+                                }
+                            }
+                        }
+
                         // On: stepless dock animation (between pixels, like Hyprland windows), content a touch softer
                         // while moving. Off: whole pixels, always crisp (previous behavior).
                         SettingRow {
