@@ -132,6 +132,103 @@ PanelWindow {
     property real dockTo: 0
     property real dockElapsed: 0
 
+    // ---------- Even pixel steps (without "Subpixel glide") ----------
+    // Without Subpixel glide the bar only sits on whole pixels. Simply rounding the curve means: a pixel
+    // jumps when the curve crosses its middle. At the end of a decelerating curve (Smooth out) these
+    // moments get further and further apart; at 600 ms the bar stood still for ~90 ms before the last pixel and
+    // then jumped (looked like a jerk). And because the moments don't line up with the monitor's frames,
+    // the steps came irregularly (1, 2, 1, 2 frames apart instead of growing evenly).
+    // So a schedule is computed at the start: for every pixel the frame in which it steps.
+    //  1. Times from the curve as before (pixel middle)
+    //  2. No gap may be more than 1.4x as long as the previous one (the other way round when accelerating): the long
+    //     standstill before the last pixel becomes an even run-out, the bar arrives a little earlier
+    //  3. Round to whole monitor frames (refresh rate from Hyprland) without accumulating errors
+    //  4. Where the curve decelerates, no gap is shorter than the previous one (the other way round when accelerating). Instead of
+    //     2, 1, 2 it is 1, 2, 2: the steps slow down evenly instead of stumbling
+    // The bar then moves exactly one pixel per step (frame.progress always sits on the pixel grid),
+    // nothing changes in between. With Subpixel glide everything stays as before (continuous along the curve).
+    // Counted in drawn frames, not by the clock: if a frame is dropped (Hyprland or Quickshell
+    // stalls briefly, e.g. on a workspace switch), it continues with the next planned step instead of
+    // catching up two steps at once (that was the 2 px jump after a brief stop).
+    property var paceFrames: []         // frame in which each pixel step comes (counted from the start)
+    property int paceSteps: 0
+    property int paceDone: 0
+    property int paceFrame: 0
+    property real pacePeriod: 1000 / 60  // ms per monitor frame (set at the start)
+    property real paceGap: 0             // ms since the last counted frame
+    readonly property bool paced: !Config.opts.barGlide
+
+    // Monitor refresh rate (Hyprland), otherwise 60
+    function refreshRate() {
+        try {
+            const r = bar.hyprMonitor && bar.hyprMonitor.lastIpcObject ? Number(bar.hyprMonitor.lastIpcObject.refreshRate) : 0;
+            return r > 20 ? r : 60;
+        } catch (e) {
+            return 60;
+        }
+    }
+
+    // u (0..1) at which the curve reaches the value y
+    function curveInv(c, y) {
+        let lo = 0, hi = 1;
+        for (let i = 0; i < 32; i++) {
+            const m = (lo + hi) / 2;
+            if (bar.curveAt(c, m) < y)
+                lo = m;
+            else
+                hi = m;
+        }
+        return (lo + hi) / 2;
+    }
+
+    // Schedule for n pixel steps in duration ms
+    function buildPace(n, duration) {
+        const c = Theme.curveOf(Config.opts.animBarCurve);
+        const fr = 1000 / bar.refreshRate();
+        const r = 1.4;
+        const ideal = [];
+        let last = 0;
+        for (let k = 1; k <= n; k++) {
+            const t = bar.curveInv(c, (k - 0.5) / n) * duration / fr;
+            ideal.push(t - last);
+            last = t;
+        }
+        const h = ideal.slice();
+        // 2. Limit the gaps (the first gap is only half a pixel and counts double)
+        for (let k = 1; k < n; k++)
+            h[k] = Math.min(h[k], Math.max(h[k - 1] * (k === 1 ? 2 : 1) * r, 1));
+        for (let k = n - 2; k > 0; k--)
+            h[k] = Math.min(h[k], Math.max(h[k + 1] * r, 1));
+        // 3. to whole frames, without accumulated rounding errors
+        const frames = [];
+        let acc = 0, prev = 0;
+        for (let k = 0; k < n; k++) {
+            acc += h[k];
+            const f = Math.round(acc);
+            frames.push(f - prev);
+            prev = f;
+        }
+        // 4. evenly growing (shrinking when accelerating) gaps, the sum stays the same
+        for (let pass = 0; pass < n; pass++) {
+            for (let k = 2; k < n; k++) {
+                const slower = ideal[k] >= ideal[k - 1];
+                if ((slower && frames[k] < frames[k - 1]) || (!slower && frames[k] > frames[k - 1])) {
+                    const t = frames[k];
+                    frames[k] = frames[k - 1];
+                    frames[k - 1] = t;
+                }
+            }
+        }
+        // Frame (from the start) in which each step comes
+        const at = [];
+        let sum = 0;
+        for (let k = 0; k < n; k++) {
+            sum += frames[k];
+            at.push(Math.max(1, sum));
+        }
+        return at;
+    }
+
     // Value of the bezier curve (x1, y1, x2, y2) at position u (0..1)
     function curveAt(c, u) {
         if (u <= 0)
@@ -170,6 +267,22 @@ PanelWindow {
         bar.dockFrom = frame.progress;
         bar.dockTo = target;
         bar.dockElapsed = 0;
+        if (bar.paced) {
+            // As many steps as the longest distance in whole pixels (height, otherwise side, and the thicker
+            // docked bar)
+            const unit = Math.max(Config.opts.barFloatOffset > 0 ? Config.opts.barFloatOffset : Config.opts.barFloatSide, bar.dynamic ? Math.max(0, Config.opts.barDockedHeight - Config.opts.barHeight) : 0);
+            const n = Math.round(Math.abs(target - frame.progress) * unit);
+            if (n <= 0) {
+                frame.progress = target;
+                return;
+            }
+            bar.paceFrames = bar.buildPace(n, Config.opts.barDockDuration);
+            bar.paceSteps = n;
+            bar.paceDone = 0;
+            bar.paceFrame = 0;
+            bar.pacePeriod = 1000 / bar.refreshRate();
+            bar.paceGap = 0;
+        }
         dockTicker.running = true;
     }
 
@@ -186,6 +299,28 @@ PanelWindow {
         onTriggered: {
             const dt = Math.max(0, Math.min(dockTicker.frameTime, 1 / 60)) * 1000;
             bar.dockElapsed += dt;
+            if (bar.paced && bar.paceSteps > 0) {
+                // Without Subpixel glide: exactly one pixel per due step, following the schedule.
+                // The call sometimes comes twice in the same frame (several windows are drawing, the second one with
+                // frameTime 0). Only a real new frame counts, otherwise two steps would land in one frame.
+                bar.paceGap += dockTicker.frameTime * 1000;
+                if (bar.paceFrame > 0 && bar.paceGap < bar.pacePeriod * 0.6)
+                    return;
+                bar.paceGap = 0;
+                bar.paceFrame++;
+                let done = bar.paceDone;
+                while (done < bar.paceSteps && bar.paceFrames[done] <= bar.paceFrame)
+                    done++;
+                if (done !== bar.paceDone) {
+                    bar.paceDone = done;
+                    frame.progress = done >= bar.paceSteps ? bar.dockTo : bar.dockFrom + (bar.dockTo - bar.dockFrom) * done / bar.paceSteps;
+                }
+                if (done >= bar.paceSteps) {
+                    bar.paceSteps = 0;
+                    dockTicker.running = false;
+                }
+                return;
+            }
             const u = Math.min(1, bar.dockElapsed / Math.max(1, Config.opts.barDockDuration));
             frame.progress = bar.dockFrom + (bar.dockTo - bar.dockFrom) * bar.curveAt(Theme.curveOf(Config.opts.animBarCurve), u);
             if (u >= 1)

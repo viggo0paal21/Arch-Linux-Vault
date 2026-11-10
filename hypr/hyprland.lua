@@ -166,7 +166,7 @@ hl.config({
         },
 
         blur = {
-                enabled = false,
+                enabled = true,
                 size = 8,
                 passes = 2,
         },
@@ -496,14 +496,12 @@ hl.window_rule({
 ------------------------
 
 -- 1. Removes the border when exactly 1 tiled window is visible on the workspace
---    (only with "Dynamic Hyprland integration", see the top of this file)
-if QS_DYNAMIC then
-    hl.window_rule({
-        name = "smart-border-single-tiled",
-        match = { float = false, workspace = "w[tv1]" },
-        border_size = 0,
-    })
-end
+--    (w[tv1]: only tiled windows count, floating ones don't). Always on, also without "Dynamic Hyprland integration".
+hl.window_rule({
+    name = "smart-border-single-tiled",
+    match = { float = false, workspace = "w[tv1]" },
+    border_size = 0,
+})
 
 -- 2. IMPORTANT: makes sure floating windows ALWAYS keep their border
 hl.window_rule({

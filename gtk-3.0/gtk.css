@@ -227,3 +227,4 @@ window.background:not(.csd):not(.solid-csd):not(.popup) {
 #box #active {
     border-bottom: 2px solid #ffffff;
 }
+@import 'colors.css';
