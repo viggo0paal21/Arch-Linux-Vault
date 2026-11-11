@@ -51,6 +51,11 @@ Singleton {
         animations: true,
         transparency: "everywhere",
         glassOpacity: 55,
+        appGlass: true,
+        appOpacity: 65,
+        kittyOpacity: 65,
+        hyprBlurSize: 10,
+        hyprBlurPasses: 3,
         popupsSolidWithWindows: false,
         barSolidWithWindows: true,
         barSolidOnlySingle: true,
@@ -150,6 +155,11 @@ Singleton {
             property bool animations: root.defaults.animations
             property string transparency: root.defaults.transparency
             property int glassOpacity: root.defaults.glassOpacity
+            property bool appGlass: root.defaults.appGlass
+            property int appOpacity: root.defaults.appOpacity
+            property int kittyOpacity: root.defaults.kittyOpacity
+            property int hyprBlurSize: root.defaults.hyprBlurSize
+            property int hyprBlurPasses: root.defaults.hyprBlurPasses
             property bool popupsSolidWithWindows: root.defaults.popupsSolidWithWindows
             property bool barSolidWithWindows: root.defaults.barSolidWithWindows
             property bool barSolidOnlySingle: root.defaults.barSolidOnlySingle

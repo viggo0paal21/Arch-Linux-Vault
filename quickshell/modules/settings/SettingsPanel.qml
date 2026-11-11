@@ -13,6 +13,18 @@ OverlayPanel {
     id: panel
 
     property int tab: 0
+
+    // App opacity: writes the opacity into Nautilus, GTK3 dialogs, kitty, Vesktop and Firefox via
+    // ~/.local/bin/qs-glass-apply. Started through python3 (no exec bit needed). The script reads
+    // appGlass / appOpacity / kittyOpacity from settings.json itself, queues itself (flock) and always
+    // applies the most recently saved state. Debounced.
+    property Timer appGlassDebounce: Timer {
+        interval: 300
+        onTriggered: panel.runAppGlass()
+    }
+    function runAppGlass() {
+        Quickshell.execDetached(["python3", Quickshell.env("HOME") + "/.local/bin/qs-glass-apply"]);
+    }
     readonly property var tabs: [
         {
             name: "Appearance",
@@ -532,6 +544,92 @@ OverlayPanel {
                                 value: Config.opts.glassOpacity
                                 suffix: " %"
                                 onEdited: v => Config.opts.glassOpacity = v
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "App glass"
+                            description: "Translucent look for Nautilus, file dialogs, kitty, Vesktop and Firefox. Off = everything as before (blur settings stay)"
+
+                            SwitchCtl {
+                                checked: Config.opts.appGlass
+                                onToggled: {
+                                    Config.opts.appGlass = !Config.opts.appGlass;
+                                    panel.appGlassDebounce.restart();
+                                }
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            visible: Config.opts.appGlass
+                            label: "App opacity"
+                            description: "Nautilus, file dialogs, kitty, Vesktop, Firefox, 100 % = solid. Nautilus and Firefox update after a restart"
+
+                            RangeControl {
+                                from: 25
+                                to: 100
+                                stepSize: 5
+                                value: Config.opts.appOpacity
+                                suffix: " %"
+                                onEdited: v => {
+                                    Config.opts.appOpacity = v;
+                                    panel.appGlassDebounce.restart();
+                                }
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            visible: !Config.opts.appGlass
+                            label: "Kitty opacity"
+                            description: "Background opacity of kitty while App glass is off, 100 % = solid. Applied live"
+
+                            RangeControl {
+                                from: 25
+                                to: 100
+                                stepSize: 5
+                                value: Config.opts.kittyOpacity
+                                suffix: " %"
+                                onEdited: v => {
+                                    Config.opts.kittyOpacity = v;
+                                    panel.appGlassDebounce.restart();
+                                }
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Blur size"
+                            description: "Hyprland blur behind all windows, panels and popups (decoration:blur:size). Applied live"
+
+                            RangeControl {
+                                from: 1
+                                to: 30
+                                stepSize: 1
+                                value: Config.opts.hyprBlurSize
+                                onEdited: v => {
+                                    Config.opts.hyprBlurSize = v;
+                                    Config.opts.glassBlurSize = v;
+                                }
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Blur passes"
+                            description: "decoration:blur:passes, more passes = softer blur but more GPU work. Applied live"
+
+                            RangeControl {
+                                from: 1
+                                to: 8
+                                stepSize: 1
+                                value: Config.opts.hyprBlurPasses
+                                onEdited: v => {
+                                    Config.opts.hyprBlurPasses = v;
+                                    Config.opts.glassBlurPasses = v;
+                                }
                             }
                         }
 

@@ -21,6 +21,8 @@ smooth animations at the full **170 Hz** on an NVIDIA card. It replaces Waybar, 
 | [`home/.local/bin/qs-start`](home/.local/bin/qs-start) | `~/.local/bin/` | Start script used by Hyprland's autostart: Vulkan (or OpenGL, see `quickshell/render-env.sh`), wall-clock animations, without MangoHud / lsfg-vk / vkBasalt |
 | [`home/.local/bin/qs-restart`](home/.local/bin/qs-restart) | `~/.local/bin/` | Restarts the shell cleanly (used by Settings → Behavior → Renderer) |
 | [`home/.local/bin/qs`](home/.local/bin/qs), [`quickshell`](home/.local/bin/quickshell) | `~/.local/bin/` | Wrappers: same fix for **every** `qs` / `quickshell` call, any config |
+| [`home/.local/bin/qs-glass-apply`](home/.local/bin/qs-glass-apply) | `~/.local/bin/` | Applies **App glass / App opacity / Kitty opacity** to Nautilus, GTK3 dialogs, kitty, Vesktop and Firefox (called by the settings, see below) |
+| [`home/.local/bin/qs-dock`](home/.local/bin/qs-dock) | `~/.local/bin/` | Starts nwg-dock-hyprland to match the bar |
 | [`home/.local/share/dbus-1/services/org.freedesktop.Notifications.service`](home/.local/share/dbus-1/services/org.freedesktop.Notifications.service) | `~/.local/share/dbus-1/services/` | Stops swaync / dunst / mako from being auto-started by D-Bus and taking the notification server away from Quickshell (see section 7) |
 | [`home/.local/state/quickshell/by-shell/oled-bw/settings.json`](home/.local/state/quickshell/by-shell/oled-bw/settings.json) | `~/.local/state/quickshell/by-shell/oled-bw/` | My saved shell settings (radius, bar, font, animation speed, transparency, FPS counter, ...) |
 | [`hypr/hyprland.lua`](hypr/hyprland.lua) | `~/.config/hypr/` | Autostart runs `qs-start` (Waybar and swaync are commented out), `Super + R` opens the Quickshell launcher, blur for the Quickshell layers |
@@ -51,6 +53,29 @@ Changes made for smooth 170 Hz (all inside `quickshell/`):
 **Exclude kitty terminal** (shown in Everywhere, right under the three modes): kitty windows don't count for the bar, so it stays translucent while only kitty is open.
 
 Floating windows don't count for the two switches. **Transparent when empty** (Bar tab) still works on top: with no windows at all the bar stays fully see-through.
+
+### App glass and blur (Settings → Appearance)
+
+The same translucent look for normal apps, with Hyprland's blur behind it.
+
+| Setting | What it does |
+|---|---|
+| **App glass** | On: Nautilus, GTK3 file dialogs ("Save as", "Open"), Thunar, kitty, Vesktop and Firefox get one tinted layer (black at **App opacity**) and everything above it becomes transparent. Off: everything goes back to how it was before (Nautilus to the value from the backup, blocks removed), and **Kitty opacity** shows up instead |
+| **App opacity** | 25–100 %, same math as the shell's Opacity (black at X %), so equal numbers look equal |
+| **Kitty opacity** | kitty's `background_opacity` while App glass is off |
+| **Blur size / Blur passes** | Hyprland's `decoration:blur` for everything (windows, panels, popups), applied live with `hyprctl eval 'hl.config(...)'`. `hyprland.lua` stays untouched; Quickshell sets the values again on start and after every config reload. Also sets the shell-glass values so the bar matches |
+
+How it works: the settings start `python3 ~/.local/bin/qs-glass-apply`. It reads the three values from `settings.json` and only edits marked spots (first touch of a file makes `<file>.bak-qsglass`):
+
+- **GTK4 / Nautilus** `~/.config/gtk-4.0/gtk.css`: only the two opacity numbers
+- **GTK3** `~/.config/gtk-3.0/gtk.css`: a `/* qs-glass:begin … end */` block at the end (overrides the GTK theme, the theme itself is not touched; undecorated windows like the dock stay as they are)
+- **kitty** `background_opacity` (+ `dynamic_background_opacity yes`), reloaded with `SIGUSR1`
+- **Vesktop** QuickCSS block (reloads live, includes the call area), Vencord `transparent: true`, and `splashBackground` removed (with it Vesktop paints the window opaque, so transparency turns black)
+- **Firefox** `user.js` block (transparency prefs and the portal file picker), `chrome/userChrome.css`, `chrome/userContent.css`, opacity in `chrome/qs-glass.css`. Needs a Firefox restart. Web pages with their own background stay opaque
+
+**Black instead of see-through** always means the window has no alpha channel (usually an X11/XWayland window), not wrong CSS. That's why Firefox (running under X11) uses the portal file dialog: the portal runs natively under Wayland. Steam can't be made translucent this way: its transparent-window flag makes the content area 0 px tall under Hyprland.
+
+Hyprland doesn't blur popups and menus by default (`decoration:blur:popups`), so menus are kept denser.
 
 ### Dynamic floating bar (Settings → Bar → Floating bar → Dynamic)
 
@@ -162,8 +187,8 @@ cd ~/config-backup
 cp -r quickshell ~/.config/
 cp hypr/hyprland.lua ~/.config/hypr/
 mkdir -p ~/.local/bin ~/.local/state/quickshell/by-shell/oled-bw
-cp home/.local/bin/qs-start home/.local/bin/qs home/.local/bin/quickshell ~/.local/bin/
-chmod +x ~/.local/bin/qs-start ~/.local/bin/qs ~/.local/bin/quickshell
+cp home/.local/bin/qs-start home/.local/bin/qs home/.local/bin/quickshell home/.local/bin/qs-restart home/.local/bin/qs-glass-apply ~/.local/bin/
+chmod +x ~/.local/bin/qs-start ~/.local/bin/qs ~/.local/bin/quickshell ~/.local/bin/qs-restart ~/.local/bin/qs-glass-apply
 cp home/.local/state/quickshell/by-shell/oled-bw/settings.json ~/.local/state/quickshell/by-shell/oled-bw/
 mkdir -p ~/.local/share/dbus-1/services
 cp home/.local/share/dbus-1/services/org.freedesktop.Notifications.service ~/.local/share/dbus-1/services/

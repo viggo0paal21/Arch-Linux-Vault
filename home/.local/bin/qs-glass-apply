@@ -1,0 +1,469 @@
+#!/usr/bin/env python3
+"""
+qs-glass-apply            (reads appGlass / appOpacity / kittyOpacity from the Quickshell settings)
+qs-glass-apply on|off|<percent>   (only used if there is no settings file)
+
+Called by Quickshell (Settings > Appearance > "App glass", "App opacity", "Kitty opacity").
+Glass on:  all apps get the "App opacity" opacity. Hyprland does the blur behind it.
+Glass off: state as before qs-glass (Nautilus from the backup, GTK3/Vesktop/Firefox blocks removed,
+           Firefox prefs restored); kitty gets "Kitty opacity".
+
+Targets (only marked spots are changed, nothing else):
+  Nautilus / GTK4   ~/.config/gtk-4.0/gtk.css   – only the 2 opacity numbers (window_bg_color, window.background)
+  GTK3              ~/.config/gtk-3.0/gtk.css   – block /* qs-glass:begin */ … /* qs-glass:end */ at the end
+                    (file dialogs "Save/Open", Thunar, other GTK3 apps)
+  kitty             ~/.config/kitty/kitty.conf  – background_opacity (+ once: dynamic_background_opacity yes)
+  Vesktop           ~/.config/vesktop/settings/quickCss.css – qs-glass block (reloads live)
+  Firefox           profile/chrome/qs-glass.css  – only the opacity; userChrome/userContent/user.js once
+
+Backup: the FIRST time a file is touched  <file>.bak-qsglass  (state before qs-glass).
+When it becomes visible:
+  kitty, Vesktop: immediately · GTK3 dialogs: next dialog (Firefox: after a Firefox restart)
+  Nautilus: next window if none is open right now (otherwise after "nautilus -q") · Firefox: after a restart
+"""
+import configparser
+import fcntl
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+
+HOME = os.environ.get("QS_GLASS_HOME") or os.path.expanduser("~")
+CFG = os.path.join(HOME, ".config")
+NO_HOOKS = os.environ.get("QS_GLASS_NO_HOOKS") == "1"   # files only, don't touch any processes (tests)
+BEGIN, END = "/* qs-glass:begin", "/* qs-glass:end */"
+
+
+def log(msg):
+    print("qs-glass: " + msg)
+
+
+def num(a):
+    return ("%.2f" % a).rstrip("0").rstrip(".")
+
+
+def read(path):
+    with open(path, encoding="utf-8") as f:
+        return f.read()
+
+
+def write(path, text, backup=True):
+    """Write atomically, only if something changes; back up once beforehand."""
+    old = read(path) if os.path.exists(path) else None
+    if old == text:
+        return False
+    if backup and old is not None and not os.path.exists(path + ".bak-qsglass"):
+        shutil.copy2(path, path + ".bak-qsglass")
+    d = os.path.dirname(path)
+    os.makedirs(d, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(prefix=".qsglass-", dir=d)
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        f.write(text)
+    if old is not None:
+        shutil.copymode(path, tmp)
+    else:
+        os.chmod(tmp, 0o644)
+    os.replace(tmp, path)
+    return True
+
+
+def remove_block(text):
+    """Remove the BEGIN/END block including the blank line before it (restores the old text)."""
+    i = text.find(BEGIN)
+    if i < 0:
+        return text
+    j = text.find(END, i)
+    if j < 0:
+        return text
+    j += len(END)
+    if text[j:j + 1] == "\n":
+        j += 1
+    pre = text[:i]
+    if pre.endswith("\n\n"):
+        pre = pre[:-1]
+    return pre + text[j:]
+
+
+def put_block(text, block):
+    """Replace the BEGIN/END block or append it at the end."""
+    i = text.find(BEGIN)
+    if i >= 0:
+        j = text.find(END, i)
+        if j < 0:
+            raise ValueError("qs-glass:begin ohne :end")
+        return text[:i] + block + text[j + len(END):]
+    sep = "" if text.endswith("\n") or not text else "\n"
+    return text + sep + "\n" + block + "\n"
+
+
+def run(cmd):
+    if NO_HOOKS:
+        return ""
+    try:
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=5).stdout
+    except Exception:
+        return ""
+
+
+def hypr_classes():
+    try:
+        return {c.get("class", "") for c in json.loads(run(["hyprctl", "clients", "-j"]) or "[]")}
+    except ValueError:
+        return set()
+
+
+# ---------------------------------------------------------------- GTK4 / Nautilus
+def gtk4(a):
+    p = os.path.join(CFG, "gtk-4.0", "gtk.css")
+    if not os.path.exists(p):
+        return
+    t = read(p)
+    t2, n1 = re.subn(r"(@define-color window_bg_color rgba\(0, 0, 0, )[\d.]+(\);)", r"\g<1>%s\2" % num(a), t, count=1)
+    t2, n2 = re.subn(r"(window\.background \{\s*background-color: rgba\(0, 0, 0, )[\d.]+(\);)", r"\g<1>%s\2" % num(a), t2, count=1)
+    if n1 != 1 or n2 != 1:
+        log("gtk-4.0/gtk.css: expected lines not found – nothing changed")
+        return
+    if write(p, t2):
+        # Nautilus often keeps running in the background and only loads CSS on start.
+        # Only quit it if NO Nautilus window is open right now.
+        if "org.gnome.Nautilus" not in hypr_classes():
+            run(["nautilus", "-q"])
+
+
+def gtk4_original():
+    """Opacity Nautilus had before qs-glass (from the backup), otherwise 0.8."""
+    try:
+        m = re.search(r"@define-color window_bg_color rgba\(0, 0, 0, ([\d.]+)\);",
+                      read(os.path.join(CFG, "gtk-4.0", "gtk.css.bak-qsglass")))
+        return float(m.group(1))
+    except (OSError, AttributeError, ValueError):
+        return 0.8
+
+
+def restart_portal():
+    # Restart the file dialog service so the next dialog has the new value –
+    # but not while one of its dialogs is open.
+    if not any("portal" in c for c in hypr_classes()):
+        run(["systemctl", "--user", "try-restart", "xdg-desktop-portal-gtk.service"])
+
+
+# ---------------------------------------------------------------- GTK3
+GTK3_CLEAR = """.view, .viewport, viewport, scrolledwindow, iconview, treeview,
+headerbar, .titlebar, toolbar, .toolbar, .inline-toolbar, actionbar, searchbar,
+notebook, notebook > stack, notebook > header, paned,
+placessidebar, placessidebar list, placessidebar row, .sidebar, stacksidebar, list,
+filechooser, filechooser .dialog-action-box, .dialog-action-area,
+.thunar, .thunar .view, .thunar .standard-view, .thunar .standard-view .view,
+.thunar treeview, .thunar treeview.view, .thunar .sidebar, .thunar .sidebar .view,
+.thunar .sidebar treeview, .thunar notebook, .thunar notebook > stack,
+.thunar .path-bar, .thunar toolbar, .thunar headerbar, .thunar .header-bar,
+.header-bar, headerbar:backdrop, .titlebar:backdrop, .titlebar:not(headerbar), messagedialog .titlebar,
+.path-bar, .location-bar, searchbar > revealer > box, filechooser #pathbarbox, .content-view"""
+
+# The layer that tints. Non-CSD windows (e.g. the dock) stay transparent as in your gtk.css –
+# there only the content of a dialog is tinted.
+GTK3_TINT = """window.background,
+.background,
+messagedialog.background,
+window.background:not(.csd):not(.solid-csd):not(.popup) > .dialog-vbox"""
+
+
+def gtk3(a):
+    p = os.path.join(CFG, "gtk-3.0", "gtk.css")
+    if not os.path.exists(p):
+        return
+    menu = max(a, 0.88)
+    block = (
+        BEGIN + " – generated by qs-glass-apply (Quickshell \"App opacity\"), don't edit by hand */\n"
+        "/* The ONE layer that tints */\n"
+        "%s {\n  background-color: rgba(0, 0, 0, %s);\n}\n"
+        "/* Everything above it transparent */\n%s {\n  background-color: transparent;\n  background-image: none;\n}\n"
+        "/* Menus, popovers, tooltips a bit denser (Hyprland doesn't blur popups) */\n"
+        "menu, .menu, .context-menu, popover, popover.background, tooltip, tooltip.background {\n"
+        "  background-color: rgba(0, 0, 0, %s);\n}\n" % (GTK3_TINT, num(a), GTK3_CLEAR, num(menu))
+        + END
+    )
+    if write(p, put_block(read(p), block)):
+        restart_portal()
+
+
+def gtk3_off():
+    p = os.path.join(CFG, "gtk-3.0", "gtk.css")
+    if os.path.exists(p) and write(p, remove_block(read(p))):
+        restart_portal()
+
+
+# ---------------------------------------------------------------- kitty
+def kitty(a):
+    p = os.path.join(CFG, "kitty", "kitty.conf")
+    if not os.path.exists(p):
+        return
+    t = read(p)
+    t2, n = re.subn(r"(?m)^(background_opacity[ \t]+)[\d.]+[ \t]*$", r"\g<1>%s" % num(a), t, count=1)
+    if n != 1:
+        log("kitty.conf: background_opacity not found – nothing changed")
+        return
+    if not re.search(r"(?m)^dynamic_background_opacity[ \t]+(yes|true)", t2):
+        t2 = re.sub(r"(?m)^(background_opacity[ \t]+[\d.]+)$",
+                    r"\1\n# qs-glass: opacity can be changed live (Quickshell App opacity)\ndynamic_background_opacity yes",
+                    t2, count=1)
+    if write(p, t2):
+        run(["pkill", "-USR1", "-x", "kitty"])   # kitty reloads its config
+
+
+# ---------------------------------------------------------------- Vesktop
+VESKTOP_CSS = """/* One layer tints, everything above it transparent */
+html, body, #app-mount { background: transparent !important; }
+#app-mount { background-color: rgba(0, 0, 0, %(a)s) !important; }
+:root, .theme-dark, .theme-darker, .theme-midnight, .visual-refresh, .visual-refresh .theme-dark {
+  --background-primary: transparent !important;
+  --background-secondary: transparent !important;
+  --background-secondary-alt: transparent !important;
+  --background-tertiary: transparent !important;
+  --background-base-lowest: transparent !important;
+  --background-base-lower: transparent !important;
+  --background-base-low: transparent !important;
+  --background-surface-high: rgba(255, 255, 255, 0.04) !important;
+  --background-surface-higher: rgba(255, 255, 255, 0.06) !important;
+  --background-surface-highest: rgba(255, 255, 255, 0.08) !important;
+  --bg-base-primary: transparent !important;
+  --bg-base-secondary: transparent !important;
+  --bg-base-tertiary: transparent !important;
+  --bg-surface-raised: rgba(255, 255, 255, 0.05) !important;
+  --chat-background-default: transparent !important;
+  --home-background: transparent !important;
+  --app-frame-background: transparent !important;
+  --channeltextarea-background: rgba(255, 255, 255, 0.06) !important;
+  --input-background: rgba(255, 255, 255, 0.06) !important;
+  /* floating things (menus, popouts, dialogs) sit ON TOP of content -> denser */
+  --background-floating: rgba(12, 12, 12, %(m)s) !important;
+  --background-nested-floating: rgba(12, 12, 12, %(m)s) !important;
+  --bg-surface-overlay: rgba(12, 12, 12, %(m)s) !important;
+  --modal-background: rgba(12, 12, 12, %(m)s) !important;
+}
+/* Call area (voice/video channel): Discord paints it black itself */
+[class*="callContainer"],
+:has(> [class*="callContainer"]) {
+  background: transparent !important;
+}
+"""
+
+
+def vesktop(a):
+    d = os.path.join(CFG, "vesktop", "settings")
+    if not os.path.isdir(d):
+        return
+    p = os.path.join(d, "quickCss.css")
+    t = read(p) if os.path.exists(p) else ""
+    block = (BEGIN + " – generated by qs-glass-apply (Quickshell \"App opacity\"), don't edit by hand */\n"
+             + VESKTOP_CSS % {"a": num(a), "m": num(max(a, 0.9))} + END)
+    write(p, put_block(t, block))   # Vesktop reloads QuickCSS live
+
+    # Once: turn on window transparency (takes effect after a Vesktop restart).
+    # Only while Vesktop isn't running – otherwise it overwrites the file with its own state.
+    s = os.path.join(d, "settings.json")
+    if os.path.exists(s) and not run(["pgrep", "-f", "vesktop"]).strip():
+        raw = read(s)
+        try:
+            data = json.loads(raw)
+        except ValueError:
+            return
+        if data.get("transparent") is not True:
+            data["transparent"] = True
+            m = re.search(r'\n( +)"', raw)
+            write(s, json.dumps(data, indent=len(m.group(1)) if m else 4, ensure_ascii=False))
+
+    # Vesktop bug (Vencord/Vesktop#880): with "splashBackground" the main window gets this
+    # color as an opaque background -> transparency turns black. Remove the entry.
+    v = os.path.join(CFG, "vesktop", "settings.json")
+    if os.path.exists(v) and not run(["pgrep", "-f", "vesktop"]).strip():
+        raw = read(v)
+        try:
+            data = json.loads(raw)
+        except ValueError:
+            return
+        if "splashBackground" in data:
+            del data["splashBackground"]
+            m = re.search(r'\n( +)"', raw)
+            write(v, json.dumps(data, indent=len(m.group(1)) if m else 4, ensure_ascii=False))
+
+
+def vesktop_off():
+    p = os.path.join(CFG, "vesktop", "settings", "quickCss.css")
+    if os.path.exists(p):
+        write(p, remove_block(read(p)))   # Vesktop reloads QuickCSS live
+
+
+# ---------------------------------------------------------------- Firefox
+# Values with "App glass" off = state before qs-glass (file-picker was 0)
+FF_PREFS_OFF = [
+    ("browser.tabs.allow_transparent_browser", "false"),
+    ("widget.transparent-windows", "false"),
+    ("mozilla.widget.use-argb-visuals", "false"),
+    ("widget.use-xdg-desktop-portal.file-picker", "0"),
+]
+
+FF_PREFS = [
+    ("toolkit.legacyUserProfileCustomizations.stylesheets", "true"),
+    ("browser.tabs.allow_transparent_browser", "true"),
+    ("widget.transparent-windows", "true"),
+    ("mozilla.widget.use-argb-visuals", "true"),   # needed if Firefox runs under X11/XWayland
+    # File dialogs through the portal (its own Wayland process) instead of Firefox's own
+    # GTK3 dialog: that one runs under X11 with Firefox and can't do transparency there (= black).
+    ("widget.use-xdg-desktop-portal.file-picker", "1"),
+]
+
+FF_CHROME = """/* Firefox translucent – Quickshell "App opacity" (qs-glass-apply).
+   The opacity lives in qs-glass.css and is written by the slider. */
+@import url("qs-glass.css");
+
+:root {
+  --tabpanel-background-color: transparent !important;
+  --toolbar-bgcolor: transparent !important;
+  --lwt-accent-color: transparent !important;
+  --lwt-accent-color-inactive: transparent !important;
+  --sidebar-background-color: transparent !important;
+  --toolbar-field-background-color: rgba(255, 255, 255, 0.06) !important;
+  --toolbar-field-focus-background-color: rgba(255, 255, 255, 0.10) !important;
+  --tab-selected-bgcolor: rgba(255, 255, 255, 0.10) !important;
+  --panel-background: rgba(12, 12, 12, 0.92) !important;
+  --arrowpanel-background: rgba(12, 12, 12, 0.92) !important;
+}
+
+/* The ONE layer that tints */
+:root, #main-window {
+  background: rgba(0, 0, 0, var(--qs-glass, 0.65)) !important;
+}
+
+/* Everything above it transparent */
+#navigator-toolbox, #titlebar, #TabsToolbar, #nav-bar, #PersonalToolbar, #toolbar-menubar,
+#browser, #tabbrowser-tabbox, #tabbrowser-tabpanels, .browserContainer, .browserStack,
+#sidebar-box, #sidebar-main, #sidebar-header, findbar {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+"""
+
+FF_CONTENT = """/* qs-glass: new tab / home page / blank page transparent (pages with their own background stay opaque) */
+@-moz-document url("about:newtab"), url("about:home"), url("about:blank") {
+  html, body { background: transparent !important; }
+}
+"""
+
+
+def firefox_profile():
+    for base in (os.path.join(CFG, "mozilla", "firefox"), os.path.join(HOME, ".mozilla", "firefox")):
+        ini = os.path.join(base, "profiles.ini")
+        if not os.path.exists(ini):
+            continue
+        cp = configparser.RawConfigParser()
+        cp.read(ini)
+        for sec in cp.sections():
+            if sec.startswith("Install") and cp.has_option(sec, "Default"):
+                return os.path.join(base, cp.get(sec, "Default"))
+        for sec in cp.sections():
+            if cp.has_option(sec, "Default") and cp.get(sec, "Default") == "1":
+                rel = cp.get(sec, "Path")
+                return os.path.join(base, rel) if cp.get(sec, "IsRelative", fallback="1") == "1" else rel
+    return None
+
+
+def ff_userjs(prof, prefs):
+    uj = os.path.join(prof, "user.js")
+    t = read(uj) if os.path.exists(uj) else ""
+    block = "// qs-glass:begin – Firefox-Transparenz (Quickshell App glass)\n" + "".join(
+        'user_pref("%s", %s);\n' % kv for kv in prefs) + "// qs-glass:end"
+    if "// qs-glass:begin" in t:
+        t = re.sub(r"// qs-glass:begin[\s\S]*?// qs-glass:end", lambda _: block, t, count=1)
+    else:
+        t = t + ("" if t.endswith("\n") or not t else "\n") + block + "\n"
+    write(uj, t)
+
+
+def firefox_off():
+    """Glass off: prefs back to the old state, own blocks removed from userChrome/userContent."""
+    prof = firefox_profile()
+    if not prof or not os.path.isdir(prof):
+        return
+    ff_userjs(prof, FF_PREFS_OFF)
+    for name in ("userChrome.css", "userContent.css"):
+        p = os.path.join(prof, "chrome", name)
+        if os.path.exists(p):
+            write(p, remove_block(read(p)))
+
+
+def firefox(a):
+    prof = firefox_profile()
+    if not prof or not os.path.isdir(prof):
+        return
+    chrome = os.path.join(prof, "chrome")
+    # Slider value (takes effect after a Firefox restart)
+    write(os.path.join(chrome, "qs-glass.css"),
+          "/* von qs-glass-apply geschrieben */\n:root { --qs-glass: %s; }\n" % num(a), backup=False)
+
+    # Once: prefs, userChrome, userContent (other content is kept)
+    ff_userjs(prof, FF_PREFS)
+
+    uc = os.path.join(chrome, "userChrome.css")
+    t = read(uc) if os.path.exists(uc) else ""
+    if 'url("qs-glass.css")' not in t:
+        # @import must come first -> qs-glass part goes before the existing content
+        write(uc, BEGIN + " */\n" + FF_CHROME + END + "\n" + t)
+
+    ucont = os.path.join(chrome, "userContent.css")
+    t = read(ucont) if os.path.exists(ucont) else ""
+    if BEGIN not in t:
+        write(ucont, put_block(t, BEGIN + " */\n" + FF_CONTENT + END))
+
+
+def pct(v, default):
+    try:
+        return min(1.0, max(0.25, float(v) / 100.0))
+    except (TypeError, ValueError):
+        return default
+
+
+def main():
+    # The Quickshell settings are the source of truth (appGlass, appOpacity, kittyOpacity).
+    # Argument only for manual use without settings:  qs-glass-apply [on|off|<percent>]
+    arg = sys.argv[1] if len(sys.argv) > 1 else ""
+    if arg in ("-h", "--help"):
+        print(__doc__)
+        return
+    glass = arg != "off"
+    a = pct(arg, 0.65)
+    ka = 0.65
+
+    os.makedirs(os.path.join(HOME, ".cache"), exist_ok=True)
+    with open(os.path.join(HOME, ".cache", "qs-glass.lock"), "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        # Several runs in quick succession (dragging the slider): always the most recently saved state.
+        try:
+            st = os.path.join(HOME, ".local", "state", "quickshell", "by-shell", "oled-bw", "settings.json")
+            with open(st, encoding="utf-8") as f:
+                s = json.load(f)
+            glass = s.get("appGlass", glass) is not False
+            a = pct(s.get("appOpacity"), a)
+            ka = pct(s.get("kittyOpacity"), ka)
+        except (OSError, ValueError):
+            pass
+
+        if glass:
+            steps = [(gtk4, a), (gtk3, a), (kitty, a), (vesktop, a), (firefox, a)]
+        else:
+            # Glass off = state as before qs-glass; kitty gets its own slider
+            steps = [(gtk4, gtk4_original()), (lambda _: gtk3_off(), None), (kitty, ka),
+                     (lambda _: vesktop_off(), None), (lambda _: firefox_off(), None)]
+        for step, val in steps:
+            try:
+                step(val)
+            except Exception as e:   # one broken target must not stop the others
+                log("%s: %s" % (getattr(step, "__name__", "?"), e))
+    log(("glass on, opacity %s" % num(a)) if glass else ("glass off, kitty %s" % num(ka)))
+
+
+if __name__ == "__main__":
+    main()

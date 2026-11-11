@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Starts nwg-dock-hyprland to match the Quickshell bar (oled-bw).
+#   -p bottom -mb 10   floats 10 px above the edge (like barFloatOffset)
+#   -i 36              icon size
+#   -d -hd 0           autohide, appears instantly at the bottom edge
+#   -l top             not above fullscreen games (direct scanout stays)
+#   -nolauncher        no app launcher button
+#   -iw special        don't show windows from the special workspace
+
+pkill -x nwg-dock-hyprla 2>/dev/null   # the process name is cut to 15 characters
+pkill -x nwg-dock-hyprland 2>/dev/null
+
+exec nwg-dock-hyprland \
+    -p bottom -mb 10 \
+    -i 36 \
+    -d -hd 0 \
+    -l top \
+    -nolauncher \
+    -iw special \
+    -s style.css \
+    >/dev/null 2>&1

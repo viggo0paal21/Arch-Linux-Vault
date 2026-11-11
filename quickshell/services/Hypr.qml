@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
+import qs.config
 
 // Hyprland commands that work with the Lua config (>= 0.55) and the old config.
 Singleton {
@@ -35,7 +36,34 @@ Singleton {
             Hyprland.refreshToplevels();
     }
 
-    Component.onCompleted: root.refresh()
+    Component.onCompleted: {
+        root.refresh();
+        blurApply.restart();
+    }
+
+    // Window blur (decoration:blur size/passes) from Settings > Appearance > Blur size / Blur passes.
+    // Set at runtime ("hyprctl eval" with the Lua config), hyprland.lua stays unchanged.
+    // Runtime values are lost on "hyprctl reload" -> set them again on start and after every reload.
+    readonly property int blurSize: Config.opts.hyprBlurSize
+    readonly property int blurPasses: Config.opts.hyprBlurPasses
+    onBlurSizeChanged: blurApply.restart()
+    onBlurPassesChanged: blurApply.restart()
+
+    Timer {
+        id: blurApply
+
+        interval: 150
+        onTriggered: root.applyBlur()
+    }
+
+    function applyBlur() {
+        const s = Math.max(0, Math.round(root.blurSize));
+        const p = Math.max(1, Math.min(8, Math.round(root.blurPasses)));
+        if (root.lua)
+            Quickshell.execDetached(["hyprctl", "eval", "hl.config({ decoration = { blur = { size = " + s + ", passes = " + p + " } } })"]);
+        else
+            Quickshell.execDetached(["hyprctl", "--batch", "keyword decoration:blur:size " + s + " ; keyword decoration:blur:passes " + p]);
+    }
 
     // Whether a window floats is only in lastIpcObject. Hyprland doesn't update it
     // by itself, so query again on matching events.
@@ -46,6 +74,8 @@ Singleton {
             const n = event.name;
             if (n === "openwindow" || n === "closewindow" || n === "changefloatingmode" || n === "movewindowv2" || n === "workspacev2" || n === "focusedmonv2")
                 root.refresh();
+            else if (n === "configreloaded")
+                blurApply.restart();
         }
     }
 

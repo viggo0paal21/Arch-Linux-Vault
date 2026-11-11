@@ -155,7 +155,7 @@ hl.config({
     decoration = {
         -- Fully square
         -- Dynamic Hyprland integration on: 10, off: 5 (see the top of this file)
-        rounding = QS_DYNAMIC and 10 or 5,
+        rounding = QS_DYNAMIC and 10 or 10,
 
         active_opacity   = 1.0,
         inactive_opacity = 1.0,
@@ -167,8 +167,8 @@ hl.config({
 
         blur = {
                 enabled = true,
-                size = 8,
-                passes = 2,
+                size = 10,
+                passes = 3,
         },
     },
 
