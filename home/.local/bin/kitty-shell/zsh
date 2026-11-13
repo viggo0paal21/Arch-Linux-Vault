@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# Start shell for kitty (kitty.conf: shell /home/viggo/.local/bin/kitty-shell/zsh).
+# Shows fastfetch when Quickshell Settings > Commands > "Fastfetch in kitty" is on,
+# then the normal zsh.
+# The file is named "zsh" on purpose: kitty detects the shell by the file name and only then sets up
+# its shell integration (ZDOTDIR), which the real zsh below then loads as usual.
+S="${XDG_STATE_HOME:-$HOME/.local/state}/quickshell/by-shell/oled-bw/settings.json"
+if grep -qE '"kittyFastfetch"[[:space:]]*:[[:space:]]*true' "$S" 2>/dev/null && command -v fastfetch >/dev/null; then
+    BIN="$HOME/.local/bin"
+    if [ -x "$BIN/fastfetch-show" ]; then
+        # Folder for this window (named after its terminal, e.g. pts-3): holds the pre-rendered
+        # variants and this window's image files
+        t=$(readlink /proc/$$/fd/0 2>/dev/null); t=${t#/dev/}; t=${t//\//-}
+        WD="${XDG_RUNTIME_DIR:-/tmp}/kitty-fastfetch/${t:-$$}"
+        rm -rf "$WD" 2>/dev/null; mkdir -p "$WD" 2>/dev/null || WD=
+        # The largest fastfetch variant that fits the window completely (see fastfetch-show). The next image
+        # from ~/.config/fastfetch/logos is only used when an image is really shown.
+        res=$(FF_WD="$WD" "$BIN/fastfetch-show" start; printf x); res=${res%x}
+        state=${res%%$'\n'*}
+        name=-; src=
+        if [[ "$state" == shown$'\t'* ]]; then
+            printf '%s' "${res#*$'\n'}"
+            rest=${state#shown$'\t'}; name=${rest%%$'\t'*}; src=${rest#*$'\t'}
+        fi
+        unset res state rest
+        # Prepare all other variants for this window in the background, so redrawing after a
+        # resize is instant (runs as a child of the shell, so fastfetch detects kitty as the terminal)
+        [ -n "$WD" ] && FF_WD="$WD" "$BIN/fastfetch-show" prerender </dev/null >/dev/null 2>&1 &
+        # zsh should redraw fastfetch to fit when the window size changes, as long as no command
+        # has run. For that zsh first reads kitty-shell/zdotdir via ZDOTDIR, which loads the real ~/.zsh* files,
+        # restores ZDOTDIR and adds the hook (fastfetch.zsh) at the end.
+        Z="$BIN/kitty-shell/zdotdir"
+        if [ -r "$Z/.zshenv" ] && [ -r "$Z/.zshrc" ]; then
+            export _FF_RESIZE=1 _FF_WD="$WD" _FF_NAME="$name" _FF_SRC="$src" _FF_SIZE="$(stty size </dev/tty 2>/dev/null)"
+            if [ -n "${KITTY_SHELL_INTEGRATION:-}" ] && [[ "${ZDOTDIR:-}" == */shell-integration/zsh ]]; then
+                # kitty shell integration: its .zshenv sets ZDOTDIR to KITTY_ORIG_ZDOTDIR -> to us
+                [ -n "${KITTY_ORIG_ZDOTDIR+x}" ] && export _FF_ORIG_ZDOTDIR="$KITTY_ORIG_ZDOTDIR"
+                export KITTY_ORIG_ZDOTDIR="$Z"
+            else
+                [ -n "${ZDOTDIR+x}" ] && export _FF_ORIG_ZDOTDIR="$ZDOTDIR"
+                export ZDOTDIR="$Z"
+            fi
+        fi
+        unset t WD name src Z
+    else
+        # Next image from ~/.config/fastfetch/logos (in turn), corners rounded like Hyprland
+        [ -x "$BIN/fastfetch-logo" ] && "$BIN/fastfetch-logo" next
+        # Start through zsh, so fastfetch shows zsh as "Shell" and not this bash script
+        # (fastfetch looks at the parent process). -f: no startup files, the ": " keeps zsh as the parent process.
+        ZSH=/usr/bin/zsh; [ -x "$ZSH" ] || ZSH=/bin/zsh
+        if [ -x "$ZSH" ]; then "$ZSH" -f -c 'fastfetch; :'; else fastfetch; fi
+    fi
+fi
+for z in /usr/bin/zsh /bin/zsh; do
+    [ -x "$z" ] && exec "$z" "$@"
+done
+exec "${SHELL:-/bin/sh}" "$@"

@@ -90,6 +90,11 @@ Singleton {
         screenCorners: false,
         gpuMonitor: true,
         fpsCounter: false,
+        kittyFastfetch: false,
+        fastfetchLogo1: "",
+        fastfetchLogo2: "",
+        fastfetchLogo3: "",
+        fastfetchLogo4: "",
         terminal: "kitty",
         lockCommand: "hyprlock || loginctl lock-session"
     })
@@ -196,6 +201,14 @@ Singleton {
             property bool screenCorners: root.defaults.screenCorners
             property bool gpuMonitor: root.defaults.gpuMonitor
             property bool fpsCounter: root.defaults.fpsCounter
+            // Settings > Commands > "Fastfetch in kitty": ~/.local/bin/kitty-shell/zsh reads the value for every new kitty
+            property bool kittyFastfetch: root.defaults.kittyFastfetch
+            // Settings > Commands > "Fastfetch images": up to 4 images, one per new kitty in turn (~/.local/bin/fastfetch-logo).
+            // All empty = every image in ~/.config/fastfetch/logos.
+            property string fastfetchLogo1: root.defaults.fastfetchLogo1
+            property string fastfetchLogo2: root.defaults.fastfetchLogo2
+            property string fastfetchLogo3: root.defaults.fastfetchLogo3
+            property string fastfetchLogo4: root.defaults.fastfetchLogo4
             property string terminal: root.defaults.terminal
             property string lockCommand: root.defaults.lockCommand
         }

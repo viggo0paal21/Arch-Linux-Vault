@@ -1,0 +1,214 @@
+#!/usr/bin/env bash
+# fastfetch image: cycles through the images in ~/.config/fastfetch/logos and rounds their corners like
+# Hyprland rounds its windows (decoration:rounding). The result is always ~/.config/fastfetch/logo-current.png,
+# which config.jsonc uses as logo.source (so it also applies to fastfetch run by hand). The smaller
+# fastfetch variants (variants/*.jsonc, see fastfetch-show) get the same image in their size as
+# logo-current-<columns>x<rows>.png.
+#
+#   fastfetch-logo next             next image
+#   fastfetch-logo take             next image and print it: first line the original, then per size
+#                                   "<columns>x<rows><Tab><finished file>" (fastfetch-show does this as soon as a
+#                                   kitty shows an image; the window remembers its files so it keeps its own
+#                                   image when redrawing)
+#   fastfetch-logo files IMAGE      only the lines "<columns>x<rows><Tab><finished file>" for IMAGE
+#   fastfetch-logo back             go back one
+#   fastfetch-logo                  only re-prepare the current image (e.g. after changing the rounding)
+#   fastfetch-logo prepare [IMG..]  only pre-render images (without switching), all from the list if none given.
+#                                   Quickshell does this when an image is picked, so kitty doesn't have to wait.
+#
+# Which images: the 4 slots in Quickshell (Settings > Commands > "Fastfetch images"), in this order.
+# If all are empty: all images from ~/.config/fastfetch/logos, alphabetically (prefix numbers set the order).
+#
+# Every image is brought to the same format as nagatoro.png (540 : 660): scaled down until it just fills
+# the area, overflow cut off (centered sideways, from the top vertically), corners rounded. That way every
+# image looks the same size in fastfetch, and even huge images (e.g. 11520 x 11520, 80 MB) are only
+# read once and then taken from the cache as small files.
+set -u
+DIR="$HOME/.config/fastfetch"
+LOGOS="$DIR/logos"
+CACHE="$DIR/.logo-cache"
+INDEX="$DIR/.logo-index"
+CURRENT="$DIR/logo-current.png"
+# Aspect ratio for all images, like nagatoro.png (540 x 660)
+FRAME_W=540
+FRAME_H=660
+# kitty stretches the image to exactly logo.width x logo.height cells. So it is rendered pixel-exact in that size:
+# kitty then shows it 1:1 (not distorted, not rescaled) and the radius is exactly Hyprland's
+# rounding. kitty reports the cell size itself (window pixels divided by columns/rows; with
+# JetBrainsMono 12 pt and cell_height 110 % that is 10 x 24). Without a terminal (e.g. from Quickshell) the
+# last measured value is used.
+CELLFILE="$DIR/.cell-size"
+CELL=$(python3 -S -c 'import fcntl, os, struct, termios
+fd = os.open("/dev/tty", os.O_RDONLY)
+r, c, x, y = struct.unpack("HHHH", fcntl.ioctl(fd, termios.TIOCGWINSZ, bytes(8)))
+if r and c and x and y: print(round(x / c), round(y / r))' 2>/dev/null)
+if [[ "$CELL" =~ ^[0-9]+\ [0-9]+$ ]]; then
+    [ "$(cat "$CELLFILE" 2>/dev/null)" = "$CELL" ] || printf '%s\n' "$CELL" > "$CELLFILE"
+else
+    CELL=$(cat "$CELLFILE" 2>/dev/null)
+    [[ "$CELL" =~ ^[0-9]+\ [0-9]+$ ]] || CELL="10 24"
+fi
+read -r CELL_W CELL_H <<< "$CELL"
+
+# Image sizes in cells: the one from config.jsonc (-> logo-current.png), then every other one from the variants
+logo_size() {  # config file -> "columns rows" of its kitty image (nothing if it has none)
+    grep -q '"kitty-direct"' "$1" 2>/dev/null || return 0
+    local c n
+    c=$(grep -m1 -oE '"width"[[:space:]]*:[[:space:]]*[0-9]+' "$1" | grep -oE '[0-9]+$')
+    n=$(grep -m1 -oE '"height"[[:space:]]*:[[:space:]]*[0-9]+' "$1" | grep -oE '[0-9]+$')
+    [ -n "$c" ] && [ -n "$n" ] && printf '%s %s\n' "$c" "$n"
+    return 0
+}
+read -r COLS ROWS < <(logo_size "$DIR/config.jsonc")
+COLS=${COLS:-44}; ROWS=${ROWS:-22}
+SIZES=("${COLS}x${ROWS}")
+for f in "$DIR"/variants/*.jsonc; do
+    [ -f "$f" ] || continue
+    s=$(logo_size "$f"); [ -n "$s" ] || continue
+    s="${s% *}x${s#* }"
+    [[ " ${SIZES[*]} " == *" $s "* ]] || SIZES+=("$s")
+done
+
+# Images from Quickshell (Settings > Commands > "Fastfetch images", slots 1-4 in this order).
+# All slots empty: all images from the logos folder.
+SETTINGS="${XDG_STATE_HOME:-$HOME/.local/state}/quickshell/by-shell/oled-bw/settings.json"
+IMAGES=()
+for k in 1 2 3 4; do
+    p=$(grep -oE "\"fastfetchLogo$k\"[[:space:]]*:[[:space:]]*\"[^\"]*\"" "$SETTINGS" 2>/dev/null | sed -E 's/^[^:]*:[[:space:]]*"(.*)"$/\1/; s#\\/#/#g')
+    [ -n "$p" ] && [ -f "$p" ] && IMAGES+=("$p")
+done
+if [ ${#IMAGES[@]} -eq 0 ]; then
+    mapfile -t IMAGES < <(find "$LOGOS" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) 2>/dev/null | LC_ALL=C sort)
+fi
+N=${#IMAGES[@]}
+
+# Rounding from Hyprland (not reachable: 0 = square)
+R=$(hyprctl getoption decoration:rounding -j 2>/dev/null | grep -oE '"int"[[:space:]]*:[[:space:]]*[0-9]+' | grep -oE '[0-9]+$')
+R=${R:-0}
+# Monitor scale: Hyprland's rounding is in logical pixels, kitty works in physical ones
+SCALE=$(hyprctl monitors -j 2>/dev/null | awk '/"scale"/ { v = $2; gsub(/[^0-9.]/, "", v); s = v } /"focused"/ && /true/ { if (s != "") printf "%.2f", s; exit }')
+[[ "$SCALE" =~ ^[0-9]+\.[0-9]+$ ]] || SCALE=1.00
+
+# columns rows -> "bw bh fw fh rp": area in screen pixels, inside it the image in FRAME_W:FRAME_H format
+# as large as possible, radius in screen pixels
+dims() {
+    awk -v w="$FRAME_W" -v h="$FRAME_H" -v c="$1" -v n="$2" -v cw="$CELL_W" -v ch="$CELL_H" -v r="$R" -v sc="$SCALE" 'BEGIN {
+        bw = c * cw; bh = n * ch; s = bw / w; if (bh / h < s) s = bh / h;
+        fw = int(w * s + 0.5); fh = int(h * s + 0.5); if (fw > bw) fw = bw; if (fh > bh) fh = bh;
+        printf "%d %d %d %d %.2f\n", bw, bh, fw, fh, r * sc }'
+}
+# The largest image needed; all sizes are made from it (cropped, corners still square)
+BASE_W=0; BASE_H=0
+for s in "${SIZES[@]}"; do
+    read -r _ _ fw fh _ < <(dims "${s%x*}" "${s#*x}")
+    if [ "$fw" -gt "$BASE_W" ]; then BASE_W=$fw; BASE_H=$fh; fi
+done
+
+src_id() { printf '%s|%s' "${1##*/}" "$(stat -c '%s %Y' "$1")"; }
+magick_cmd() { command -v magick || command -v convert; }
+
+# SRC -> path of the cropped image with square corners in BASE_W x BASE_H (the original is only read for this)
+make_base() {
+    local src=$1 key out tmp im
+    key=$(printf 'base4|%s|%s|%s|%s|%s' "$(src_id "$src")" "$BASE_W" "$BASE_H" "$FRAME_W" "$FRAME_H" | md5sum | cut -c1-16)
+    out="$CACHE/$key.base.png"
+    if [ ! -s "$out" ]; then
+        im=$(magick_cmd) || return 1
+        tmp="$out.tmp.$$.png"
+        # Scale down to image size (^ = fill the area), cut off the overflow (centered sideways, otherwise from the top)
+        if nice -n 10 "$im" "$src[0]" -alpha set -resize "${BASE_W}x${BASE_H}^" \
+            -gravity north -crop "${BASE_W}x${BASE_H}+0+0" +repage "PNG32:$tmp" 2>/dev/null; then
+            mv -f "$tmp" "$out"
+        else
+            rm -f "$tmp"; return 1
+        fi
+    fi
+    printf '%s\n' "$out"
+}
+
+# SRC COLUMNS ROWS -> path of the finished image (rendered if it isn't in the cache yet).
+# It is only re-rendered for a new/changed image, different rounding, scale or size.
+make_logo() {
+    local src=$1 c=$2 n=$3 key out tmp im base bw bh fw fh rp draw
+    [ -f "$src" ] || return 1
+    mkdir -p "$CACHE"
+    key=$(printf 'v4|%s|%s|%s|%s|%s|%s|%s|%s|%s' "$(src_id "$src")" "$R" "$SCALE" "$c" "$n" "$CELL_W" "$CELL_H" "$FRAME_W" "$FRAME_H" | md5sum | cut -c1-16)
+    out="$CACHE/$key.png"
+    if [ ! -s "$out" ]; then
+        im=$(magick_cmd) || return 1
+        base=$(make_base "$src") || return 1
+        read -r bw bh fw fh rp < <(dims "$c" "$n")
+        # Rounding 0 (Hyprland not reachable): keep it square, a circle with radius 0 would be empty
+        draw="roundrectangle 0,0 $((fw - 1)),$((fh - 1)) $rp,$rp"
+        [ "$R" -gt 0 ] || draw="rectangle 0,0 $((fw - 1)),$((fh - 1))"
+        tmp="$out.tmp.$$.png"
+        # Bring to size, round the corners, center it with a transparent border on exactly the kitty area
+        if nice -n 10 "$im" "$base" -resize "${fw}x${fh}!" \
+            \( -size "${fw}x${fh}" xc:none -fill white -draw "$draw" \) \
+            -compose DstIn -composite -compose Over -background none -gravity center -extent "${bw}x${bh}" "PNG32:$tmp" 2>/dev/null; then
+            mv -f "$tmp" "$out"
+        else
+            rm -f "$tmp"; return 1
+        fi
+    fi
+    printf '%s\n' "$out"
+}
+
+# Render SRC in all sizes and link it (relative, so the links also work from another view)
+link_all() {
+    local src=$1 s out name
+    for s in "${SIZES[@]}"; do
+        out=$(make_logo "$src" "${s%x*}" "${s#*x}") || return 1
+        if [ "$s" = "${COLS}x${ROWS}" ]; then name="$CURRENT"; else name="$DIR/logo-current-$s.png"; fi
+        ln -sfn ".logo-cache/${out##*/}" "$name"
+    done
+}
+
+# Print the finished files of an image for all sizes
+print_files() {
+    local src=$1 s out
+    for s in "${SIZES[@]}"; do
+        out=$(make_logo "$src" "${s%x*}" "${s#*x}") || return 1
+        printf '%s\t%s\n' "$s" "$out"
+    done
+}
+if [ "${1:-}" = "files" ]; then
+    [ -n "${2:-}" ] || exit 1
+    print_files "$2"
+    exit $?
+fi
+
+# Only pre-render
+if [ "${1:-}" = "prepare" ]; then
+    shift
+    [ $# -gt 0 ] || set -- "${IMAGES[@]}"
+    for f in "$@"; do
+        for s in "${SIZES[@]}"; do make_logo "$f" "${s%x*}" "${s#*x}" >/dev/null; done
+    done
+    exit 0
+fi
+
+[ "$N" -gt 0 ] || exit 0
+I=$(cat "$INDEX" 2>/dev/null); [[ "$I" =~ ^[0-9]+$ ]] || I=-1
+if [ "${1:-}" = "next" ] || [ "${1:-}" = "take" ]; then
+    I=$(( (I + 1) % N ))
+    printf '%s' "$I" > "$INDEX"
+elif [ "${1:-}" = "back" ]; then
+    [ "$I" -ge 0 ] || I=0
+    I=$(( (I + N - 1) % N ))
+    printf '%s' "$I" > "$INDEX"
+elif [ "$I" -lt 0 ] || [ "$I" -ge "$N" ]; then
+    I=0
+fi
+
+link_all "${IMAGES[$I]}" || exit 0
+if [ "${1:-}" = "take" ]; then
+    printf '%s\n' "${IMAGES[$I]}"
+    print_files "${IMAGES[$I]}"
+fi
+
+# Pre-render the image for the next kitty in the background (done at once if it is in the cache)
+if { [ "${1:-}" = "next" ] || [ "${1:-}" = "take" ]; } && [ "$N" -gt 1 ]; then
+    setsid -f "$0" prepare "${IMAGES[$(( (I + 1) % N ))]}" >/dev/null 2>&1 </dev/null
+fi
+exit 0

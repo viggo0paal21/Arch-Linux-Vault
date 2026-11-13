@@ -39,6 +39,10 @@ Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
 | [`qs-start`](home/.local/bin/qs-start) | Starts Quickshell from the Hyprland autostart: Vulkan backend, without MangoHud / lsfg-vk / vkBasalt. See [Quickshell Guide](Quickshell%20Guide.md#3-why-the-start-script-exists-nvidia) |
 | [`qs`](home/.local/bin/qs), [`quickshell`](home/.local/bin/quickshell) | Wrappers around `/usr/bin/qs` and `/usr/bin/quickshell` with the same fix, so it applies to every Quickshell config |
 | [`check-direct-scanout`](home/.local/bin/check-direct-scanout) | Notification that shows whether Hyprland's direct scanout is active (`Super + Home`) |
+| [`qs-dock`](home/.local/bin/qs-dock), [`qs-glass-apply`](home/.local/bin/qs-glass-apply) | Dock launcher for nwg-dock-hyprland and the "App glass" / "App opacity" helper, see the [Quickshell Guide](Quickshell%20Guide.md) |
+| [`kitty-shell/`](home/.local/bin/kitty-shell) | kitty starts zsh through this wrapper (`shell` line in [`kitty/kitty.conf`](kitty/kitty.conf)). It shows fastfetch before the first prompt when Quickshell Settings > Commands > "Fastfetch in kitty" is on |
+| [`fastfetch-show`](home/.local/bin/fastfetch-show), [`fastfetch-fit`](home/.local/bin/fastfetch-fit), [`fastfetch-logo`](home/.local/bin/fastfetch-logo) | fastfetch for kitty: picks the biggest variant from [`fastfetch/variants/`](fastfetch/variants) that fits the window, redraws a smaller one when the window shrinks, and cycles the images from Settings > Commands > "Fastfetch images" (one per new kitty, pixel-exact for the cell size) |
+| [`fastfetch-revert-variants`](home/.local/bin/fastfetch-revert-variants) | Rolls the variants feature back to the local `*.bak-variants` backups (only useful on the machine that has them) |
 
 ### Shell
 
@@ -267,9 +271,14 @@ for d in */; do case "$d" in home/|etc/) ;; *) cp -r "$d" ~/.config/ ;; esac; do
 
 # Starship prompt and zsh: see "Shell: zsh" above
 
-# scripts for ~/.local/bin (Quickshell start script + wrappers, check-direct-scanout):
-mkdir -p ~/.local/bin && cp home/.local/bin/* ~/.local/bin/
-chmod +x ~/.local/bin/{qs-start,qs,quickshell,check-direct-scanout}
+# scripts for ~/.local/bin (Quickshell start script + wrappers, check-direct-scanout, qs-dock, qs-glass-apply,
+# the fastfetch scripts and the kitty-shell/ folder; "/." also copies subfolders and hidden files):
+mkdir -p ~/.local/bin && cp -r home/.local/bin/. ~/.local/bin/
+chmod +x ~/.local/bin/{qs-start,qs,quickshell,check-direct-scanout,qs-dock,qs-glass-apply,fastfetch-show,fastfetch-fit,fastfetch-logo,fastfetch-revert-variants,kitty-shell/zsh}
+
+# fastfetch in kitty: needs zsh, python3 and ImageMagick (magick). Put your images into
+# ~/.config/fastfetch/logos (not in the repo, they are big). kitty/kitty.conf and fastfetch/config.jsonc
+# contain /home/viggo paths, change them to your home folder.
 
 # Quickshell settings:
 mkdir -p ~/.local/state/quickshell/by-shell/oled-bw

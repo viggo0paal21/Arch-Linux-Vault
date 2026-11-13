@@ -1,128 +1,162 @@
 {
-  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
-  "logo": {
-      //"source": "/home/viggo/.config/fastfetch/lambda.txt",
-      "type": "kitty", 
-      "source": "/home/viggo/.config/fastfetch/tanzel.png",
-      //"source": "/home/viggo/.config/fastfetch/archlogo.txt",
-      //"source": "/home/viggo/.config/fastfetch/arch.txt",
-      //"type": "file",
-      "color": {
-        "1": "white",
-        "2": "white"
-      },
-      "padding": {
-        "top": 2,
-        "left": 4
-      }
+    "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+    "logo": {
+        "type": "kitty-direct",
+        "source": "/home/viggo/.config/fastfetch/logo-current.png",
+        "width": 44,
+        "height": 22,
+        "padding": {
+            "top": 4,
+            "left": 3
+        }
     },
-  "display": {
-    "key": {
-      "width": 15
+    "display": {
+        "color": {
+            "keys": "white",
+            "title": "bright_white",
+            "output": "bright_white",
+            "separator": "90"
+        },
+        "percent": {
+            "color": {
+                "green": "white",
+                "yellow": "bright_white",
+                "red": "bright_white"
+            }
+        },
+        "bar": {
+            "color": {
+                "elapsed": "bright_white",
+                "total": "90",
+                "border": "90"
+            }
+        }
     },
-    "color": "white",
-    "separator": "~>" 
-  },
-  "modules": [
-    "break",
-    {
-      "type": "title",
-      "format": "{6} | {8}"
-    },
-    "separator",
-    {
-      "type": "os",
-      "key": "OS ",
-      "keyColor": "white",
-      "format": "{4}{?6} ({6}){?} v{9}"
-    },
-    {
-      "type": "kernel",
-      "key": "Kernel ",
-      "keyColor": "white",
-      "format": "{1} {2}"
-    },
-    {
-      "type": "users",
-      "key": "User ",
-      "keyColor": "white",
-      "format": "{1} - {5}"
-    },
-    "break",
-    {
-      "type": "uptime",
-      "key": "Uptime ",
-      "keyColor": "white"
-    },
-    {
-      "type": "board",
-      "key": "Board ",
-      "keyColor": "white",
-      "format": "{1}"
-    },
-    {
-      "type": "bios",
-      "key": "Bios ",
-      "keyColor": "white",
-      "format": "{4} - {1}"
-    },
-    {
-      "type": "cpu",
-      "key": "CPU ",
-      "temp": true,
-      "showPeCoreCount": true,
-      "keyColor": "white",
-      "format": "{1} ({4}) {8}"
-    },
-    {
-      "type": "gpu",
-      "key": "GPU ",
-      // temp/NVML query briefly blocks the GPU on NVIDIA (~70 ms freeze in Quickshell)
-      "temp": false,
-      "detectionMethod": "pci",
-      "showPeCoreCount": true,
-      "keyColor": "white",
-      "format": "{1} {2}"
-    },
-    {
-      "type": "memory",
-      "key": "RAM ",
-      "temp": true,
-      "showPeCoreCount": true,
-      "keyColor": "white",
-      "format": "{1} / {2} {3}"
-    },
-    "break",
-    {
-      "type": "disk",
-      "key": "Disk ",
-      "keyColor": "white",
-      "format": "{1} / {2} {3} "
-    },
-    "break",
-    {
-      "type": "sound",
-      "key": "Sound ",
-      "keyColor": "white",
-      "format": "{2} {3}"
-    },
-    //{
-    //  "type": "media",
-    //  "key": "Media ",
-    //  "keyColor": "white",
-    //  "format": "{5}: {1} {?3}by {3}{?}"
-    //},
-    {
-      "type": "dateTime",
-      "key": "Date ",
-      "keyColor": "white",
-      "format": "{23}-{4}-{1} | {14}:{18}:{20}"
-    },
-   // {
-   //   "type": "weather",
-   //   "key": "Weather ",
-   //   "keyColor": "white",
-   //   "format": "{1}"
-   // }
-  ]
+    "modules": [
+        "break",
+        {
+            "type": "custom",
+            "format": "\u001b[90m┌──────────────────────Hardware──────────────────────┐"
+        },
+        {
+            "type": "host",
+            "key": "󰌢  PC",
+            "keyColor": "bold_bright_white"
+        },
+        {
+            "type": "cpu",
+            "key": "│ ├󰻠 ",
+            "keyColor": "white"
+        },
+        {
+            "type": "gpu",
+            "key": "│ ├󰍹 ",
+            "keyColor": "white",
+            "temp": false,
+            "detectionMethod": "pci"
+        },
+        {
+            "type": "memory",
+            "key": "│ ├󰑭 ",
+            "keyColor": "white"
+        },
+        {
+            "type": "disk",
+            "key": "└ └󰋊 ",
+            "keyColor": "white"
+        },
+        {
+            "type": "custom",
+            "format": "\u001b[90m└────────────────────────────────────────────────────┘"
+        },
+        "break",
+        {
+            "type": "custom",
+            "format": "\u001b[90m┌──────────────────────Software──────────────────────┐"
+        },
+        {
+            "type": "os",
+            "key": "  OS",
+            "keyColor": "bold_bright_white"
+        },
+        {
+            "type": "kernel",
+            "key": "│ ├󰌽 ",
+            "keyColor": "white"
+        },
+        {
+            "type": "bios",
+            "key": "│ ├󰖡 ",
+            "keyColor": "white"
+        },
+        {
+            "type": "packages",
+            "key": "│ ├󰏗 ",
+            "keyColor": "white"
+        },
+        {
+            "type": "shell",
+            "key": "└ └󰞷 ",
+            "keyColor": "white"
+        },
+        "break",
+        {
+            "type": "de",
+            "key": "󰧨  DE",
+            "keyColor": "bold_bright_white"
+        },
+        {
+            "type": "lm",
+            "key": "│ ├󰍁 ",
+            "keyColor": "white"
+        },
+        {
+            "type": "wm",
+            "key": "│ ├󱂬 ",
+            "keyColor": "white"
+        },
+        {
+            "type": "wmtheme",
+            "key": "│ ├󰉦 ",
+            "keyColor": "white"
+        },
+        {
+            "type": "terminal",
+            "key": "└ └󰆍 ",
+            "keyColor": "white"
+        },
+        {
+            "type": "custom",
+            "format": "\u001b[90m└────────────────────────────────────────────────────┘"
+        },
+        "break",
+        {
+            "type": "custom",
+            "format": "\u001b[90m┌────────────────────Uptime / Age / DT────────────────────┐"
+        },
+        {
+            "type": "command",
+            "key": "  ›  OS Age  ",
+            "keyColor": "white",
+            "text": "birth_install=$(stat -c %W /); current=$(date +%s); time_progression=$((current - birth_install)); days_difference=$((time_progression / 86400)); echo $days_difference days"
+        },
+        {
+            "type": "uptime",
+            "key": "  ›  Uptime  ",
+            "keyColor": "white"
+        },
+        {
+            "type": "datetime",
+            "key": "  ›  DateTime  ",
+            "keyColor": "white"
+        },
+        {
+            "type": "custom",
+            "format": "\u001b[90m└─────────────────────────────────────────────────────────┘"
+        },
+        {
+            "type": "custom",
+            "format": "  \u001b[38;5;240m● \u001b[38;5;243m● \u001b[38;5;246m● \u001b[38;5;249m● \u001b[38;5;251m● \u001b[38;5;253m● \u001b[38;5;255m● \u001b[38;5;15m●\u001b[0m"
+        }
+    ]
 }

@@ -1,0 +1,100 @@
+{
+    "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+    "logo": {
+        "type": "kitty-direct",
+        "source": "/home/viggo/.config/fastfetch/logo-current-22x11.png",
+        "width": 22,
+        "height": 11,
+        "padding": {
+            "top": 0,
+            "left": 3,
+            "right": 3
+        }
+    },
+    "display": {
+        "color": {
+            "keys": "white",
+            "title": "bright_white",
+            "output": "bright_white",
+            "separator": "90"
+        },
+        "percent": {
+            "color": {
+                "green": "white",
+                "yellow": "bright_white",
+                "red": "bright_white"
+            }
+        },
+        "bar": {
+            "color": {
+                "elapsed": "bright_white",
+                "total": "90",
+                "border": "90"
+            }
+        }
+    },
+    "modules": [
+        {
+            "type": "os",
+            "key": "  OS",
+            "keyColor": "bold_bright_white",
+            "format": "{name}"
+        },
+        {
+            "type": "kernel",
+            "key": "󰌽  Kernel",
+            "keyColor": "white",
+            "format": "{release}"
+        },
+        {
+            "type": "packages",
+            "key": "󰏗  Packages",
+            "keyColor": "white",
+            "format": "{all}"
+        },
+        {
+            "type": "shell",
+            "key": "󰞷  Shell",
+            "keyColor": "white"
+        },
+        {
+            "type": "wm",
+            "key": "󱂬  WM",
+            "keyColor": "white"
+        },
+        {
+            "type": "terminal",
+            "key": "󰆍  Terminal",
+            "keyColor": "white"
+        },
+        {
+            "type": "cpu",
+            "key": "󰻠  CPU",
+            "keyColor": "white",
+            "format": "{name}"
+        },
+        {
+            "type": "gpu",
+            "key": "󰍹  GPU",
+            "keyColor": "white",
+            "temp": false,
+            "detectionMethod": "pci",
+            "format": "{name}"
+        },
+        {
+            "type": "memory",
+            "key": "󰑭  RAM",
+            "keyColor": "white",
+            "format": "{used} / {total}"
+        },
+        {
+            "type": "uptime",
+            "key": "󰅐  Uptime",
+            "keyColor": "white"
+        },
+        {
+            "type": "custom",
+            "format": "  \u001b[38;5;240m● \u001b[38;5;243m● \u001b[38;5;246m● \u001b[38;5;249m● \u001b[38;5;251m● \u001b[38;5;253m● \u001b[38;5;255m● \u001b[38;5;15m●\u001b[0m"
+        }
+    ]
+}

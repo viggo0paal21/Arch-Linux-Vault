@@ -1,4 +1,5 @@
 import QtQuick
+import Qt.labs.folderlistmodel
 import Quickshell
 import Quickshell.Io
 import Quickshell.Widgets
@@ -2145,6 +2146,292 @@ OverlayPanel {
                                 text: Config.opts.terminal
                                 placeholder: "kitty"
                                 onCommitted: value => Config.opts.terminal = value.trim() !== "" ? value.trim() : Config.defaults.terminal
+                            }
+                        }
+
+                        // kitty starts through ~/.local/bin/kitty-shell/zsh (kitty.conf: shell ...), which reads the value
+                        // for every new window. So it applies right away to the next kitty, no restart needed.
+                        SettingRow {
+                            width: parent.width
+                            label: "Fastfetch in kitty"
+                            description: "Show fastfetch every time a new kitty window opens"
+
+                            SwitchCtl {
+                                checked: Config.opts.kittyFastfetch
+                                onToggled: Config.opts.kittyFastfetch = !Config.opts.kittyFastfetch
+                            }
+                        }
+
+                        // Images for fastfetch: 4 slots, one per new kitty in this order
+                        // (~/.local/bin/fastfetch-logo reads fastfetchLogo1..4). Clicking a slot opens the picker below it
+                        // (images from ~/.config/fastfetch/logos and ~/Pictures), right-click clears it.
+                        Column {
+                            id: ffLogos
+
+                            // Slot currently being picked for (0..3), -1 = picker closed
+                            property int picking: -1
+                            readonly property var slots: [Config.opts.fastfetchLogo1, Config.opts.fastfetchLogo2, Config.opts.fastfetchLogo3, Config.opts.fastfetchLogo4]
+                            readonly property string logosDir: Quickshell.env("HOME") + "/.config/fastfetch/logos"
+                            readonly property string picturesDir: Quickshell.env("HOME") + "/Pictures"
+                            // All selectable images, first the logos folder, then ~/Pictures
+                            readonly property var choices: {
+                                const l = [];
+                                for (let i = 0; i < ffLogosModel.count; i++)
+                                    l.push(ffLogosModel.get(i, "filePath"));
+                                for (let i = 0; i < ffPicturesModel.count; i++)
+                                    l.push(ffPicturesModel.get(i, "filePath"));
+                                return l;
+                            }
+
+                            function setSlot(i, path) {
+                                if (i === 0)
+                                    Config.opts.fastfetchLogo1 = path;
+                                else if (i === 1)
+                                    Config.opts.fastfetchLogo2 = path;
+                                else if (i === 2)
+                                    Config.opts.fastfetchLogo3 = path;
+                                else if (i === 3)
+                                    Config.opts.fastfetchLogo4 = path;
+                                // Prepare it for fastfetch right away (huge images take a few seconds),
+                                // so the next kitty doesn't have to wait for it
+                                if (path !== "")
+                                    Quickshell.execDetached([Quickshell.env("HOME") + "/.local/bin/fastfetch-logo", "prepare", path]);
+                            }
+
+                            // Path as a URL (spaces, # etc. in the file name)
+                            function url(path) {
+                                return path !== "" ? "file://" + path.split("/").map(encodeURIComponent).join("/") : "";
+                            }
+
+                            width: parent.width
+                            spacing: 10
+
+                            FolderListModel {
+                                id: ffLogosModel
+
+                                folder: "file://" + ffLogos.logosDir
+                                nameFilters: ["*.png", "*.jpg", "*.jpeg", "*.webp"]
+                                caseSensitive: false
+                                showDirs: false
+                                sortField: FolderListModel.Name
+                            }
+
+                            FolderListModel {
+                                id: ffPicturesModel
+
+                                folder: "file://" + ffLogos.picturesDir
+                                nameFilters: ["*.png", "*.jpg", "*.jpeg", "*.webp"]
+                                caseSensitive: false
+                                showDirs: false
+                                sortField: FolderListModel.Name
+                            }
+
+                            SettingRow {
+                                width: parent.width
+                                label: "Fastfetch images"
+                                description: "One per new kitty window, in this order. Click a slot to pick, right-click to clear. All empty = every image in ~/.config/fastfetch/logos"
+                                controlWidth: 4 * 60 + 3 * 8
+
+                                Row {
+                                    spacing: 8
+
+                                    Repeater {
+                                        model: 4
+
+                                        delegate: Item {
+                                            id: ffSlot
+
+                                            required property int index
+                                            readonly property string path: ffLogos.slots[index] || ""
+                                            readonly property bool picking: ffLogos.picking === index
+
+                                            width: 60
+                                            height: 60
+
+                                            ClippingRectangle {
+                                                anchors.fill: parent
+                                                radius: Theme.radius
+                                                color: Theme.layer3
+
+                                                Image {
+                                                    anchors.fill: parent
+                                                    anchors.margins: 4
+                                                    source: ffLogos.url(ffSlot.path)
+                                                    sourceSize.width: 112
+                                                    sourceSize.height: 112
+                                                    fillMode: Image.PreserveAspectFit
+                                                    asynchronous: true
+                                                    smooth: true
+                                                }
+
+                                                Glyph {
+                                                    anchors.centerIn: parent
+                                                    visible: ffSlot.path === ""
+                                                    text: Icons.plus
+                                                    color: Theme.fgMuted
+                                                }
+                                            }
+
+                                            Txt {
+                                                anchors.left: parent.left
+                                                anchors.top: parent.top
+                                                anchors.leftMargin: 5
+                                                anchors.topMargin: 2
+                                                text: String(ffSlot.index + 1)
+                                                color: Theme.fgDim
+                                                font.pixelSize: Theme.fontSm - 1
+                                            }
+
+                                            Rectangle {
+                                                anchors.fill: parent
+                                                radius: Theme.radius
+                                                color: "transparent"
+                                                border.width: ffSlot.picking ? 2 : 1
+                                                border.color: ffSlot.picking ? Theme.accent : (ffSlotArea.containsMouse ? Theme.fgMuted : Theme.border)
+
+                                                Behavior on border.color {
+                                                    CAnim {}
+                                                }
+                                            }
+
+                                            MouseArea {
+                                                id: ffSlotArea
+
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                                onClicked: mouse => {
+                                                    if (mouse.button === Qt.RightButton) {
+                                                        ffLogos.setSlot(ffSlot.index, "");
+                                                        return;
+                                                    }
+                                                    ffLogos.picking = ffSlot.picking ? -1 : ffSlot.index;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Picker for the clicked slot
+                            Rectangle {
+                                width: parent.width
+                                visible: ffLogos.picking >= 0
+                                height: visible ? ffPick.implicitHeight + 24 : 0
+                                radius: Theme.radius
+                                color: Theme.layer2
+                                border.width: 1
+                                border.color: Theme.border
+
+                                Column {
+                                    id: ffPick
+
+                                    x: 12
+                                    y: 12
+                                    width: parent.width - 24
+                                    spacing: 10
+
+                                    Item {
+                                        width: parent.width
+                                        height: 28
+
+                                        Txt {
+                                            anchors.left: parent.left
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            text: "Image " + (ffLogos.picking + 1) + " · from ~/.config/fastfetch/logos and ~/Pictures"
+                                            color: Theme.fgMuted
+                                            font.pixelSize: Theme.fontSm
+                                        }
+
+                                        IconButton {
+                                            anchors.right: ffPickClose.left
+                                            anchors.rightMargin: 6
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            size: 28
+                                            icon: Icons.image
+                                            idleColor: Theme.layer3
+                                            // Open the folder in the file manager to drop images into it
+                                            onClicked: Quickshell.execDetached(["sh", "-c", "mkdir -p \"$1\" && exec xdg-open \"$1\"", "sh", ffLogos.logosDir])
+                                        }
+
+                                        IconButton {
+                                            id: ffPickClose
+
+                                            anchors.right: parent.right
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            size: 28
+                                            icon: Icons.close
+                                            idleColor: Theme.layer3
+                                            onClicked: ffLogos.picking = -1
+                                        }
+                                    }
+
+                                    Flow {
+                                        width: parent.width
+                                        spacing: 8
+
+                                        Repeater {
+                                            model: ffLogos.picking >= 0 ? ffLogos.choices : []
+
+                                            delegate: Item {
+                                                id: ffChoice
+
+                                                required property string modelData
+                                                readonly property bool chosen: ffLogos.slots[ffLogos.picking] === modelData
+
+                                                width: 72
+                                                height: 72
+
+                                                ClippingRectangle {
+                                                    anchors.fill: parent
+                                                    radius: Theme.radius
+                                                    color: Theme.layer3
+
+                                                    Image {
+                                                        anchors.fill: parent
+                                                        anchors.margins: 4
+                                                        source: ffLogos.url(ffChoice.modelData)
+                                                        sourceSize.width: 136
+                                                        sourceSize.height: 136
+                                                        fillMode: Image.PreserveAspectFit
+                                                        asynchronous: true
+                                                        smooth: true
+                                                    }
+                                                }
+
+                                                Rectangle {
+                                                    anchors.fill: parent
+                                                    radius: Theme.radius
+                                                    color: "transparent"
+                                                    border.width: ffChoice.chosen ? 2 : 1
+                                                    border.color: ffChoice.chosen ? Theme.accent : (ffChoiceArea.containsMouse ? Theme.fgMuted : Theme.border)
+                                                }
+
+                                                MouseArea {
+                                                    id: ffChoiceArea
+
+                                                    anchors.fill: parent
+                                                    hoverEnabled: true
+                                                    cursorShape: Qt.PointingHandCursor
+                                                    onClicked: {
+                                                        ffLogos.setSlot(ffLogos.picking, ffChoice.modelData);
+                                                        ffLogos.picking = -1;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    Txt {
+                                        width: parent.width
+                                        visible: ffLogos.choices.length === 0
+                                        text: "No images yet. Put some into ~/.config/fastfetch/logos or ~/Pictures."
+                                        color: Theme.fgMuted
+                                        font.pixelSize: Theme.fontSm
+                                        wrapMode: Text.Wrap
+                                    }
+                                }
                             }
                         }
 

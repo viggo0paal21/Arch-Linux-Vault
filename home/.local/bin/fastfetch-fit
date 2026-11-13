@@ -1,0 +1,152 @@
+#!/usr/bin/env python3
+# Measures how much room a fastfetch output (from stdin) needs in the terminal: columns and rows including
+# the prompt after it, when it starts at the top left. The real output is measured: text, cursor jumps
+# (\e[nA/B/C/D/G/H) and the kitty image (\e_G...c=,r=...), so it stays right when the package count,
+# uptime etc. change. Empty lines at the very top may scroll out for the prompt (nothing visible is lost).
+#
+#   fastfetch --pipe false | fastfetch-fit --measure   prints "columns rows" (used by fastfetch-show)
+#   fastfetch --pipe false | fastfetch-fit             prints the output only if it fits the terminal completely
+#                                                      (no wrapped line, nothing lost at the top), otherwise
+#                                                      nothing and exit code 1
+import os
+import sys
+import unicodedata
+
+
+
+def prompt_lines():
+    """Rows the zsh prompt needs after fastfetch (starship e.g. 2: empty line + prompt). Measured by
+    kitty-shell/zdotdir/fastfetch.zsh at every start and stored in ~/.config/fastfetch/.prompt-lines."""
+    v = os.environ.get("FASTFETCH_PROMPT_LINES", "")
+    if not v:
+        try:
+            with open(os.path.expanduser("~/.config/fastfetch/.prompt-lines")) as f:
+                v = f.read().strip()
+        except OSError:
+            v = ""
+    return int(v) if v.isdigit() and 0 < int(v) < 20 else 1
+
+
+def char_width(ch):
+    o = ord(ch)
+    if o < 32 or o == 127:
+        return 0
+    if unicodedata.category(ch) in ("Mn", "Me", "Cf"):
+        return 0
+    return 2 if unicodedata.east_asian_width(ch) in ("W", "F") else 1
+
+
+def footprint(data):
+    """Columns and rows used by the output (including the prompt) when it starts at the top left."""
+    row = col = 0
+    max_col = max_row = 0
+    first_row = None  # topmost row with content
+    i, n = 0, len(data)
+    while i < n:
+        ch = data[i]
+        if ch == "\x1b" and i + 1 < n:
+            nx = data[i + 1]
+            if nx == "[":  # CSI: parameters up to the final byte
+                j = i + 2
+                while j < n and not ("\x40" <= data[j] <= "\x7e"):
+                    j += 1
+                if j >= n:
+                    break
+                params, final = data[i + 2:j], data[j]
+                nums = [int(p) if p.isdigit() else 0 for p in params.lstrip("?").split(";")] if params else []
+                a = nums[0] if nums and nums[0] > 0 else 1
+                if final == "A":
+                    row = max(0, row - a)
+                elif final == "B":
+                    row += a
+                elif final == "C":
+                    col += a
+                elif final == "D":
+                    col = max(0, col - a)
+                elif final == "G":
+                    col = a - 1
+                elif final in "Hf":
+                    row = nums[0] - 1 if len(nums) > 0 and nums[0] > 0 else 0
+                    col = nums[1] - 1 if len(nums) > 1 and nums[1] > 0 else 0
+                i = j + 1
+                continue
+            if nx in "_]P^X":  # APC/OSC/DCS...: up to ESC \ or BEL
+                j = i + 2
+                while j < n and data[j] != "\x07" and not (data[j] == "\x1b" and j + 1 < n and data[j + 1] == "\\"):
+                    j += 1
+                body = data[i + 2:j]
+                if nx == "_" and body.startswith("G"):  # kitty image
+                    ctrl = {}
+                    for kv in body[1:].split(";", 1)[0].split(","):
+                        if "=" in kv:
+                            k, v = kv.split("=", 1)
+                            ctrl[k] = v
+                    c = int(ctrl["c"]) if ctrl.get("c", "").isdigit() else 0
+                    r = int(ctrl["r"]) if ctrl.get("r", "").isdigit() else 0
+                    if ctrl.get("a", "t") in ("T", "p") and c > 0 and r > 0:
+                        max_col = max(max_col, col + c)
+                        max_row = max(max_row, row + r - 1)
+                        first_row = row if first_row is None else min(first_row, row)
+                        if ctrl.get("C", "0") != "1":  # kitty puts the cursor after the image, in its last row
+                            col += c
+                            row += r - 1
+                i = j + (1 if j < n and data[j] == "\x07" else 2)
+                continue
+            i += 2  # other ESC sequences
+            continue
+        if ch == "\n":
+            row += 1
+            col = 0
+        elif ch == "\r":
+            col = 0
+        elif ch == "\t":
+            col = (col // 8 + 1) * 8
+        elif ch == "\b":
+            col = max(0, col - 1)
+        else:
+            w = char_width(ch)
+            if w:
+                col += w
+                max_col = max(max_col, col)
+                max_row = max(max_row, row)
+                first_row = row if first_row is None else min(first_row, row)
+        i += 1
+    # fastfetch itself must not scroll (max_row + 1). The prompt starts in the row where the cursor is at the
+    # end; if it pushes the output up, only the empty rows at the very top may disappear.
+    return max_col, max(max_row + 1, row + prompt_lines() - (first_row or 0))
+
+
+def term_size():
+    try:
+        fd = os.open("/dev/tty", os.O_RDONLY)
+        try:
+            s = os.get_terminal_size(fd)
+        finally:
+            os.close(fd)
+        return s.columns, s.lines
+    except OSError:
+        return None
+
+
+def main():
+    raw = sys.stdin.buffer.read()
+    if sys.argv[1:] == ["--measure"]:
+        cols, rows = footprint(raw.decode("utf-8", "replace"))
+        print(cols, rows)
+        return 0
+    try:
+        need_cols, need_rows = footprint(raw.decode("utf-8", "replace"))
+        size = term_size()
+        if size is not None and (need_cols > size[0] or need_rows > size[1]):
+            if os.environ.get("FASTFETCH_FIT_DEBUG"):
+                sys.stderr.write("fastfetch-fit: needs %dx%d, window %dx%d\n" % (need_cols, need_rows, size[0], size[1]))
+            return 1
+    except Exception:
+        pass  # When in doubt just show it
+    sys.stdout.buffer.write(raw)
+    sys.stdout.buffer.flush()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

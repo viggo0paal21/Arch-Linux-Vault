@@ -10,3 +10,6 @@ fi
 [ -n "$QS_FORCE_BACKEND" ] && _qs_backend="$QS_FORCE_BACKEND"
 export QSG_RHI_BACKEND="$_qs_backend"
 unset _qs_settings _qs_backend
+# Big images (e.g. 11520 x 11520) in the previews of Settings > Commands > Fastfetch images:
+# otherwise Qt rejects every image that needs more than 256 MB to load. Value in MB.
+export QT_IMAGEIO_MAXALLOC=1024

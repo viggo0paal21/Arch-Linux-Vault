@@ -1,0 +1,226 @@
+#!/usr/bin/env bash
+# fastfetch in the largest variant that fits the terminal completely: no wrapped line, nothing pushed out
+# of the window at the top. Variants from large to small: ~/.config/fastfetch/config.jsonc, then
+# ~/.config/fastfetch/variants/*.jsonc by file name (2-..., 3-..., ...).
+# Used by ~/.local/bin/kitty-shell/zsh (start) and kitty-shell/zdotdir/fastfetch.zsh (resize).
+#
+#   fastfetch-show start            pick the fitting variant. If it has an image, the next image is used.
+#   fastfetch-show prerender        (in the background) render and measure all variants for this window ahead,
+#                                   so redrawing later is instant
+#   fastfetch-show redraw NAME IMG  after a resize: if the shown variant NAME still fits and no larger one does,
+#                                   everything stays ("same"); otherwise the new variant, with the image
+#                                   IMG of this window (empty: it had none yet -> next image)
+#
+# Output on stdout: first line "shown<Tab>variant<Tab>image", "none" (nothing fits) or "same", then the
+# fastfetch output to show. The image in it is a fixed file from the cache (not logo-current*.png),
+# so every window keeps its own image.
+# The pre-rendered variants of each window live in $FF_WD (set by kitty-shell/zsh, e.g. /run/user/1000/kitty-fastfetch/pts-3).
+DIR="$HOME/.config/fastfetch"
+BIN="$HOME/.local/bin"
+SIZES="$DIR/.variant-sizes"
+MODE=${1:-start}
+WD=${FF_WD:-}
+TAB=$'\t'
+
+ZSH=/usr/bin/zsh; [ -x "$ZSH" ] || ZSH=/bin/zsh; [ -x "$ZSH" ] || ZSH=
+# Run fastfetch with a config. Through zsh, so fastfetch shows zsh as "Shell" (it looks at
+# the parent process). The x at the end keeps $(...) from cutting off the trailing empty lines.
+run_ff() {
+    if [ -n "$ZSH" ]; then
+        "$ZSH" -f -c 'fastfetch --pipe false -c "$1" 2>/dev/null; print -n x' zsh "$1"
+    else
+        fastfetch --pipe false -c "$1" 2>/dev/null; printf x
+    fi
+}
+measure() { printf '%s' "$1" | "$BIN/fastfetch-fit" --measure 2>/dev/null; }
+# Image of a config (logo.source) and its size in cells; empty if it has none
+logo_src() { grep -m1 -oE '"source"[[:space:]]*:[[:space:]]*"[^"]*"' "$1" 2>/dev/null | sed -E 's/.*"([^"]*)"$/\1/'; }
+logo_cells() {
+    local c n
+    c=$(grep -m1 -oE '"width"[[:space:]]*:[[:space:]]*[0-9]+' "$1" | grep -oE '[0-9]+$')
+    n=$(grep -m1 -oE '"height"[[:space:]]*:[[:space:]]*[0-9]+' "$1" | grep -oE '[0-9]+$')
+    printf '%sx%s' "$c" "$n"
+}
+b64() { printf '%s' "$1" | base64 -w0; }
+
+CONFIGS=("$DIR/config.jsonc")
+for f in "$DIR"/variants/*.jsonc; do [ -f "$f" ] && CONFIGS+=("$f"); done
+
+# If an image is missing (e.g. the small sizes the first time), prepare it first without switching.
+# Otherwise fastfetch would use its ASCII logo instead of the image.
+for f in "${CONFIGS[@]}"; do
+    src=$(logo_src "$f")
+    if [ -n "$src" ] && [ ! -e "$src" ]; then
+        [ -x "$BIN/fastfetch-logo" ] && "$BIN/fastfetch-logo" >/dev/null 2>&1
+        break
+    fi
+done
+
+# Image files of this window ("<columns>x<rows><Tab>file" per line)
+declare -A IMG=()
+load_img() { local s p; while IFS="$TAB" read -r s p; do [ -n "$p" ] && IMG[$s]=$p; done; }
+# Switch the image in the output from logo-current*.png to this window's fixed file
+fix_img() {  # output config -> output
+    local out=$1 cfg=$2 src cells
+    src=$(logo_src "$cfg"); [ -n "$src" ] || { printf '%s' "$out"; return; }
+    cells=$(logo_cells "$cfg")
+    if [ -n "${IMG[$cells]:-}" ]; then
+        out=${out//"$(b64 "$src")"/"$(b64 "${IMG[$cells]}")"}
+    fi
+    printf '%s' "$out"
+}
+# Store all pre-rendered variants with this window's image (<variant>.fixed). That way
+# fastfetch.zsh can print the finished file directly when redrawing, without starting this script.
+write_fixed_all() {
+    [ -n "$WD" ] || return 0
+    local cfg name out
+    for cfg in "${CONFIGS[@]}"; do
+        name=${cfg##*/}
+        [ -f "$WD/$name.out" ] || continue
+        out=$(cat "$WD/$name.out"; printf x); out=${out%x}
+        if [ -n "$(logo_src "$cfg")" ] && [[ "$out" == *$'\e_G'* ]]; then
+            [ ${#IMG[@]} -gt 0 ] || continue  # this window's image is not decided yet
+            out=$(fix_img "$out" "$cfg"; printf x); out=${out%x}
+        fi
+        printf '%s' "$out" > "$WD/$name.fixed.tmp.$$" && mv -f "$WD/$name.fixed.tmp.$$" "$WD/$name.fixed"
+    done
+}
+# Decide the image for this window: IMG given -> its files, otherwise take the next image
+CHOSEN_SRC=
+pick_img() {
+    local want=$1 lines
+    if [ -n "$want" ] && [ -f "$want" ]; then
+        if [ -n "$WD" ] && [ -s "$WD/img" ] && [ "$(head -n1 "$WD/img")" = "$want" ]; then
+            load_img < <(tail -n +2 "$WD/img")
+        else
+            lines=$("$BIN/fastfetch-logo" files "$want" 2>/dev/null)
+            load_img <<< "$lines"
+            [ -n "$WD" ] && { printf '%s\n%s\n' "$want" "$lines" > "$WD/img.tmp.$$" && mv -f "$WD/img.tmp.$$" "$WD/img"; }
+            write_fixed_all
+        fi
+        CHOSEN_SRC=$want
+    else
+        lines=$("$BIN/fastfetch-logo" take 2>/dev/null) || return 0
+        CHOSEN_SRC=$(head -n1 <<< "$lines")
+        load_img < <(tail -n +2 <<< "$lines")
+        [ -n "$WD" ] && { printf '%s\n' "$lines" > "$WD/img.tmp.$$" && mv -f "$WD/img.tmp.$$" "$WD/img"; }
+        write_fixed_all
+    fi
+}
+
+read -r TR TC < <(stty size </dev/tty 2>/dev/null)
+size_ok=; [[ "${TR:-}" =~ ^[1-9][0-9]*$ && "${TC:-}" =~ ^[1-9][0-9]*$ ]] && size_ok=1
+can_measure=; [ -x "$BIN/fastfetch-fit" ] && command -v python3 >/dev/null && can_measure=1
+
+# Get a variant (pre-rendered or now): sets OUT, NC, NR
+get_variant() {
+    local cfg=$1 name=${1##*/} sz
+    if [ -n "$WD" ] && [ -f "$WD/$name.out" ] && [ -f "$WD/$name.size" ]; then
+        read -r NC NR < "$WD/$name.size"
+        OUT=$(cat "$WD/$name.out"; printf x); OUT=${OUT%x}
+    else
+        OUT=$(run_ff "$cfg"); OUT=${OUT%x}
+        read -r NC NR < <(measure "$OUT")
+        if [ -n "$WD" ] && [[ "${NC:-}" =~ ^[0-9]+$ && "${NR:-}" =~ ^[0-9]+$ ]]; then
+            printf '%s' "$OUT" > "$WD/$name.out.tmp.$$" && mv -f "$WD/$name.out.tmp.$$" "$WD/$name.out"
+            printf '%s %s\n' "$NC" "$NR" > "$WD/$name.size.tmp.$$" && mv -f "$WD/$name.size.tmp.$$" "$WD/$name.size"
+        fi
+    fi
+    [[ "${NC:-}" =~ ^[0-9]+$ && "${NR:-}" =~ ^[0-9]+$ ]]
+}
+# Print the result: status line, then the output (image switched to this window's file)
+emit() {  # config output
+    local cfg=$1 out=$2
+    # Variant without an image: the window still keeps its image for later
+    CHOSEN_SRC=${WANT_SRC:-}
+    if [ -n "$(logo_src "$cfg")" ] && [[ "$out" == *$'\e_G'* ]]; then
+        pick_img "${WANT_SRC:-}"
+        out=$(fix_img "$out" "$cfg"; printf x); out=${out%x}
+    fi
+    printf 'shown\t%s\t%s\n' "${cfg##*/}" "$CHOSEN_SRC"
+    printf '%s' "$out"
+}
+
+# Last measured sizes from all windows ("file columns rows"), so at start clearly too large
+# variants don't have to run first. Invalid as soon as a config is newer.
+declare -A KNOWN=()
+if [ -f "$SIZES" ]; then
+    fresh=1
+    for f in "${CONFIGS[@]}"; do [ "$f" -nt "$SIZES" ] && fresh=; done
+    if [ -n "$fresh" ]; then
+        while read -r name c r; do
+            [[ "${c:-}" =~ ^[0-9]+$ && "${r:-}" =~ ^[0-9]+$ ]] && KNOWN[$name]="$c $r"
+        done < "$SIZES"
+    fi
+fi
+save_sizes() {
+    local k
+    for k in "${!KNOWN[@]}"; do printf '%s %s\n' "$k" "${KNOWN[$k]}"; done > "$SIZES.tmp.$$" && mv -f "$SIZES.tmp.$$" "$SIZES"
+}
+
+case "$MODE" in
+prerender)
+    [ -n "$WD" ] && [ -d "$WD" ] && [ -n "$can_measure" ] || exit 0
+    order=()
+    for cfg in "${CONFIGS[@]}"; do
+        get_variant "$cfg" || continue
+        KNOWN[${cfg##*/}]="$NC $NR"
+        order+=("${cfg##*/}")
+    done
+    save_sizes
+    # Store with this window's image (if it has one already), then the order: only from now on
+    # fastfetch.zsh redraws directly from these files
+    [ -s "$WD/img" ] && load_img < <(tail -n +2 "$WD/img")
+    write_fixed_all
+    printf '%s\n' "${order[@]}" > "$WD/order.tmp.$$" && mv -f "$WD/order.tmp.$$" "$WD/order"
+    exit 0
+    ;;
+redraw)
+    CUR=${2:--}
+    WANT_SRC=${3:-}
+    [ -n "$size_ok" ] && [ -n "$can_measure" ] || { echo same; exit 3; }
+    for cfg in "${CONFIGS[@]}"; do
+        get_variant "$cfg" || continue
+        if [ "$NC" -le "$TC" ] && [ "$NR" -le "$TR" ]; then
+            # The shown variant still fits and no larger one does: do nothing (kitty already shows it correctly)
+            [ "${cfg##*/}" = "$CUR" ] && { echo same; exit 3; }
+            emit "$cfg" "$OUT"
+            exit 0
+        fi
+    done
+    [ "$CUR" = "-" ] && { echo same; exit 3; }
+    echo none
+    exit 1
+    ;;
+esac
+
+# start
+WANT_SRC=
+if [ -z "$size_ok" ] || [ -z "$can_measure" ]; then
+    # Size unknown (or measuring doesn't work): just the normal variant
+    OUT=$(run_ff "$DIR/config.jsonc"); OUT=${OUT%x}
+    emit "$DIR/config.jsonc" "$OUT"
+    exit 0
+fi
+for cfg in "${CONFIGS[@]}"; do
+    name=${cfg##*/}
+    # Image variant without an image (no images at all): skip it instead of an ASCII logo
+    src=$(logo_src "$cfg")
+    [ -z "$src" ] || [ -e "$src" ] || continue
+    if [ -n "${KNOWN[$name]:-}" ]; then
+        read -r kc kr <<< "${KNOWN[$name]}"
+        # Clearly too large: skip (uptime, package count etc. only change the width by a few characters,
+        # so barely too large ones are still measured again)
+        if [ "$kc" -gt $((TC + 4)) ] || [ "$kr" -gt $((TR + 1)) ]; then continue; fi
+    fi
+    get_variant "$cfg" || continue
+    KNOWN[$name]="$NC $NR"
+    if [ "$NC" -le "$TC" ] && [ "$NR" -le "$TR" ]; then
+        save_sizes
+        emit "$cfg" "$OUT"
+        exit 0
+    fi
+done
+save_sizes
+echo none
+exit 1
