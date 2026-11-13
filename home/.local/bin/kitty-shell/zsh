@@ -13,19 +13,25 @@ if grep -qE '"kittyFastfetch"[[:space:]]*:[[:space:]]*true' "$S" 2>/dev/null && 
         t=$(readlink /proc/$$/fd/0 2>/dev/null); t=${t#/dev/}; t=${t//\//-}
         WD="${XDG_RUNTIME_DIR:-/tmp}/kitty-fastfetch/${t:-$$}"
         rm -rf "$WD" 2>/dev/null; mkdir -p "$WD" 2>/dev/null || WD=
-        # The largest fastfetch variant that fits the window completely (see fastfetch-show). The next image
-        # from ~/.config/fastfetch/logos is only used when an image is really shown.
-        res=$(FF_WD="$WD" "$BIN/fastfetch-show" start; printf x); res=${res%x}
-        state=${res%%$'\n'*}
+        # The largest fastfetch variant that fits the window completely (see fastfetch-show). It shows up instantly
+        # (from the last kitty's snapshot), the fresh values follow right after in one step.
+        # fastfetch-show draws by itself and only returns what it showed. The next image from
+        # ~/.config/fastfetch/logos is only used up when one is really shown.
+        state=$(FF_WD="$WD" "$BIN/fastfetch-show" start)
         name=-; src=
         if [[ "$state" == shown$'\t'* ]]; then
-            printf '%s' "${res#*$'\n'}"
             rest=${state#shown$'\t'}; name=${rest%%$'\t'*}; src=${rest#*$'\t'}
         fi
-        unset res state rest
-        # Prepare all other variants for this window in the background, so redrawing after a
-        # resize is instant (runs as a child of the shell, so fastfetch detects kitty as the terminal)
-        [ -n "$WD" ] && FF_WD="$WD" "$BIN/fastfetch-show" prerender </dev/null >/dev/null 2>&1 &
+        unset state rest
+        # Prepare all other variants for this window in the background (for an instant redraw on
+        # a resize and as the snapshot for the next kitty). Only after the window animation
+        # and at the lowest priority, so nothing stutters. Runs as a child of the shell so fastfetch
+        # detects kitty as the terminal.
+        if [ -n "$WD" ]; then
+            low=(nice -n 19); command -v ionice >/dev/null && low+=(ionice -c 3)
+            (sleep 0.5; export FF_WD="$WD"; exec "${low[@]}" "$BIN/fastfetch-show" prerender) </dev/null >/dev/null 2>&1 &
+            unset low
+        fi
         # zsh should redraw fastfetch to fit when the window size changes, as long as no command
         # has run. For that zsh first reads kitty-shell/zdotdir via ZDOTDIR, which loads the real ~/.zsh* files,
         # restores ZDOTDIR and adds the hook (fastfetch.zsh) at the end.

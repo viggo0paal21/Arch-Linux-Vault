@@ -15,6 +15,9 @@
 #   fastfetch-logo                  only re-prepare the current image (e.g. after changing the rounding)
 #   fastfetch-logo prepare [IMG..]  only pre-render images (without switching), all from the list if none given.
 #                                   Quickshell does this when an image is picked, so kitty doesn't have to wait.
+#   fastfetch-logo prepare-next     prepare the image for the next kitty and store it in .next-image
+#                                   ("<now> <after>", original, then per size "<columns>x<rows><Tab>file").
+#                                   fastfetch-show takes it from there without this script, so kitty shows it instantly.
 #
 # Which images: the 4 slots in Quickshell (Settings > Commands > "Fastfetch images"), in this order.
 # If all are empty: all images from ~/.config/fastfetch/logos, alphabetically (prefix numbers set the order).
@@ -29,6 +32,7 @@ LOGOS="$DIR/logos"
 CACHE="$DIR/.logo-cache"
 INDEX="$DIR/.logo-index"
 CURRENT="$DIR/logo-current.png"
+NEXTFILE="$DIR/.next-image"
 # Aspect ratio for all images, like nagatoro.png (540 x 660)
 FRAME_W=540
 FRAME_H=660
@@ -178,13 +182,28 @@ if [ "${1:-}" = "files" ]; then
     exit $?
 fi
 
-# Only pre-render
+# Prepare the next image and store it with its files in .next-image
+prepare_next() {
+    local i j lines
+    [ "$N" -gt 0 ] || { rm -f "$NEXTFILE"; return 0; }
+    i=$(cat "$INDEX" 2>/dev/null); [[ "$i" =~ ^[0-9]+$ ]] || i=-1
+    j=$(( (i + 1) % N ))
+    lines=$(print_files "${IMAGES[$j]}") || return 0
+    printf '%s %s\n%s\n%s\n' "$i" "$j" "${IMAGES[$j]}" "$lines" > "$NEXTFILE.tmp.$$" && mv -f "$NEXTFILE.tmp.$$" "$NEXTFILE"
+}
+if [ "${1:-}" = "prepare-next" ]; then
+    prepare_next
+    exit 0
+fi
+
+# Only pre-render (then also renew .next-image in case the list changed)
 if [ "${1:-}" = "prepare" ]; then
     shift
     [ $# -gt 0 ] || set -- "${IMAGES[@]}"
     for f in "$@"; do
         for s in "${SIZES[@]}"; do make_logo "$f" "${s%x*}" "${s#*x}" >/dev/null; done
     done
+    prepare_next
     exit 0
 fi
 
@@ -207,8 +226,8 @@ if [ "${1:-}" = "take" ]; then
     print_files "${IMAGES[$I]}"
 fi
 
-# Pre-render the image for the next kitty in the background (done at once if it is in the cache)
-if { [ "${1:-}" = "next" ] || [ "${1:-}" = "take" ]; } && [ "$N" -gt 1 ]; then
-    setsid -f "$0" prepare "${IMAGES[$(( (I + 1) % N ))]}" >/dev/null 2>&1 </dev/null
+# Prepare the image for the next kitty in the background already (done instantly if it is in the cache)
+if [ "${1:-}" = "next" ] || [ "${1:-}" = "take" ]; then
+    setsid -f nice -n 10 "$0" prepare-next >/dev/null 2>&1 </dev/null
 fi
 exit 0
