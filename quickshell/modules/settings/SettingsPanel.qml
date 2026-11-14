@@ -15,10 +15,10 @@ OverlayPanel {
 
     property int tab: 0
 
-    // App opacity: writes the opacity into Nautilus, GTK3 dialogs, kitty, Vesktop and Firefox via
-    // ~/.local/bin/qs-glass-apply. Started through python3 (no exec bit needed). The script reads
-    // appGlass / appOpacity / kittyOpacity from settings.json itself, queues itself (flock) and always
-    // applies the most recently saved state. Debounced.
+    // App opacity: writes the opacity into kitty (always) and with App glass also into Nautilus, GTK3 dialogs,
+    // Vesktop and Firefox via ~/.local/bin/qs-glass-apply. Started through python3 (no exec bit needed). The
+    // script reads appGlass / appOpacity from settings.json itself, queues itself (flock) and always applies the
+    // most recently saved state. Debounced. Tidal (SONE) is set by services/Hypr.qml (Hyprland rule).
     property Timer appGlassDebounce: Timer {
         interval: 300
         onTriggered: panel.runAppGlass()
@@ -551,7 +551,7 @@ OverlayPanel {
                         SettingRow {
                             width: parent.width
                             label: "App glass"
-                            description: "Translucent look for Nautilus, file dialogs, kitty, Vesktop and Firefox. Off = everything as before (blur settings stay)"
+                            description: "Translucent look for Nautilus, file dialogs, Vesktop and Firefox too. Off = those as before (kitty, Tidal and blur settings stay)"
 
                             SwitchCtl {
                                 checked: Config.opts.appGlass
@@ -564,9 +564,8 @@ OverlayPanel {
 
                         SettingRow {
                             width: parent.width
-                            visible: Config.opts.appGlass
                             label: "App opacity"
-                            description: "Nautilus, file dialogs, kitty, Vesktop, Firefox, 100 % = solid. Nautilus and Firefox update after a restart"
+                            description: "kitty and Tidal, with App glass also Nautilus, file dialogs, Vesktop, Firefox. 100 % = solid. Tidal fades as a whole (text too), kitty only its background"
 
                             RangeControl {
                                 from: 25
@@ -576,25 +575,6 @@ OverlayPanel {
                                 suffix: " %"
                                 onEdited: v => {
                                     Config.opts.appOpacity = v;
-                                    panel.appGlassDebounce.restart();
-                                }
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            visible: !Config.opts.appGlass
-                            label: "Kitty opacity"
-                            description: "Background opacity of kitty while App glass is off, 100 % = solid. Applied live"
-
-                            RangeControl {
-                                from: 25
-                                to: 100
-                                stepSize: 5
-                                value: Config.opts.kittyOpacity
-                                suffix: " %"
-                                onEdited: v => {
-                                    Config.opts.kittyOpacity = v;
                                     panel.appGlassDebounce.restart();
                                 }
                             }

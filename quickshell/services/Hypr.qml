@@ -39,6 +39,7 @@ Singleton {
     Component.onCompleted: {
         root.refresh();
         blurApply.restart();
+        opacityApply.restart();
     }
 
     // Window blur (decoration:blur size/passes) from Settings > Appearance > Blur size / Blur passes.
@@ -65,6 +66,30 @@ Singleton {
             Quickshell.execDetached(["hyprctl", "--batch", "keyword decoration:blur:size " + s + " ; keyword decoration:blur:passes " + p]);
     }
 
+    // Settings > Appearance > "App opacity" for Tidal (SONE). SONE draws its window fully opaque and has no
+    // transparency of its own, so Hyprland makes the whole window translucent (window rule "qs-app-opacity").
+    // Like the blur it is set at runtime via "hyprctl eval", hyprland.lua stays unchanged; after "hyprctl reload"
+    // the rule is gone -> set it again on start and after every reload. Same name = same rule, the new value wins.
+    // kitty gets the same value as background_opacity (qs-glass-apply), so at the same number the background
+    // looks the same. Class without backslashes so nothing gets escaped wrongly: [.] = dot, (?i) = any case.
+    readonly property int appOpacity: Config.opts.appOpacity
+    readonly property string appOpacityClasses: "(?i)(sone|io[.]github[.]lullabyx[.]sone)"
+    onAppOpacityChanged: opacityApply.restart()
+
+    Timer {
+        id: opacityApply
+
+        interval: 150
+        onTriggered: root.applyAppOpacity()
+    }
+
+    function applyAppOpacity() {
+        if (!root.lua)
+            return;
+        const a = Math.max(25, Math.min(100, Math.round(root.appOpacity))) / 100;
+        Quickshell.execDetached(["hyprctl", "eval", "hl.window_rule({ name = \"qs-app-opacity\", match = { class = \"" + root.appOpacityClasses + "\" }, opacity = \"" + a.toFixed(2) + " override\" })"]);
+    }
+
     // Whether a window floats is only in lastIpcObject. Hyprland doesn't update it
     // by itself, so query again on matching events.
     Connections {
@@ -74,8 +99,10 @@ Singleton {
             const n = event.name;
             if (n === "openwindow" || n === "closewindow" || n === "changefloatingmode" || n === "movewindowv2" || n === "workspacev2" || n === "focusedmonv2")
                 root.refresh();
-            else if (n === "configreloaded")
+            else if (n === "configreloaded") {
                 blurApply.restart();
+                opacityApply.restart();
+            }
         }
     }
 
