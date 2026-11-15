@@ -1,7 +1,8 @@
 import QtQuick
 import qs.config
 
-// Quick settings tile (icon, title, subtitle). Active = white.
+// Quick settings tile (icon, title, subtitle), no background and no circle. Active = icon and title
+// light up (icon in the accent color), off = both dimmed. chevron = small arrow on the right (opens a sub page).
 Rectangle {
     id: root
 
@@ -9,7 +10,7 @@ Rectangle {
     property string title: ""
     property string subtitle: ""
     property bool active: false
-    readonly property color fg: active ? Theme.accentFg : Theme.fg
+    property bool chevron: false
 
     signal clicked
     signal rightClicked
@@ -17,50 +18,61 @@ Rectangle {
     implicitHeight: 58
     implicitWidth: 160
     radius: Theme.radius
-    color: active ? Theme.accent : (area.pressed ? Theme.pressed : (area.containsMouse ? Theme.hover : Theme.layer2))
-    border.width: 1
-    border.color: active ? Theme.accent : Theme.border
+    // Transparent on the blur like the terminals, a background only on hover
+    color: area.pressed ? Theme.pressed : (area.containsMouse ? Theme.fill : "transparent")
 
     Behavior on color {
         CAnim {}
     }
 
-    Row {
-        anchors.left: parent.left
-        anchors.leftMargin: 14
-        anchors.right: parent.right
-        anchors.rightMargin: 10
+    Item {
+        id: chip
+
+        x: 10
         anchors.verticalCenter: parent.verticalCenter
-        spacing: 12
+        width: 30
+        height: 30
 
         Glyph {
-            anchors.verticalCenter: parent.verticalCenter
+            anchors.centerIn: parent
             text: root.icon
-            color: root.fg
+            color: root.active ? Theme.accent : Qt.rgba(1, 1, 1, 0.38)
             font.pixelSize: Theme.iconSize + 2
         }
+    }
 
-        Column {
-            anchors.verticalCenter: parent.verticalCenter
-            width: parent.width - 40
-            spacing: 1
+    Column {
+        anchors.left: chip.right
+        anchors.leftMargin: 11
+        anchors.right: parent.right
+        anchors.rightMargin: root.chevron ? 28 : 10
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: 1
 
-            Txt {
-                width: parent.width
-                text: root.title
-                color: root.fg
-                font.weight: Theme.weightStrong
-            }
-
-            Txt {
-                width: parent.width
-                visible: root.subtitle !== ""
-                text: root.subtitle
-                color: root.active ? Theme.accentFg : Theme.fgDim
-                opacity: root.active ? 0.7 : 1
-                font.pixelSize: Theme.fontSm
-            }
+        Txt {
+            width: parent.width
+            text: root.title
+            color: root.active ? Theme.fg : Theme.textMuted
+            font.pixelSize: Theme.fontSm + 1
         }
+
+        Txt {
+            width: parent.width
+            visible: root.subtitle !== ""
+            text: root.subtitle
+            color: root.active ? Theme.textDim : Qt.rgba(1, 1, 1, 0.38)
+            font.pixelSize: Theme.fontSm - 1
+        }
+    }
+
+    Glyph {
+        anchors.right: parent.right
+        anchors.rightMargin: 8
+        anchors.verticalCenter: parent.verticalCenter
+        visible: root.chevron
+        text: Icons.right
+        color: area.containsMouse ? Theme.textDim : Qt.rgba(1, 1, 1, 0.38)
+        font.pixelSize: Theme.iconSize - 2
     }
 
     MouseArea {

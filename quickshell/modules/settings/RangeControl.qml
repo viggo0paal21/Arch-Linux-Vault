@@ -38,7 +38,7 @@ Item {
         }
     }
 
-    Txt {
+    FixedText {
         id: valueText
 
         anchors.right: parent.right
@@ -46,6 +46,7 @@ Item {
         width: 54
         horizontalAlignment: Text.AlignRight
         text: root.value.toFixed(root.decimals) + root.suffix
-        color: Theme.fgDim
+        color: Theme.textDim
+        font.pixelSize: Theme.fontSm + 1
     }
 }

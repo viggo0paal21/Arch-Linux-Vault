@@ -6,8 +6,9 @@ import qs.services
 Rectangle {
     color: Glass.popupBg
     radius: Theme.radiusLg
+    // Hairline instead of a grey border: just the edge, no more boxes inside
     border.width: 1
-    border.color: Theme.border
+    border.color: Theme.hairline
 
     MouseArea {
         anchors.fill: parent

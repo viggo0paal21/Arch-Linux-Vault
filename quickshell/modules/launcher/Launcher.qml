@@ -96,7 +96,7 @@ OverlayPanel {
         x: Math.round((parent.width - width) / 2)
         y: Math.round(parent.height * 0.16) - 14 * (1 - panel.progress)
         width: Math.min(620, parent.width - 40)
-        property real h: header.height + list.height + 26
+        property real h: header.height + list.height + 25
 
         height: h
         opacity: panel.progress
@@ -110,31 +110,35 @@ OverlayPanel {
             }
         }
 
-        // Search field
+        // Search row: no box of its own, just a hairline to the results
         Item {
             id: header
 
             x: 12
-            y: 12
+            y: 6
             width: parent.width - 24
-            height: 46
-
-            Rectangle {
-                anchors.fill: parent
-                radius: Theme.radius
-                color: Theme.layer2
-                border.width: 1
-                border.color: Theme.border
-            }
+            height: 54
 
             Glyph {
                 id: modeIcon
 
                 anchors.left: parent.left
-                anchors.leftMargin: 14
+                anchors.leftMargin: 12
                 anchors.verticalCenter: parent.verticalCenter
                 text: panel.mode === "calc" ? Icons.calculator : (panel.mode === "cmd" ? Icons.terminal : Icons.search)
-                color: Theme.fgDim
+                color: Theme.textMuted
+            }
+
+            Txt {
+                id: modeHint
+
+                anchors.right: parent.right
+                anchors.rightMargin: 12
+                anchors.verticalCenter: parent.verticalCenter
+                visible: search.text === ""
+                text: "=  calculate      >  run"
+                color: Theme.textMuted
+                font.pixelSize: Theme.fontSm
             }
 
             TextInput {
@@ -151,7 +155,7 @@ OverlayPanel {
                 selectedTextColor: Theme.accentFg
                 font.family: Theme.font
                 font.pixelSize: Theme.fontLg
-                font.weight: Theme.weight
+                font.weight: Theme.uiWeight
                 renderType: Theme.smooth ? Text.QtRendering : Text.NativeRendering
                 clip: true
 
@@ -180,18 +184,25 @@ OverlayPanel {
                 Txt {
                     anchors.fill: parent
                     visible: search.text === ""
-                    text: "Search apps …   = calculate   > command"
-                    color: Theme.fgMuted
+                    text: "Search"
+                    color: Theme.textMuted
                     font.pixelSize: Theme.fontLg
                 }
             }
+        }
+
+        Rectangle {
+            anchors.top: header.bottom
+            width: parent.width
+            height: 1
+            color: Theme.hairline
         }
 
         ListView {
             id: list
 
             anchors.top: header.bottom
-            anchors.topMargin: 8
+            anchors.topMargin: 7
             x: 12
             width: parent.width - 24
             height: card.visibleRows * card.rowHeight
@@ -203,10 +214,9 @@ OverlayPanel {
             highlightFollowsCurrentItem: true
 
             highlight: Rectangle {
+                width: list.width
                 radius: Theme.radius
-                color: Theme.layer3
-                border.width: 1
-                border.color: Theme.borderStrong
+                color: Theme.fillStrong
             }
 
             delegate: Item {
@@ -235,6 +245,7 @@ OverlayPanel {
                     anchors.centerIn: appIcon
                     visible: row.modelData.kind !== "app"
                     text: row.modelData.kind === "calc" ? Icons.calculator : Icons.terminal
+                    color: Theme.textDim
                     font.pixelSize: 22
                 }
 
@@ -249,15 +260,15 @@ OverlayPanel {
                     Txt {
                         width: parent.width
                         text: row.modelData.title
-                        font.weight: row.index === panel.current ? Theme.weightStrong : Theme.weight
+                        color: row.index === panel.current ? Theme.fg : Theme.textDim
                     }
 
                     Txt {
                         width: parent.width
                         visible: text !== ""
                         text: row.modelData.subtitle
-                        color: Theme.fgMuted
-                        font.pixelSize: Theme.fontSm
+                        color: Theme.textMuted
+                        font.pixelSize: Theme.fontSm - 1
                     }
                 }
 
@@ -274,8 +285,8 @@ OverlayPanel {
         Txt {
             anchors.centerIn: list
             visible: panel.mode === "apps" && panel.results.length === 0
-            text: "No results"
-            color: Theme.fgMuted
+            text: "No matches"
+            color: Theme.textMuted
         }
     }
 }

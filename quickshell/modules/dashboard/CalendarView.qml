@@ -2,7 +2,7 @@ import QtQuick
 import qs.config
 import qs.components
 
-// Month calendar (week starts on Monday). Today = filled white. Scroll flips months.
+// Month calendar (week starts on Monday). Today = circle in the accent color. Mouse wheel flips months.
 Item {
     id: root
 
@@ -61,7 +61,7 @@ Item {
             anchors.leftMargin: 4
             anchors.verticalCenter: parent.verticalCenter
             text: root.monthNames[root.month] + " " + root.year
-            font.weight: Theme.weightStrong
+            font.weight: Theme.uiWeightStrong
 
             MouseArea {
                 anchors.fill: parent
@@ -77,12 +77,14 @@ Item {
 
             IconButton {
                 size: 28
+                fg: Theme.textDim
                 icon: Icons.left
                 onClicked: root.shift(-1)
             }
 
             IconButton {
                 size: 28
+                fg: Theme.textDim
                 icon: Icons.right
                 onClicked: root.shift(1)
             }
@@ -106,8 +108,8 @@ Item {
                 height: 24
                 horizontalAlignment: Text.AlignHCenter
                 text: modelData
-                color: Theme.fgMuted
-                font.pixelSize: Theme.fontSm
+                color: Theme.textMuted
+                font.pixelSize: Theme.fontXs
             }
         }
     }
@@ -131,15 +133,16 @@ Item {
                     anchors.centerIn: parent
                     width: 30
                     height: 30
-                    radius: Theme.radiusSm
+                    radius: width / 2
                     color: cell.modelData.isToday ? Theme.accent : "transparent"
                 }
 
                 Txt {
                     anchors.centerIn: parent
                     text: cell.modelData.day
-                    color: cell.modelData.isToday ? Theme.accentFg : (cell.modelData.inMonth ? Theme.fg : Theme.fgMuted)
-                    font.weight: cell.modelData.isToday ? Theme.weightStrong : Theme.weight
+                    color: cell.modelData.isToday ? Theme.accentFg : (cell.modelData.inMonth ? Theme.fg : Theme.textMuted)
+                    font.pixelSize: Theme.fontSm + 1
+                    font.weight: cell.modelData.isToday ? Theme.uiWeightStrong : Theme.uiWeight
                 }
             }
         }

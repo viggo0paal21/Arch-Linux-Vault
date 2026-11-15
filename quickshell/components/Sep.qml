@@ -6,5 +6,5 @@ Rectangle {
 
     implicitWidth: vertical ? 1 : 10
     implicitHeight: vertical ? 10 : 1
-    color: Theme.border
+    color: Theme.hairline
 }

@@ -32,10 +32,11 @@ Rectangle {
     readonly property int timeout: root.notif && root.popup ? Notifs.timeoutFor(root.notif) : 0
 
     implicitHeight: content.implicitHeight + 28
-    radius: Theme.radiusLg
-    color: root.popup ? Glass.popupBg : Theme.layer2
-    border.width: 1
-    border.color: root.critical ? Theme.accent : (hover.hovered ? Theme.borderStrong : Theme.border)
+    radius: root.popup ? Theme.radiusLg : Theme.radius
+    // Popup: its own glass surface with a hairline. In the control center: just a light background, no border.
+    color: root.popup ? Glass.popupBg : (hover.hovered ? Theme.fillStrong : Theme.fill)
+    border.width: root.popup || root.critical ? 1 : 0
+    border.color: root.critical ? Theme.accent : Theme.hairline
     clip: true
 
     // While sliding in/out, x/y lie between two pixels. The card is then drawn sharply into a texture once
@@ -52,6 +53,11 @@ Rectangle {
     }
 
     Behavior on border.color {
+        CAnim {}
+    }
+    Behavior on color {
+        enabled: !root.popup
+
         CAnim {}
     }
 
@@ -117,8 +123,8 @@ Rectangle {
                     anchors.rightMargin: 6
                     anchors.verticalCenter: parent.verticalCenter
                     text: root.appName + (Notifs.timeOf(root.notif) !== "" ? "  ·  " + Notifs.timeOf(root.notif) : "")
-                    color: Theme.fgMuted
-                    font.pixelSize: Theme.fontSm
+                    color: Theme.textMuted
+                    font.pixelSize: Theme.fontSm - 1
                 }
 
                 IconButton {
@@ -128,8 +134,9 @@ Rectangle {
                     anchors.verticalCenter: parent.verticalCenter
                     size: 22
                     iconSize: Theme.fontSize + 1
+                    fg: Theme.textDim
                     icon: Icons.close
-                    opacity: hover.hovered ? 1 : 0.5
+                    opacity: hover.hovered ? 1 : 0
                     onClicked: Notifs.dismiss(root.notif)
                 }
             }
@@ -138,7 +145,7 @@ Rectangle {
                 width: parent.width
                 visible: text !== ""
                 text: root.summary
-                font.weight: Theme.weightStrong
+                font.weight: Theme.uiWeightStrong
                 wrapMode: Text.Wrap
                 maximumLineCount: 2
             }
@@ -148,11 +155,12 @@ Rectangle {
                 visible: root.body !== ""
                 text: root.body
                 textFormat: Text.StyledText
-                color: Theme.fgDim
+                color: Theme.textDim
                 linkColor: Theme.fg
                 font.family: Theme.font
                 font.pixelSize: Theme.fontSm + 1
-                font.weight: Theme.weight
+                font.weight: Theme.uiWeight
+                lineHeight: 1.1
                 renderType: Theme.smooth ? Text.QtRendering : Text.NativeRendering
                 wrapMode: Text.Wrap
                 maximumLineCount: root.compact ? 3 : 5
@@ -177,9 +185,7 @@ Rectangle {
                         width: actionLabel.implicitWidth + 24
                         height: 28
                         radius: Theme.radiusSm
-                        color: actionArea.pressed ? Theme.pressed : (actionArea.containsMouse ? Theme.hover : Theme.layer3)
-                        border.width: 1
-                        border.color: Theme.border
+                        color: actionArea.pressed || actionArea.containsMouse ? Theme.pressed : Theme.fillStrong
 
                         Txt {
                             id: actionLabel
@@ -187,6 +193,7 @@ Rectangle {
                             anchors.centerIn: parent
                             text: actionBtn.modelData.text || actionBtn.modelData.identifier
                             font.pixelSize: Theme.fontSm
+                            font.weight: Theme.uiWeightStrong
                         }
 
                         MouseArea {
@@ -214,6 +221,6 @@ Rectangle {
         height: 2
         width: (parent.width - 2 * root.radius) * root.remaining
         visible: root.popup && root.timeout > 0
-        color: Theme.fgMuted
+        color: Theme.hairlineStrong
     }
 }

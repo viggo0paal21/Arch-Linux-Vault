@@ -60,6 +60,26 @@ Singleton {
     readonly property int iconSize: fontSize + 4
     readonly property int barIconSize: fontSize
 
+    // Menus and popups (everything except the bar): body text one step lighter than the bar, semibold only for
+    // headings, big numbers thin. Follows Settings > Appearance > Font weight (700 -> 500 / 600).
+    // The bar and all icons stay at "weight" (see Glyph.qml and the texts in modules/bar).
+    // As bold as the bar: the same weight for text, headings one step more
+    readonly property int uiWeight: weight
+    readonly property int uiWeightStrong: Math.min(900, weight + 100)
+    readonly property int uiWeightLight: 300
+    readonly property int fontXs: fontSize - 3
+    // Text in menus: white for content, two greys for secondary things (easier to read than fgMuted)
+    readonly property color textDim: "#d4d4d4"
+    readonly property color textMuted: "#a3a3a3"
+    // Hairline for edges and separators, equally subtle on light and dark backgrounds
+    readonly property color hairline: Qt.rgba(1, 1, 1, 0.08)
+    readonly property color hairlineStrong: Qt.rgba(1, 1, 1, 0.18)
+    // Backgrounds for controls in menus, without borders
+    readonly property color fill: glassy ? Qt.rgba(1, 1, 1, 0.06) : "#0f0f0f"
+    readonly property color fillStrong: glassy ? Qt.rgba(1, 1, 1, 0.11) : "#1c1c1c"
+    // Inner padding of the panels
+    readonly property int padLg: 20
+
     // Spacing
     readonly property int barHeight: Config.opts.barHeight
     readonly property int barBottom: (Config.opts.barFloating ? Config.opts.barFloatOffset : 0) + barHeight

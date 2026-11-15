@@ -80,7 +80,7 @@ Item {
                 anchors.fill: parent
                 radius: parent.radius
                 border.width: 1
-                border.color: Theme.borderStrong
+                border.color: Theme.hairlineStrong
                 gradient: Gradient {
                     GradientStop { position: 0; color: "#00000000" }
                     GradientStop { position: 1; color: "#ff000000" }
@@ -135,7 +135,7 @@ Item {
                 anchors.fill: parent
                 radius: height / 2
                 border.width: 1
-                border.color: Theme.borderStrong
+                border.color: Theme.hairlineStrong
                 gradient: Gradient {
                     orientation: Gradient.Horizontal
                     GradientStop { position: 0.000; color: "#ff0000" }
@@ -206,7 +206,7 @@ Item {
                 anchors.fill: parent
                 radius: height / 2
                 border.width: 1
-                border.color: Theme.borderStrong
+                border.color: Theme.hairlineStrong
                 gradient: Gradient {
                     orientation: Gradient.Horizontal
                     GradientStop { position: 0; color: Qt.hsva(root.h, root.s, root.v, 0) }
@@ -253,7 +253,7 @@ Item {
                 radius: Theme.radiusSm
                 color: root.color
                 border.width: 1
-                border.color: Theme.borderStrong
+                border.color: Theme.hairlineStrong
             }
 
             InputField {
@@ -274,7 +274,7 @@ Item {
                 height: 34
                 horizontalAlignment: Text.AlignRight
                 text: Math.round(root.a * 100) + " %"
-                color: Theme.fgDim
+                color: Theme.textDim
             }
         }
 
@@ -294,7 +294,7 @@ Item {
                     radius: 13
                     color: modelData
                     border.width: root.toHex(root.color) === modelData.toUpperCase() ? 2 : 1
-                    border.color: root.toHex(root.color) === modelData.toUpperCase() ? Theme.fg : Theme.borderStrong
+                    border.color: root.toHex(root.color) === modelData.toUpperCase() ? Theme.fg : Theme.hairlineStrong
 
                     MouseArea {
                         anchors.fill: parent

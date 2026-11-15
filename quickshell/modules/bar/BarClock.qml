@@ -25,6 +25,8 @@ Row {
         anchors.verticalCenter: parent.verticalCenter
         text: Qt.formatDateTime(clock.date, root.timeFormat)
         color: root.fg
+        // Bar: font weight as before (menus use Theme.uiWeight)
+        font.weight: Theme.weight
     }
 
     FixedText {
@@ -32,5 +34,7 @@ Row {
         visible: Config.opts.barShowDate
         text: clock.date.toLocaleString(Qt.locale("en_US"), "ddd, MMM d")
         color: root.fgDim
+        // Bar: font weight as before (menus use Theme.uiWeight)
+        font.weight: Theme.weight
     }
 }

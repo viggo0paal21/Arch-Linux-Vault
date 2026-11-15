@@ -50,6 +50,18 @@ PopupWindow {
         menu: root.current
     }
 
+    // If any entry has a checkmark, all of them get the column for it, so the texts line up
+    readonly property bool anyCheckable: {
+        // opener.children is an ObjectModel (list in .values); a plain JS array has .values as a function
+        const c = opener.children;
+        const list = c && c.values && typeof c.values !== "function" ? c.values : (c || []);
+        for (let i = 0; i < list.length; i++) {
+            if (list[i] && list[i].buttonType !== QsMenuButtonType.None)
+                return true;
+        }
+        return false;
+    }
+
     Card {
         id: card
 
@@ -82,13 +94,13 @@ PopupWindow {
                         anchors.verticalCenter: parent.verticalCenter
                         text: Icons.left
                         font.pixelSize: Theme.fontSize + 2
-                        color: Theme.fgDim
+                        color: Theme.textDim
                     }
 
                     Txt {
                         anchors.verticalCenter: parent.verticalCenter
                         text: "Back"
-                        color: Theme.fgDim
+                        color: Theme.textDim
                     }
                 }
 
@@ -121,7 +133,7 @@ PopupWindow {
                         width: parent.width - 16
                         height: 1
                         visible: entry.sep
-                        color: Theme.border
+                        color: Theme.hairline
                     }
 
                     Rectangle {
@@ -147,7 +159,7 @@ PopupWindow {
 
                         Glyph {
                             anchors.verticalCenter: parent.verticalCenter
-                            visible: entry.checkable
+                            visible: root.anyCheckable
                             width: 14
                             text: entry.modelData.checkState === Qt.Checked ? Icons.check : ""
                             font.pixelSize: Theme.fontSize
@@ -175,7 +187,7 @@ PopupWindow {
                         visible: !entry.sep && entry.modelData.hasChildren
                         text: Icons.right
                         font.pixelSize: Theme.fontSize + 2
-                        color: Theme.fgDim
+                        color: Theme.textDim
                     }
 
                     MouseArea {

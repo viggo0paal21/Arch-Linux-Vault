@@ -28,6 +28,8 @@ Row {
             anchors.verticalCenter: parent.verticalCenter
             text: Math.round(SysInfo.cpu * 100) + "%"
             color: root.fg
+            // Bar: font weight as before (menus use Theme.uiWeight)
+            font.weight: Theme.weight
         }
     }
 
@@ -46,6 +48,8 @@ Row {
             anchors.verticalCenter: parent.verticalCenter
             text: Math.round(SysInfo.mem * 100) + "%"
             color: root.fg
+            // Bar: font weight as before (menus use Theme.uiWeight)
+            font.weight: Theme.weight
         }
     }
 
@@ -65,6 +69,8 @@ Row {
             anchors.verticalCenter: parent.verticalCenter
             text: Math.round(SysInfo.cpuTemp) + "°"
             color: root.fg
+            // Bar: font weight as before (menus use Theme.uiWeight)
+            font.weight: Theme.weight
         }
     }
 }

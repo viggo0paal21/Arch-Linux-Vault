@@ -18,6 +18,7 @@ smooth animations at the full **170 Hz** on an NVIDIA card. It replaces Waybar, 
 | File | Goes to | What it is |
 |---|---|---|
 | [`quickshell/`](quickshell) | `~/.config/quickshell/` | The shell itself (bar, launcher, control center, dashboard, notifications, OSD, power menu, settings) |
+| [`quickshell-old-design/`](quickshell-old-design) | `~/.config/quickshell/` (instead of `quickshell/`) | Alternative: the same shell with the old design from before the November 2026 redesign. Not updated anymore |
 | [`home/.local/bin/qs-start`](home/.local/bin/qs-start) | `~/.local/bin/` | Start script used by Hyprland's autostart: Vulkan (or OpenGL, see `quickshell/render-env.sh`), wall-clock animations, without MangoHud / lsfg-vk / vkBasalt |
 | [`home/.local/bin/qs-restart`](home/.local/bin/qs-restart) | `~/.local/bin/` | Restarts the shell cleanly (used by Settings → Behavior → Renderer) |
 | [`home/.local/bin/qs`](home/.local/bin/qs), [`quickshell`](home/.local/bin/quickshell) | `~/.local/bin/` | Wrappers: same fix for **every** `qs` / `quickshell` call, any config |
@@ -454,6 +455,7 @@ For stutter, jitter and short freezes see the **[Quickshell Stutter Guide](Quick
 | Logs | `qs log` |
 | Log full of `qt.svg.draw: The requested buffer size is too big, ignoring` or `qt.svg: Invalid path data` | Harmless warnings about broken SVG icons: masks with an empty area (Qt can't allocate a 0-pixel buffer) or invalid path data (drawn up to the broken part). The start script and wrappers hide them with `QT_LOGGING_RULES=qt.svg*.warning=false` |
 | Back to Waybar + swaync + rofi | In `hyprland.lua`: comment out the `qs-start` line, remove the `--` in front of `waybar &` and `swaync &`, set `Super + R` back to `hl.dsp.exec_cmd(menu)`. Also `rm ~/.local/share/dbus-1/services/org.freedesktop.Notifications.service` |
+| Back to the old design | `mv ~/.config/quickshell ~/.config/quickshell.new && cp -r quickshell-old-design ~/.config/quickshell` (same settings file, Quickshell reloads by itself) |
 | Remove the wrappers | `rm ~/.local/bin/qs ~/.local/bin/quickshell` (the real commands are in `/usr/bin`) |
 
 Kill all instances and start fresh with a pause in between, otherwise `qs ipc` may still reach the old instance:

@@ -55,6 +55,8 @@ BarChip {
             anchors.verticalCenter: parent.verticalCenter
             text: Audio.muted ? "Muted" : Math.round(Audio.volume * 100) + "%"
             color: Audio.muted ? root.fgDim : root.fg
+            // Bar: font weight as before (menus use Theme.uiWeight)
+            font.weight: Theme.weight
         }
     }
 

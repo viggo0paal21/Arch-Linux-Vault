@@ -10,7 +10,7 @@ Font like the Waybar: Inter 15px bold, icons from JetBrainsMono Nerd Font Propo.
 |---|---|
 | Bar | Arch button (launcher), workspaces as pills, window title, tray with its own B/W menu, CPU/RAM/temp + clock, network/Bluetooth/volume/bell, power. Optional floating bar that docks with a single window (with an optional subpixel glide), optional shell glass (looks like kitty's glass: either the bar blurs the wallpaper itself, or Hyprland blurs the background behind it), Arch or Tux launcher icon with adjustable size, optional group boxes with a color picker |
 | Launcher | Fuzzy app search, frequently used apps first, `=` calculator, `>` run a command |
-| Control center | Network, Bluetooth, do not disturb, stay awake, night light, mic, volume/mic sliders, media player, notification history |
+| Control center | Wi-Fi and Bluetooth (each with its own page that slides in: nearby networks with password entry, paired and nearby devices with battery), do not disturb, night light, mic, volume/mic sliders, media player, notification history. Shows "No internet" only when the shell's own check fails too (NetworkManager's check often fails behind a VPN like NordVPN) |
 | Dashboard | Big clock, calendar, system monitor (CPU, NVIDIA GPU, RAM, drives, network with history graphs) |
 | Notifications | Own daemon (replaces dunst/swaync), popups slide in from the right, timeout bar, actions |
 | OSD | Volume indicator bottom center |
@@ -21,6 +21,9 @@ Font like the Waybar: Inter 15px bold, icons from JetBrainsMono Nerd Font Propo.
 | Background | OLED black or your own image, optional rounded screen corners |
 
 Every monitor gets its own bar.
+
+> Prefer the old look (cards with borders, round buttons, sliders with a knob)? It is kept as an alternative in
+> [`../quickshell-old-design`](../quickshell-old-design).
 
 ## Installation
 
@@ -74,7 +77,7 @@ fps       toggle
 - Bar: scrolling on the workspaces switches them, scrolling on the status area changes the volume, middle click mutes.
 - Tray: left click opens the app, right click the menu, middle click the secondary action.
 - Notification: click = default action, middle click = close, hovering pauses the timer.
-- Bluetooth tile: click = on/off, right click = blueman-manager (or bluetoothctl).
+- Wi-Fi / Bluetooth tile: click = its own page, right click = on/off. On the page: click a network to connect (unknown ones ask for the password right there), click a device to connect/disconnect or pair it; hover a row for Disconnect / Forget. Searching only runs while the page is open. "Network settings" / "Bluetooth settings" at the bottom open nm-connection-editor / blueman-manager (or nmtui / bluetoothctl).
 - Close panels with Esc or by clicking outside.
 
 ## Files

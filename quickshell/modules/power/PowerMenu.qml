@@ -110,19 +110,19 @@ OverlayPanel {
         // at rest on whole pixels without a texture
         x: Math.round((parent.width - width) / 2)
         y: Math.round((parent.height - height) / 2) + 14 * (1 - panel.progress)
-        spacing: 22
+        spacing: 14
         opacity: panel.progress
         layer.enabled: panel.progress > 0 && panel.progress < 1
         layer.smooth: true
 
         Row {
             anchors.horizontalCenter: parent.horizontalCenter
-            spacing: 14
+            spacing: 18
 
             Repeater {
                 model: panel.actions
 
-                delegate: Rectangle {
+                delegate: Item {
                     id: tile
 
                     required property var modelData
@@ -130,37 +130,32 @@ OverlayPanel {
                     readonly property bool selected: index === panel.current
                     readonly property bool isArmed: index === panel.armed
 
-                    width: 124
-                    height: 124
-                    radius: Theme.radiusLg
-                    color: isArmed ? Theme.accent : (selected ? Qt.tint(Glass.popupBg, Theme.layer3) : Glass.popupBg)
-                    border.width: 1
-                    border.color: selected ? Theme.accent : Theme.border
+                    width: 92
+                    height: 112
 
-                    Behavior on color {
-                        CAnim {}
-                    }
-                    Behavior on border.color {
-                        CAnim {}
-                    }
+                    // Just the icon, no circle: selected = bright, otherwise dimmed, "Confirm" = accent color
+                    Item {
+                        id: circle
 
-                    Column {
-                        anchors.centerIn: parent
-                        spacing: 10
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        width: 72
+                        height: 72
 
                         Glyph {
-                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.centerIn: parent
                             text: tile.modelData.icon
-                            color: tile.isArmed ? Theme.accentFg : Theme.fg
-                            font.pixelSize: 34
+                            color: tile.isArmed ? Theme.accent : (tile.selected ? Theme.fg : Qt.rgba(1, 1, 1, 0.38))
+                            font.pixelSize: 40
                         }
+                    }
 
-                        Txt {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: tile.isArmed ? "Sure?" : tile.modelData.label
-                            color: tile.isArmed ? Theme.accentFg : Theme.fg
-                            font.weight: Theme.weightStrong
-                        }
+                    Txt {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.top: circle.bottom
+                        anchors.topMargin: 12
+                        text: tile.isArmed ? "Confirm" : tile.modelData.label
+                        color: tile.selected ? Theme.fg : Qt.rgba(1, 1, 1, 0.38)
+                        font.pixelSize: Theme.fontSm + 1
                     }
 
                     MouseArea {
@@ -178,10 +173,13 @@ OverlayPanel {
             }
         }
 
+        // Hint only while confirming; the row always keeps its height so nothing jumps
         Txt {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: panel.armed >= 0 ? "Click again or press Enter to confirm" : "Esc to close"
-            color: Theme.fgMuted
+            text: "Click again or press Enter"
+            color: Theme.textMuted
+            font.pixelSize: Theme.fontSm
+            opacity: panel.armed >= 0 ? 1 : 0
         }
     }
 }

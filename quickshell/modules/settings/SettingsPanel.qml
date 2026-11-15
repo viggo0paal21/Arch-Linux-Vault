@@ -138,16 +138,14 @@ OverlayPanel {
         width: 150
         height: 30
         radius: Theme.radiusSm
-        color: cpArea.pressed ? Theme.pressed : (cpArea.containsMouse ? Theme.hover : Theme.layer3)
-        border.width: 1
-        border.color: Theme.border
+        color: cpArea.pressed ? Theme.pressed : (cpArea.containsMouse ? Theme.fillStrong : Theme.fill)
 
         Glyph {
             anchors.left: parent.left
             anchors.leftMargin: 6
             anchors.verticalCenter: parent.verticalCenter
             text: Icons.left
-            color: Theme.fgMuted
+            color: Theme.textMuted
             font.pixelSize: Theme.fontSm
         }
 
@@ -162,7 +160,7 @@ OverlayPanel {
             anchors.rightMargin: 6
             anchors.verticalCenter: parent.verticalCenter
             text: Icons.right
-            color: Theme.fgMuted
+            color: Theme.textMuted
             font.pixelSize: Theme.fontSm
         }
 
@@ -195,7 +193,7 @@ OverlayPanel {
         signal curveBPicked(string v)
 
         width: parent ? parent.width : 0
-        controlWidth: 420
+        controlWidth: 390
         implicitHeight: Math.max(64, arCol.height + 28)
 
         Column {
@@ -222,7 +220,7 @@ OverlayPanel {
                 Txt {
                     anchors.verticalCenter: parent.verticalCenter
                     text: ar.labelA
-                    color: Theme.fgMuted
+                    color: Theme.textMuted
                     font.pixelSize: Theme.fontSm
                 }
 
@@ -235,7 +233,7 @@ OverlayPanel {
                     visible: ar.curveB !== ""
                     anchors.verticalCenter: parent.verticalCenter
                     text: ar.labelB
-                    color: Theme.fgMuted
+                    color: Theme.textMuted
                     font.pixelSize: Theme.fontSm
                 }
 
@@ -251,7 +249,7 @@ OverlayPanel {
     Card {
         id: card
 
-        readonly property int tabHeight: 56
+        readonly property int tabHeight: 40
 
         // Fade in + short glide, subpixel like the bar: drawn as a texture while moving (text stays sharp),
         // at rest on whole pixels without a texture
@@ -285,16 +283,11 @@ OverlayPanel {
                 height: 48
                 spacing: 12
 
-                Glyph {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: Icons.tune
-                }
-
                 Txt {
                     anchors.verticalCenter: parent.verticalCenter
                     text: "Settings"
                     font.pixelSize: Theme.fontLg + 3
-                    font.weight: Theme.weightStrong
+                    font.weight: Theme.uiWeightStrong
                 }
             }
 
@@ -305,7 +298,7 @@ OverlayPanel {
                 anchors.topMargin: 14
                 width: parent.width
                 height: count * card.tabHeight + (count - 1) * spacing
-                spacing: 6
+                spacing: 2
                 interactive: false
                 model: panel.tabs
                 currentIndex: panel.tab
@@ -313,10 +306,9 @@ OverlayPanel {
                 highlightFollowsCurrentItem: true
 
                 highlight: Rectangle {
+                    width: tabList.width
                     radius: Theme.radius
-                    color: Theme.layer3
-                    border.width: 1
-                    border.color: Theme.borderStrong
+                    color: Theme.fillStrong
                 }
 
                 delegate: Item {
@@ -346,34 +338,23 @@ OverlayPanel {
                         id: tabIcon
 
                         anchors.left: parent.left
-                        anchors.leftMargin: 16
+                        anchors.leftMargin: 14
                         anchors.verticalCenter: parent.verticalCenter
-                        width: 26
+                        width: 22
                         text: tabRow.modelData.icon
-                        color: tabRow.current ? Theme.fg : Theme.fgDim
+                        color: tabRow.current ? Theme.fg : Theme.textMuted
+                        font.pixelSize: Theme.iconSize - 2
                     }
 
-                    Column {
+                    // Just the name; the short description ("hint") is no longer shown below it
+                    Txt {
                         anchors.left: tabIcon.right
-                        anchors.leftMargin: 14
+                        anchors.leftMargin: 12
                         anchors.right: parent.right
                         anchors.rightMargin: 12
                         anchors.verticalCenter: parent.verticalCenter
-                        spacing: 2
-
-                        Txt {
-                            width: parent.width
-                            text: tabRow.modelData.name
-                            color: tabRow.current ? Theme.fg : Theme.fgDim
-                            font.weight: tabRow.current ? Theme.weightStrong : Theme.weight
-                        }
-
-                        Txt {
-                            width: parent.width
-                            text: tabRow.modelData.hint
-                            color: Theme.fgMuted
-                            font.pixelSize: Theme.fontSm
-                        }
+                        text: tabRow.modelData.name
+                        color: tabRow.current ? Theme.fg : Theme.textDim
                     }
 
                     MouseArea {
@@ -394,22 +375,22 @@ OverlayPanel {
                 anchors.bottom: parent.bottom
                 spacing: 12
 
-                IconButton {
-                    x: 4
-                    size: 40
-                    icon: Icons.restart
-                    label: "Reset to defaults"
-                    idleColor: Theme.layer2
-                    onClicked: Config.reset()
+                Txt {
+                    x: 14
+                    width: parent.width - 28
+                    text: "Changes save automatically"
+                    color: Theme.textMuted
+                    font.pixelSize: Theme.fontSm
                 }
 
-                Txt {
-                    x: 8
-                    width: parent.width - 16
-                    text: "Saved automatically to " + Quickshell.statePath("settings.json")
-                    color: Theme.fgMuted
-                    font.pixelSize: Theme.fontSm
-                    wrapMode: Text.WrapAnywhere
+                IconButton {
+                    x: 4
+                    size: 36
+                    icon: Icons.restart
+                    iconSize: Theme.iconSize - 2
+                    label: "Reset to defaults"
+                    fg: Theme.textDim
+                    onClicked: Config.reset()
                 }
             }
         }
@@ -421,7 +402,7 @@ OverlayPanel {
             y: 14
             width: 1
             height: parent.height - 28
-            color: Theme.border
+            color: Theme.hairline
         }
 
         // ---------- Right: options of the tab ----------
@@ -444,15 +425,15 @@ OverlayPanel {
                     anchors.verticalCenter: parent.verticalCenter
                     text: panel.tabs[panel.tab].name
                     font.pixelSize: Theme.fontLg + 3
-                    font.weight: Theme.weightStrong
+                    font.weight: Theme.uiWeightStrong
                 }
 
                 IconButton {
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
-                    size: 40
+                    size: 36
                     icon: Icons.close
-                    idleColor: Theme.layer2
+                    fg: Theme.textDim
                     onClicked: Ui.close()
                 }
             }
@@ -640,7 +621,7 @@ OverlayPanel {
                                 Txt {
                                     anchors.verticalCenter: parent.verticalCenter
                                     text: "Only 1"
-                                    color: Theme.fgMuted
+                                    color: Theme.textMuted
                                     font.pixelSize: Theme.fontSm
                                     opacity: Config.opts.barSolidWithWindows ? 1 : 0.4
                                 }
@@ -959,7 +940,7 @@ OverlayPanel {
                             width: parent.width
                             height: Math.round(width * 0.42)
                             radius: Theme.radiusLg
-                            color: Theme.layer2
+                            color: Theme.fill
                             onThumbChanged: hero.request()
 
                             Connections {
@@ -1047,7 +1028,7 @@ OverlayPanel {
 
                                 Txt {
                                     text: "CURRENT WALLPAPER"
-                                    color: Theme.fgDim
+                                    color: Theme.textDim
                                     font.pixelSize: Theme.fontSm - 1
                                     font.letterSpacing: 1.2
                                 }
@@ -1056,7 +1037,7 @@ OverlayPanel {
                                     width: parent.width
                                     text: hero.file !== "" ? Walls.fileName(hero.file) : "No wallpaper set"
                                     font.pixelSize: Theme.fontLg
-                                    font.weight: Theme.weightStrong
+                                    font.weight: Theme.uiWeightStrong
                                     elide: Text.ElideMiddle
                                 }
                             }
@@ -1127,7 +1108,7 @@ OverlayPanel {
                                 anchors.verticalCenter: parent.verticalCenter
                                 size: 38
                                 icon: Icons.shuffle
-                                idleColor: Theme.layer2
+                                idleColor: Theme.fill
                                 onClicked: Walls.random()
                             }
                         }
@@ -1180,7 +1161,7 @@ OverlayPanel {
                                     ClippingRectangle {
                                         anchors.fill: parent
                                         radius: Theme.radius
-                                        color: Theme.layer3
+                                        color: Theme.fillStrong
 
                                         Image {
                                             id: img
@@ -1278,7 +1259,7 @@ OverlayPanel {
                                         radius: Theme.radius
                                         color: "transparent"
                                         border.width: tile.current ? 2 : 1
-                                        border.color: tile.current ? Theme.accent : (tileArea.containsMouse ? Theme.fgMuted : Theme.border)
+                                        border.color: tile.current ? Theme.accent : (tileArea.containsMouse ? Theme.textMuted : Theme.hairline)
 
                                         Behavior on border.color {
                                             CAnim {}
@@ -1332,7 +1313,7 @@ OverlayPanel {
                         Txt {
                             width: parent.width
                             text: Walls.model.count === 0 ? "No images in " + Walls.folder + " (folder from waypaper)" : Walls.model.count + " wallpapers in " + Walls.folder.replace(Quickshell.env("HOME"), "~") + " · set with " + "waypaper / awww"
-                            color: Theme.fgMuted
+                            color: Theme.textMuted
                             font.pixelSize: Theme.fontSm
                             horizontalAlignment: Text.AlignHCenter
                             topPadding: 4
@@ -1376,7 +1357,7 @@ OverlayPanel {
                                         anchors.verticalCenter: parent.verticalCenter
                                         width: heightRow.labelWidth
                                         text: "Docked"
-                                        color: Theme.fgMuted
+                                        color: Theme.textMuted
                                         font.pixelSize: Theme.fontSm
                                     }
 
@@ -1407,7 +1388,7 @@ OverlayPanel {
                                         anchors.verticalCenter: parent.verticalCenter
                                         width: heightRow.labelWidth
                                         text: Config.opts.barFloating ? "Floating" : "Height"
-                                        color: Theme.fgMuted
+                                        color: Theme.textMuted
                                         font.pixelSize: Theme.fontSm
                                     }
 
@@ -1429,7 +1410,7 @@ OverlayPanel {
                                         icon: String.fromCodePoint(0xF0450)
                                         iconSize: Theme.fontSm
                                         label: "Reset"
-                                        idleColor: Theme.layer3
+                                        idleColor: Theme.fill
                                         onClicked: {
                                             Config.opts.barHeight = Config.defaults.barHeight;
                                             Config.opts.barDockedHeight = Config.defaults.barDockedHeight;
@@ -1538,7 +1519,7 @@ OverlayPanel {
                                     icon: String.fromCodePoint(0xF04E6)
                                     iconSize: Theme.fontSm
                                     label: "From Hyprland"
-                                    idleColor: Theme.layer3
+                                    idleColor: Theme.fill
                                     onClicked: hyprBlurReader.running = true
                                 }
 
@@ -1548,7 +1529,7 @@ OverlayPanel {
                                     icon: String.fromCodePoint(0xF0450)
                                     iconSize: Theme.fontSm
                                     label: "Defaults"
-                                    idleColor: Theme.layer3
+                                    idleColor: Theme.fill
                                     onClicked: {
                                         for (const k of panel.glassBlurKeys)
                                             Config.opts[k] = Config.defaults[k];
@@ -1601,7 +1582,7 @@ OverlayPanel {
                                         icon: String.fromCodePoint(0xF0450)
                                         iconSize: Theme.fontSm
                                         label: "Reset"
-                                        idleColor: Theme.layer3
+                                        idleColor: Theme.fill
                                         onClicked: Config.opts[blurRow.modelData.key] = Config.defaults[blurRow.modelData.key]
                                     }
                                 }
@@ -1637,7 +1618,7 @@ OverlayPanel {
                                     icon: String.fromCodePoint(0xF0450)
                                     iconSize: Theme.fontSm
                                     label: "Reset"
-                                    idleColor: Theme.layer3
+                                    idleColor: Theme.fill
                                     onClicked: Config.opts.barFloatOffset = Config.defaults.barFloatOffset
                                 }
                             }
@@ -1672,7 +1653,7 @@ OverlayPanel {
                                     icon: String.fromCodePoint(0xF0450)
                                     iconSize: Theme.fontSm
                                     label: "Reset"
-                                    idleColor: Theme.layer3
+                                    idleColor: Theme.fill
                                     onClicked: Config.opts.barFloatSide = Config.defaults.barFloatSide
                                 }
                             }
@@ -1705,9 +1686,9 @@ OverlayPanel {
                                         width: 96
                                         height: 84
                                         radius: Theme.radius
-                                        color: iconTile.selected ? Theme.accent : (iconTileArea.pressed ? Theme.pressed : (iconTileArea.containsMouse ? Theme.hover : Theme.layer3))
+                                        color: iconTile.selected ? Theme.accent : (iconTileArea.pressed ? Theme.pressed : (iconTileArea.containsMouse ? Theme.hover : Theme.fillStrong))
                                         border.width: 1
-                                        border.color: iconTile.selected ? Theme.accent : (iconTileArea.containsMouse ? Theme.fgDim : Theme.borderStrong)
+                                        border.color: iconTile.selected ? Theme.accent : (iconTileArea.containsMouse ? Theme.textDim : Theme.hairlineStrong)
                                         scale: iconTileArea.pressed ? 0.96 : (iconTileArea.containsMouse && !iconTile.selected ? 1.04 : 1)
 
                                         Behavior on color {
@@ -1737,7 +1718,7 @@ OverlayPanel {
                                                 anchors.horizontalCenter: parent.horizontalCenter
                                                 text: iconTile.modelData.name
                                                 font.pixelSize: Theme.fontSm
-                                                color: iconTile.selected ? Theme.accentFg : Theme.fgDim
+                                                color: iconTile.selected ? Theme.accentFg : Theme.textDim
                                             }
                                         }
 
@@ -1813,7 +1794,7 @@ OverlayPanel {
                                     icon: String.fromCodePoint(0xF0450)
                                     iconSize: Theme.fontSm
                                     label: "Reset"
-                                    idleColor: Theme.layer3
+                                    idleColor: Theme.fill
                                     onClicked: Config.opts.launcherIconSize = Config.defaults.launcherIconSize
                                 }
                             }
@@ -1857,7 +1838,7 @@ OverlayPanel {
                                         radius: Theme.radiusSm
                                         color: Config.opts.barBoxColor
                                         border.width: 1
-                                        border.color: boxColorArea.containsMouse || boxColorBlock.open ? Theme.fgDim : Theme.borderStrong
+                                        border.color: boxColorArea.containsMouse || boxColorBlock.open ? Theme.textDim : Theme.hairlineStrong
 
                                         Txt {
                                             anchors.centerIn: parent
@@ -1882,7 +1863,7 @@ OverlayPanel {
                                         icon: String.fromCodePoint(0xF0450)
                                         iconSize: Theme.fontSm
                                         label: "Reset"
-                                        idleColor: Theme.layer3
+                                        idleColor: Theme.fill
                                         onClicked: Config.opts.barBoxColor = Config.defaults.barBoxColor
                                     }
                                 }
@@ -1893,9 +1874,7 @@ OverlayPanel {
                                 height: boxPicker.implicitHeight + 36
                                 visible: boxColorBlock.open
                                 radius: Theme.radius
-                                color: Theme.layer2
-                                border.width: 1
-                                border.color: Theme.border
+                                color: Theme.fill
 
                                 ColorPicker {
                                     id: boxPicker
@@ -2231,7 +2210,7 @@ OverlayPanel {
                                             ClippingRectangle {
                                                 anchors.fill: parent
                                                 radius: Theme.radius
-                                                color: Theme.layer3
+                                                color: Theme.fillStrong
 
                                                 Image {
                                                     anchors.fill: parent
@@ -2248,7 +2227,7 @@ OverlayPanel {
                                                     anchors.centerIn: parent
                                                     visible: ffSlot.path === ""
                                                     text: Icons.plus
-                                                    color: Theme.fgMuted
+                                                    color: Theme.textMuted
                                                 }
                                             }
 
@@ -2258,7 +2237,7 @@ OverlayPanel {
                                                 anchors.leftMargin: 5
                                                 anchors.topMargin: 2
                                                 text: String(ffSlot.index + 1)
-                                                color: Theme.fgDim
+                                                color: Theme.textDim
                                                 font.pixelSize: Theme.fontSm - 1
                                             }
 
@@ -2267,7 +2246,7 @@ OverlayPanel {
                                                 radius: Theme.radius
                                                 color: "transparent"
                                                 border.width: ffSlot.picking ? 2 : 1
-                                                border.color: ffSlot.picking ? Theme.accent : (ffSlotArea.containsMouse ? Theme.fgMuted : Theme.border)
+                                                border.color: ffSlot.picking ? Theme.accent : (ffSlotArea.containsMouse ? Theme.textMuted : Theme.hairline)
 
                                                 Behavior on border.color {
                                                     CAnim {}
@@ -2300,9 +2279,7 @@ OverlayPanel {
                                 visible: ffLogos.picking >= 0
                                 height: visible ? ffPick.implicitHeight + 24 : 0
                                 radius: Theme.radius
-                                color: Theme.layer2
-                                border.width: 1
-                                border.color: Theme.border
+                                color: Theme.fill
 
                                 Column {
                                     id: ffPick
@@ -2320,7 +2297,7 @@ OverlayPanel {
                                             anchors.left: parent.left
                                             anchors.verticalCenter: parent.verticalCenter
                                             text: "Image " + (ffLogos.picking + 1) + " · from ~/.config/fastfetch/logos and ~/Pictures"
-                                            color: Theme.fgMuted
+                                            color: Theme.textMuted
                                             font.pixelSize: Theme.fontSm
                                         }
 
@@ -2330,8 +2307,8 @@ OverlayPanel {
                                             anchors.verticalCenter: parent.verticalCenter
                                             size: 28
                                             icon: Icons.image
-                                            idleColor: Theme.layer3
-                                            // Open the folder in the file manager to drop images into it
+                                            idleColor: Theme.fill
+                                            // Open the folder in the file manager to put images into it
                                             onClicked: Quickshell.execDetached(["sh", "-c", "mkdir -p \"$1\" && exec xdg-open \"$1\"", "sh", ffLogos.logosDir])
                                         }
 
@@ -2342,7 +2319,7 @@ OverlayPanel {
                                             anchors.verticalCenter: parent.verticalCenter
                                             size: 28
                                             icon: Icons.close
-                                            idleColor: Theme.layer3
+                                            idleColor: Theme.fill
                                             onClicked: ffLogos.picking = -1
                                         }
                                     }
@@ -2366,7 +2343,7 @@ OverlayPanel {
                                                 ClippingRectangle {
                                                     anchors.fill: parent
                                                     radius: Theme.radius
-                                                    color: Theme.layer3
+                                                    color: Theme.fillStrong
 
                                                     Image {
                                                         anchors.fill: parent
@@ -2385,7 +2362,7 @@ OverlayPanel {
                                                     radius: Theme.radius
                                                     color: "transparent"
                                                     border.width: ffChoice.chosen ? 2 : 1
-                                                    border.color: ffChoice.chosen ? Theme.accent : (ffChoiceArea.containsMouse ? Theme.fgMuted : Theme.border)
+                                                    border.color: ffChoice.chosen ? Theme.accent : (ffChoiceArea.containsMouse ? Theme.textMuted : Theme.hairline)
                                                 }
 
                                                 MouseArea {
@@ -2407,7 +2384,7 @@ OverlayPanel {
                                         width: parent.width
                                         visible: ffLogos.choices.length === 0
                                         text: "No images yet. Put some into ~/.config/fastfetch/logos or ~/Pictures."
-                                        color: Theme.fgMuted
+                                        color: Theme.textMuted
                                         font.pixelSize: Theme.fontSm
                                         wrapMode: Text.Wrap
                                     }
@@ -2495,7 +2472,7 @@ OverlayPanel {
                                     Txt {
                                         anchors.verticalCenter: parent.verticalCenter
                                         text: "Curve"
-                                        color: Theme.fgMuted
+                                        color: Theme.textMuted
                                         font.pixelSize: Theme.fontSm
                                     }
 
@@ -2573,7 +2550,7 @@ OverlayPanel {
                                 icon: String.fromCodePoint(0xF0450)
                                 iconSize: Theme.fontSm
                                 label: "Reset"
-                                idleColor: Theme.layer3
+                                idleColor: Theme.fill
                                 onClicked: panel.resetAnimations()
                             }
                         }
@@ -2588,7 +2565,7 @@ OverlayPanel {
                 width: 3
                 height: flick.visibleArea.heightRatio * flick.height
                 radius: 1.5
-                color: Theme.borderStrong
+                color: Theme.hairlineStrong
                 visible: flick.contentHeight > flick.height + 1
             }
         }

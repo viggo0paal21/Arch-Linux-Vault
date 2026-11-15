@@ -44,41 +44,39 @@ OverlayPanel {
             id: card
 
             width: parent.width
-            height: Math.min(dashContent.implicitHeight + 2 * 18, panel.height - panel.topOffset - Theme.gap)
+            height: Math.min(dashContent.implicitHeight + 22 + 24, panel.height - panel.topOffset - Theme.gap)
             clip: true
 
             Row {
                 id: dashContent
 
-                x: 18
-                y: 18
-                spacing: 18
+                x: 24
+                y: 22
+                spacing: 28
 
                 // Left: clock + calendar
                 Column {
                     id: leftCol
 
-                    width: 300
-                    spacing: 16
+                    width: 290
+                    spacing: 26
 
                     Column {
                         width: parent.width
-                        spacing: 2
+                        spacing: 0
 
-                        Txt {
+                        // Big clock, thin and with equal-width digits (does not jump when the minute changes)
+                        FixedText {
+                            x: -3
                             text: Qt.formatDateTime(clock.date, Config.opts.clock24h ? "HH:mm" : "h:mm AP")
-                            font.pixelSize: 56
-                            font.weight: Theme.weight
+                            font.pixelSize: 64
+                            font.weight: Theme.uiWeightLight
                         }
 
                         Txt {
-                            text: clock.date.toLocaleString(panel.enLocale, "dddd, MMMM d, yyyy")
-                            color: Theme.fgDim
+                            text: clock.date.toLocaleString(panel.enLocale, "dddd, MMMM d")
+                            color: Theme.textDim
                         }
-                    }
-
-                    Sep {
-                        width: parent.width
                     }
 
                     CalendarView {
@@ -93,22 +91,19 @@ OverlayPanel {
                     height: Math.max(leftCol.implicitHeight, rightCol.implicitHeight)
                 }
 
-                // Right: system monitor
+                // Right: system monitor, no boxes, groups only by spacing and small headings
                 Column {
                     id: rightCol
 
-                    width: card.width - 36 - leftCol.width - 2 * dashContent.spacing - 1
-                    spacing: 10
+                    width: card.width - 48 - leftCol.width - 2 * dashContent.spacing - 1
+                    spacing: 24
 
-                    Grid {
+                    Row {
                         width: parent.width
-                        columns: 2
-                        columnSpacing: 10
-                        rowSpacing: 10
+                        spacing: 24
 
                         StatCard {
-                            width: (rightCol.width - 10) / 2
-                            icon: Icons.cpu
+                            width: Math.floor((rightCol.width - 24) / 2)
                             title: "CPU"
                             value: Math.round(SysInfo.cpu * 100) + "%"
                             subtitle: SysInfo.cpuTemp > 0 ? Math.round(SysInfo.cpuTemp) + " °C" : "Temperature unknown"
@@ -116,8 +111,7 @@ OverlayPanel {
                         }
 
                         StatCard {
-                            width: (rightCol.width - 10) / 2
-                            icon: Icons.gpu
+                            width: Math.floor((rightCol.width - 24) / 2)
                             title: "GPU"
                             value: SysInfo.gpuAvailable ? Math.round(SysInfo.gpu * 100) + "%" : "–"
                             subtitle: SysInfo.gpuAvailable ? Math.round(SysInfo.gpuTemp) + " °C  ·  " + SysInfo.formatBytes(SysInfo.vramUsed) + " / " + SysInfo.formatBytes(SysInfo.vramTotal) : (Config.opts.gpuMonitor ? "nvidia-smi not found" : "Off (settings)")
@@ -126,147 +120,113 @@ OverlayPanel {
                     }
 
                     // Memory
-                    Rectangle {
+                    Column {
                         width: parent.width
-                        height: memCol.implicitHeight + 28
-                        radius: Theme.radius
-                        color: Theme.layer2
-                        border.width: 1
-                        border.color: Theme.border
+                        spacing: 8
 
-                        Column {
-                            id: memCol
-
-                            x: 14
-                            y: 14
-                            width: parent.width - 28
-                            spacing: 8
-
-                            Item {
-                                width: parent.width
-                                height: 20
-
-                                Row {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    spacing: 10
-
-                                    Glyph {
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        text: Icons.ram
-                                        color: Theme.fgDim
-                                    }
-
-                                    Txt {
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        text: "Memory"
-                                        color: Theme.fgDim
-                                    }
-                                }
-
-                                Txt {
-                                    anchors.right: parent.right
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: SysInfo.formatBytes(SysInfo.memUsed) + " / " + SysInfo.formatBytes(SysInfo.memTotal)
-                                }
-                            }
-
-                            Meter {
-                                width: parent.width
-                                value: SysInfo.mem
-                            }
+                        Item {
+                            width: parent.width
+                            height: 20
 
                             Txt {
-                                visible: SysInfo.swapTotal > 0
-                                text: "Swap " + SysInfo.formatBytes(SysInfo.swapUsed) + " / " + SysInfo.formatBytes(SysInfo.swapTotal)
-                                color: Theme.fgMuted
+                                anchors.left: parent.left
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: "Memory"
+                                color: Theme.textMuted
                                 font.pixelSize: Theme.fontSm
+                                font.weight: Theme.uiWeightStrong
                             }
+
+                            FixedText {
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: SysInfo.formatBytes(SysInfo.memUsed) + " / " + SysInfo.formatBytes(SysInfo.memTotal)
+                                color: Theme.textDim
+                                font.pixelSize: Theme.fontSm + 1
+                            }
+                        }
+
+                        Meter {
+                            width: parent.width
+                            height: 6
+                            value: SysInfo.mem
+                        }
+
+                        FixedText {
+                            visible: SysInfo.swapTotal > 0
+                            text: "Swap " + SysInfo.formatBytes(SysInfo.swapUsed) + " / " + SysInfo.formatBytes(SysInfo.swapTotal)
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fontSm - 1
                         }
                     }
 
                     // Drives
-                    Rectangle {
+                    Column {
                         width: parent.width
-                        height: diskCol.implicitHeight + 28
-                        radius: Theme.radius
-                        color: Theme.layer2
-                        border.width: 1
-                        border.color: Theme.border
+                        spacing: 10
 
-                        Column {
-                            id: diskCol
+                        Txt {
+                            text: "Disks"
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fontSm
+                            font.weight: Theme.uiWeightStrong
+                        }
 
-                            x: 14
-                            y: 14
-                            width: parent.width - 28
-                            spacing: 10
+                        Repeater {
+                            model: SysInfo.disks
 
-                            Row {
-                                spacing: 10
+                            delegate: Column {
+                                id: diskItem
 
-                                Glyph {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: Icons.disk
-                                    color: Theme.fgDim
-                                }
+                                required property var modelData
 
-                                Txt {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: "Disks"
-                                    color: Theme.fgDim
-                                }
-                            }
+                                width: rightCol.width
+                                spacing: 6
 
-                            Repeater {
-                                model: SysInfo.disks
+                                Item {
+                                    width: parent.width
+                                    height: 18
 
-                                delegate: Column {
-                                    id: diskItem
-
-                                    required property var modelData
-
-                                    width: diskCol.width
-                                    spacing: 6
-
-                                    Item {
-                                        width: parent.width
-                                        height: 18
-
-                                        Txt {
-                                            anchors.left: parent.left
-                                            anchors.verticalCenter: parent.verticalCenter
-                                            text: diskItem.modelData.mount
-                                        }
-
-                                        Txt {
-                                            anchors.right: parent.right
-                                            anchors.verticalCenter: parent.verticalCenter
-                                            text: SysInfo.formatBytes(diskItem.modelData.used) + " / " + SysInfo.formatBytes(diskItem.modelData.size)
-                                            color: Theme.fgDim
-                                        }
+                                    Txt {
+                                        anchors.left: parent.left
+                                        anchors.right: diskSize.left
+                                        anchors.rightMargin: 12
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: diskItem.modelData.mount
+                                        font.pixelSize: Theme.fontSm + 1
                                     }
 
-                                    Meter {
-                                        width: parent.width
-                                        value: diskItem.modelData.size > 0 ? diskItem.modelData.used / diskItem.modelData.size : 0
+                                    FixedText {
+                                        id: diskSize
+
+                                        anchors.right: parent.right
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: SysInfo.formatBytes(diskItem.modelData.used) + " / " + SysInfo.formatBytes(diskItem.modelData.size)
+                                        color: Theme.textDim
+                                        font.pixelSize: Theme.fontSm + 1
                                     }
                                 }
-                            }
 
-                            Txt {
-                                visible: SysInfo.disks.length === 0
-                                text: "Reading …"
-                                color: Theme.fgMuted
+                                Meter {
+                                    width: parent.width
+                                    height: 6
+                                    value: diskItem.modelData.size > 0 ? diskItem.modelData.used / diskItem.modelData.size : 0
+                                }
                             }
+                        }
+
+                        Txt {
+                            visible: SysInfo.disks.length === 0
+                            text: "Reading …"
+                            color: Theme.textMuted
                         }
                     }
 
                     StatCard {
                         width: parent.width
-                        icon: Icons.arrowDown
                         title: "Network"
                         value: "↓ " + SysInfo.formatRate(SysInfo.rxRate)
-                        subtitle: "↑ " + SysInfo.formatRate(SysInfo.txRate) + "  ·  " + (Net.connected ? Net.name : "disconnected") + "  ·  up " + SysInfo.formatUptime(SysInfo.uptime)
+                        subtitle: "↑ " + SysInfo.formatRate(SysInfo.txRate) + "  ·  " + (Net.connected ? Net.name : "disconnected")
                         history: SysInfo.rxHistory
                         historyMax: Math.max(1024 * 64, ...SysInfo.rxHistory)
                     }

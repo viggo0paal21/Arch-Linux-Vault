@@ -2,8 +2,8 @@ import QtQuick
 import qs.config
 import qs.components
 
-// One row in the settings panel: its own surface like the launcher's search field,
-// text on the left, control on the right, plenty of space around.
+// One row in the settings panel: text on the left, control on the right. No box of its own anymore, the rows
+// of a page are separated by fine lines like a list.
 Item {
     id: root
 
@@ -12,31 +12,37 @@ Item {
     property int controlWidth: 260
     default property alias control: slot.data
 
-    implicitHeight: Math.max(64, texts.implicitHeight + 28)
-
-    HoverHandler {
-        id: hover
+    // First visible row of a page: no line above it
+    readonly property bool first: {
+        const p = root.parent;
+        if (!p)
+            return true;
+        const kids = p.children;
+        for (let i = 0; i < kids.length; i++) {
+            if (kids[i].visible && kids[i].height > 0)
+                return kids[i] === root;
+        }
+        return true;
     }
 
-    Rectangle {
-        anchors.fill: parent
-        radius: Theme.radius
-        color: Theme.layer2
-        border.width: 1
-        border.color: hover.hovered ? Theme.borderStrong : Theme.border
+    implicitHeight: Math.max(60, texts.implicitHeight + 26)
 
-        Behavior on border.color {
-            CAnim {}
-        }
+    // Separator in the middle of the gap above the row (the pages have 10 px between rows)
+    Rectangle {
+        y: -6
+        width: parent.width
+        height: 1
+        visible: !root.first
+        color: Theme.hairline
     }
 
     Column {
         id: texts
 
         anchors.left: parent.left
-        anchors.leftMargin: 18
+        anchors.leftMargin: 2
         anchors.right: slot.left
-        anchors.rightMargin: 24
+        anchors.rightMargin: 28
         anchors.verticalCenter: parent.verticalCenter
         spacing: 3
 
@@ -49,7 +55,7 @@ Item {
             width: parent.width
             visible: root.description !== ""
             text: root.description
-            color: Theme.fgMuted
+            color: Theme.textMuted
             font.pixelSize: Theme.fontSm
             wrapMode: Text.Wrap
         }
@@ -59,7 +65,7 @@ Item {
         id: slot
 
         anchors.right: parent.right
-        anchors.rightMargin: 18
+        anchors.rightMargin: 2
         anchors.verticalCenter: parent.verticalCenter
         width: root.controlWidth
         height: childrenRect.height

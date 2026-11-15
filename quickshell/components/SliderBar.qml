@@ -2,6 +2,7 @@ import QtQuick
 import qs.config
 
 // Slider 0..1. Never sets "value" itself, it reports moved(v).
+// No knob: the bright fill simply ends, with the same rounding as the left end.
 Item {
     id: root
 
@@ -28,38 +29,28 @@ Item {
         width: parent.width
         height: 6
         radius: 3
-        color: Theme.layer3
+        color: Qt.rgba(1, 1, 1, 0.18)
 
         Rectangle {
-            width: knob.x + knob.width / 2
+            width: knob.x
             height: parent.height
             radius: parent.radius
             color: Theme.accent
         }
     }
 
-    Rectangle {
+    // Invisible marker for the end of the fill (width 0). The animation still runs through kx.
+    Item {
         id: knob
 
         anchors.verticalCenter: parent.verticalCenter
         property real kx: root.shown * (root.width - width)
-        property real kw: area.containsMouse || area.pressed ? 16 : 12
 
         // subpixel like the bar
         x: kx
-        width: kw
-        height: width
-        radius: width / 2
-        color: Theme.accent
-        border.width: 3
-        border.color: Theme.bg
+        width: 0
+        height: 0
 
-        Behavior on kw {
-            Anim {
-                duration: Theme.ctlFast
-                easing.bezierCurve: Theme.curveSmooth
-            }
-        }
         Behavior on kx {
             enabled: !root.dragging
 

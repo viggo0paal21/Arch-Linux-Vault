@@ -717,6 +717,8 @@ PanelWindow {
             anchors.left: leftRow.right
             anchors.leftMargin: 12
             anchors.verticalCenter: parent.verticalCenter
+            // Bar: font weight as before (menus use Theme.uiWeight)
+            font.weight: Theme.weight
             anchors.verticalCenterOffset: bar.contentShift
             width: Math.max(0, Math.min(implicitWidth, rightRow.x - x - 24))
             visible: Config.opts.barShowTitle && value !== "" && width > 30

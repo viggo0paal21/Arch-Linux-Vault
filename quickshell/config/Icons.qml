@@ -90,4 +90,18 @@ Singleton {
     readonly property string image: String.fromCodePoint(0xF0976) // md-image_outline
     readonly property string shuffle: String.fromCodePoint(0xF049F) // md-shuffle_variant
     readonly property string refresh: String.fromCodePoint(0xF0450) // md-refresh
+    // Wi-Fi and Bluetooth page
+    readonly property string wifiLock1: String.fromCodePoint(0xF0921) // md-wifi_strength_1_lock
+    readonly property string wifiLock2: String.fromCodePoint(0xF0924) // md-wifi_strength_2_lock
+    readonly property string wifiLock3: String.fromCodePoint(0xF0927) // md-wifi_strength_3_lock
+    readonly property string wifiLock4: String.fromCodePoint(0xF092A) // md-wifi_strength_4_lock
+    readonly property string mouse: String.fromCodePoint(0xF037D) // md-mouse
+    readonly property string keyboard: String.fromCodePoint(0xF030C) // md-keyboard
+    readonly property string gamepad: String.fromCodePoint(0xF0297) // md-gamepad_variant
+    readonly property string phone: String.fromCodePoint(0xF011C) // md-cellphone
+    readonly property string laptop: String.fromCodePoint(0xF0322) // md-laptop
+    readonly property string tv: String.fromCodePoint(0xF0502) // md-television
+    readonly property string printer: String.fromCodePoint(0xF042A) // md-printer
+    readonly property string trash: String.fromCodePoint(0xF0A7A) // md-trash_can_outline
+    readonly property string openExternal: String.fromCodePoint(0xF03CC) // md-open_in_new
 }

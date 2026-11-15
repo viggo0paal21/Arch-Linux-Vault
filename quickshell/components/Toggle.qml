@@ -15,9 +15,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: height / 2
-        color: root.checked ? Theme.accent : Theme.layer3
-        border.width: 1
-        border.color: root.checked ? Theme.accent : Theme.borderStrong
+        color: root.checked ? Theme.accent : Theme.fillStrong
 
         Behavior on color {
             CAnim {}
@@ -33,7 +31,7 @@ Item {
         width: root.height - 8
         height: width
         radius: width / 2
-        color: root.checked ? Theme.accentFg : Theme.fgDim
+        color: root.checked ? Theme.accentFg : Theme.textDim
 
         Behavior on kx {
             Anim {

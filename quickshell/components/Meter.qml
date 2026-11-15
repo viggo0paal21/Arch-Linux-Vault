@@ -9,7 +9,7 @@ Rectangle {
 
     implicitHeight: 4
     radius: height / 2
-    color: Theme.layer3
+    color: Qt.rgba(1, 1, 1, 0.18)
 
     Rectangle {
         property real w: Math.max(root.height, root.width * Math.max(0, Math.min(1, root.value)))

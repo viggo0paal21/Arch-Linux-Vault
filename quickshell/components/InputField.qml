@@ -14,11 +14,15 @@ Rectangle {
     implicitHeight: 34
     implicitWidth: 220
     radius: Theme.radiusSm
-    color: Theme.layer2
+    color: field.activeFocus ? Theme.fillStrong : Theme.fill
+    // No border at rest, a fine bright edge while typing
     border.width: 1
-    border.color: field.activeFocus ? Theme.fgDim : Theme.border
+    border.color: field.activeFocus ? Theme.hairline : "transparent"
 
     Behavior on border.color {
+        CAnim {}
+    }
+    Behavior on color {
         CAnim {}
     }
 
@@ -41,7 +45,7 @@ Rectangle {
         selectedTextColor: Theme.accentFg
         font.family: Theme.font
         font.pixelSize: Theme.fontSize
-        font.weight: Theme.weight
+        font.weight: Theme.uiWeight
         renderType: Theme.smooth ? Text.QtRendering : Text.NativeRendering
         selectByMouse: true
         onAccepted: root.committed(text)
@@ -54,7 +58,7 @@ Rectangle {
             anchors.fill: parent
             visible: field.text === "" && !field.activeFocus
             text: root.placeholder
-            color: Theme.fgMuted
+            color: Theme.textMuted
         }
     }
 }

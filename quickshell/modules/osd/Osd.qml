@@ -75,7 +75,7 @@ PanelWindow {
         radius: height / 2
         color: Glass.popupBg
         border.width: 1
-        border.color: Theme.borderStrong
+        border.color: Theme.hairline
         opacity: t
         layer.enabled: t > 0 && t < 1
         layer.smooth: true
@@ -95,21 +95,22 @@ PanelWindow {
                 anchors.verticalCenter: parent.verticalCenter
                 width: 24
                 text: Audio.icon()
+                color: Theme.textDim
             }
 
             Meter {
                 anchors.verticalCenter: parent.verticalCenter
                 width: 180
-                height: 6
+                height: 4
                 value: Audio.muted ? 0 : Audio.volume
             }
 
-            Txt {
+            FixedText {
                 anchors.verticalCenter: parent.verticalCenter
                 width: 40
                 horizontalAlignment: Text.AlignRight
                 text: Audio.muted ? "–" : Math.round(Audio.volume * 100)
-                font.weight: Theme.weightStrong
+                color: Theme.textDim
             }
         }
     }
