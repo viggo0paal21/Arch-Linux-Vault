@@ -13,9 +13,9 @@
 > cp -r quickshell-old-design ~/.config/quickshell
 > ```
 >
-> The whole repo at that point is also available as the git tag
+> The whole repo at that point is also available as the branch
 > [`quickshell-old-design`](https://github.com/viggo0paal21/arch-linux-vault/tree/quickshell-old-design)
-> ([download as zip](https://github.com/viggo0paal21/arch-linux-vault/archive/refs/tags/quickshell-old-design.zip)).
+> ([download as zip](https://github.com/viggo0paal21/arch-linux-vault/archive/refs/heads/quickshell-old-design.zip)).
 
 Complete Quickshell setup for Hyprland (Lua config, ≥ 0.55) and Quickshell 0.3.x.
 True black (#000000), white text, slightly rounded corners, smooth animations.

@@ -70,7 +70,7 @@ Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
 | [`nwg-look/`](nwg-look) | GTK settings tool |
 | [`qt6ct/`](qt6ct) | Qt 6 theme settings |
 | [`quickshell/`](quickshell) | **My shell (in use):** bar, launcher, control center, dashboard, notifications, OSD, power menu. See [Quickshell Guide](Quickshell%20Guide.md) |
-| [`quickshell-old-design/`](quickshell-old-design) | The same shell with its **old design** (before the November 2026 redesign), kept as an alternative. Copy it to `~/.config/quickshell` instead of `quickshell/`. Also available as the tag [`quickshell-old-design`](https://github.com/viggo0paal21/arch-linux-vault/archive/refs/tags/quickshell-old-design.zip) (zip) |
+| [`quickshell-old-design/`](quickshell-old-design) | The same shell with its **old design** (before the November 2026 redesign), kept as an alternative. Copy it to `~/.config/quickshell` instead of `quickshell/`. The whole repo at that point is also the branch [`quickshell-old-design`](https://github.com/viggo0paal21/arch-linux-vault/tree/quickshell-old-design) ([zip](https://github.com/viggo0paal21/arch-linux-vault/archive/refs/heads/quickshell-old-design.zip)) |
 | [`rofi/`](rofi) | App launcher: `config.rasi` (settings) + `monochrome.rasi` (theme). Replaced by the Quickshell launcher, kept as fallback |
 | [`swaync/`](swaync) | Notifications. Replaced by Quickshell, kept as fallback |
 | [`vibrantLinux/`](vibrantLinux) | Per-app color saturation |
