@@ -85,8 +85,6 @@ Singleton {
         notifTimeout: 5,
         osdEnabled: true,
         volumeStep: 5,
-        oledBackground: false,
-        wallpaper: "",
         screenCorners: false,
         gpuMonitor: true,
         fpsCounter: false,
@@ -196,8 +194,6 @@ Singleton {
             property int notifTimeout: root.defaults.notifTimeout
             property bool osdEnabled: root.defaults.osdEnabled
             property int volumeStep: root.defaults.volumeStep
-            property bool oledBackground: root.defaults.oledBackground
-            property string wallpaper: root.defaults.wallpaper
             property bool screenCorners: root.defaults.screenCorners
             property bool gpuMonitor: root.defaults.gpuMonitor
             property bool fpsCounter: root.defaults.fpsCounter

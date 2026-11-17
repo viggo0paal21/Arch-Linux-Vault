@@ -15,10 +15,10 @@ Font like the Waybar: Inter 15px bold, icons from JetBrainsMono Nerd Font Propo.
 | Notifications | Own daemon (replaces dunst/swaync), popups slide in from the right, timeout bar, actions |
 | OSD | Volume indicator bottom center |
 | Power menu | Lock, suspend, log out, reboot, shut down (dangerous ones need a confirmation) |
-| Settings | Everything changeable live and saved (radius, bar, font, transparency, animations, …) |
+| Settings | Everything changeable live and saved (radius, bar, font, transparency, animations, …). "System font" sets the UI font for every app (GTK 3/4, Qt via fontconfig, Firefox, Electron) and the shell; `qs-font-revert` undoes only that |
 | Wallpaper (Settings tab) | Pick the wallpaper from previews: the current one large on top, all images of the waypaper folder as tiles (newest first or by name, search, random). A click sets it via `waypaper --wallpaper` (its awww backend, fill mode and transition). Thumbnails are made once with `vipsthumbnail` (ImageMagick as fallback) into `~/.cache/quickshell/wallthumbs` |
 | Wallpaper colors | Optional (Settings → Appearance): everything that is highlighted in white (buttons, switches, sliders, active workspace, graphs, selection) takes the color of the wallpaper, like Caelestia. Styles Tonal / Vibrant / Exact. Detected automatically on every wallpaper change (awww cache file, `awww query`, waypaper). Black-and-white wallpapers stay black and white, text and surfaces always stay black and white |
-| Background | OLED black or your own image, optional rounded screen corners |
+| Background | Optional rounded screen corners (the wallpaper itself comes from waypaper / awww) |
 
 Every monitor gets its own bar.
 
@@ -100,7 +100,6 @@ Change colors: `config/Theme.qml`. Quickshell reloads automatically when you sav
 - `qs log` shows the logs of the running instance.
 - On QML errors Quickshell shows a small error window with file and line after reloading.
 - No notifications: is `dunst`/`swaync`/`mako` still running? → stop it.
-- Background doesn't stay black: `swaybg`/`hyprpaper` is still running → stop it, or turn off "OLED background" in the settings.
 - Icons are boxes: Nerd Font missing → `ttf-jetbrains-mono-nerd`.
 - Font looks different from the Waybar: check `fc-list | grep -i inter`, otherwise install `inter-font`.
 - Stutter, jitter or short freezes: see the [Quickshell Stutter Guide](../Quickshell%20Stutter%20Guide.md).

@@ -28,16 +28,9 @@ import qs.modules.settings
 ShellRoot {
     id: shell
 
-    // Background (black or image) on every screen
-    Variants {
-        model: Config.opts.oledBackground ? Quickshell.screens : []
-
-        Wallpaper {}
-    }
-
     // Bar on every screen
-    // "Shell glass" (Settings > Bar) recreates the bars, because the layer namespace
-    // (Hyprland rules) can only be set when the window is created.
+    // "Shell glass" (Settings > Bar) recreates the bars,
+    // because the layer namespace (Hyprland rules) can only be set when the window is created.
     Variants {
         model: Config.opts.barShellGlass ? [] : Quickshell.screens
 

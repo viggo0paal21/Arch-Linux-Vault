@@ -107,6 +107,38 @@ OverlayPanel {
             Config.opts[k] = d[k];
     }
 
+    // System font: font for all apps (GTK 3/4, Qt through fontconfig, Firefox, Electron) and the shell.
+    // The current value comes from gtk-3.0/settings.ini (so the real system state), read when opening.
+    // Applying is done by ~/.local/bin/qs-font-apply (it saves the old state the first time, qs-font-revert restores
+    // it again). The shell itself follows right away through uiFont.
+    property string systemFont: ""
+
+    function applySystemFont(family) {
+        const prev = Config.opts.uiFont;
+        panel.systemFont = family;
+        Config.opts.uiFont = family;
+        Quickshell.execDetached(["python3", Quickshell.env("HOME") + "/.local/bin/qs-font-apply", family, prev]);
+    }
+
+    Process {
+        id: systemFontReader
+
+        command: ["sh", "-c", "sed -n 's/^gtk-font-name=//p' \"${XDG_CONFIG_HOME:-$HOME/.config}/gtk-3.0/settings.ini\" 2>/dev/null | head -n 1"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                // "Noto Sans  10" -> "Noto Sans"
+                const t = this.text.trim().replace(/\s+[0-9]+(\.[0-9]+)?$/, "").trim();
+                if (t !== "")
+                    panel.systemFont = t;
+            }
+        }
+    }
+
+    onOpenChanged: {
+        if (panel.open)
+            systemFontReader.running = true;
+    }
+
     function switchTab(delta) {
         panel.tab = (panel.tab + delta + panel.tabs.length) % panel.tabs.length;
     }
@@ -255,8 +287,9 @@ OverlayPanel {
         // at rest on whole pixels without a texture
         x: Math.round((parent.width - width) / 2)
         y: Math.round((parent.height - height) / 2) + 12 * (1 - panel.progress)
-        width: Math.min(940, parent.width - 80)
-        height: Math.min(700, parent.height - 140)
+        // Bigger than before (940 x 700): more room for texts and previews, font and buttons keep their size
+        width: Math.min(1240, parent.width - 120)
+        height: Math.min(900, parent.height - 140)
         opacity: panel.progress
         layer.enabled: panel.progress > 0 && panel.progress < 1
         layer.smooth: true
@@ -703,8 +736,24 @@ OverlayPanel {
 
                         SettingRow {
                             width: parent.width
-                            label: "Font"
-                            description: "Must be installed (fc-list)"
+                            label: "System font"
+                            description: "Every app (GTK, Qt, Firefox, Electron) and the shell. Open apps use it after a restart"
+
+                            FontSelect {
+                                objectName: "systemFontSelect"
+                                width: parent.width
+                                value: panel.systemFont
+                                menuParent: card
+                                scrollArea: flick
+                                active: panel.open && panel.tab === 0
+                                onPicked: family => panel.applySystemFont(family)
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Shell font"
+                            description: "Only Quickshell (System font sets it too). Must be installed (fc-list)"
 
                             InputField {
                                 width: parent.width
@@ -837,30 +886,6 @@ OverlayPanel {
                                         }
                                     }
                                 }
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            label: "OLED background"
-                            description: "True black wallpaper (turn off swaybg/hyprpaper)"
-
-                            SwitchCtl {
-                                checked: Config.opts.oledBackground
-                                onToggled: Config.opts.oledBackground = !Config.opts.oledBackground
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            label: "Wallpaper image"
-                            description: "Path to an image, empty = pure black"
-
-                            InputField {
-                                width: parent.width
-                                text: Config.opts.wallpaper
-                                placeholder: "~/Pictures/wall.png"
-                                onCommitted: value => Config.opts.wallpaper = value.trim()
                             }
                         }
 
@@ -1120,7 +1145,8 @@ OverlayPanel {
                             readonly property string query: wallSearch.input.text.trim().toLowerCase()
 
                             width: parent.width
-                            columns: 3
+                            // Tiles about as big as before (~200 px): the wider window simply fits more per row
+                            columns: Math.max(3, Math.floor((width + spacing) / 230))
                             spacing: 10
 
                             Repeater {

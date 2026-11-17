@@ -22,7 +22,7 @@ Singleton {
     // falling back to the entry from waypaper. Always tracked (also for Settings > Wallpaper).
     property string waypaperFile: ""
     property string daemonFile: ""
-    readonly property string file: Config.opts.oledBackground && Config.opts.wallpaper !== "" ? root.expand(Config.opts.wallpaper) : (root.daemonFile !== "" ? root.daemonFile : root.waypaperFile)
+    readonly property string file: root.daemonFile !== "" ? root.daemonFile : root.waypaperFile
 
     // The 16 colors of the image (for the preview in the settings)
     readonly property var sourceColors: quant.colors

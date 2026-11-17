@@ -230,6 +230,34 @@ save_sizes() {
     for k in "${!KNOWN[@]}"; do printf '%s %s\n' "$k" "${KNOWN[$k]}"; done > "$SIZES.tmp.$$" && mv -f "$SIZES.tmp.$$" "$SIZES"
 }
 fits() { [ "$NC" -le "$TC" ] && [ "$NR" -le "$TR" ]; }
+# Shape of an output for the live comparison: number of lines + cursor jumps per line, and the longest line
+# (without colors/image). Same shape and no longer line = everything sits at exactly the same spots and fits.
+shape() {
+    printf '%s' "$1" | LC_ALL=C awk '
+        BEGIN { sig = ""; max = 0; n = 0 }
+        {
+            line = $0
+            gsub(/\033_[^\033]*\033\\/, "", line)
+            mv = ""; t = line
+            while (match(t, /\033\[[0-9;?]*[ABCDGHf]/)) { mv = mv substr(t, RSTART + 1, RLENGTH - 1); t = substr(t, RSTART + RLENGTH) }
+            gsub(/\033\[[0-9;?]*[@-~]/, "", line)
+            if (length(line) > max) max = length(line)
+            sig = sig mv "|"; n++
+        }
+        END { printf "%d:%s\t%d\n", n, sig, max }'
+}
+# Output without the kitty image (\e_G...\e\\). The text positions stay the same: after the image fastfetch jumps
+# up far enough that it continues in the top line with and without the image.
+strip_img() {
+    local s=$1 out=
+    while [[ $s == *"$ESC"_* ]]; do
+        out+=${s%%"$ESC"_*}
+        s=${s#*"$ESC"_}
+        s=${s#*"$ESC"\\}
+    done
+    printf '%s' "$out$s"
+}
+now_ms() { local t=$EPOCHREALTIME; t=${t/,/.}; printf '%s' "$(( ${t%.*} * 1000 + 10#${t#*.} / 1000 ))"; }
 
 case "$MODE" in
 prerender)
@@ -276,6 +304,63 @@ redraw)
     [ "$CUR" = "-" ] && { echo same; exit 3; }
     echo none
     exit 1
+    ;;
+live)
+    CUR=${2:-}
+    WANT_SRC=${3:-}
+    GEN=${4:-}
+    SPID=${5:-}
+    FULL=${6:-}
+    [ -n "$CUR" ] && [ "$CUR" != "-" ] && [ -n "$WD" ] && [ -d "$WD" ] || exit 1
+    # Cancelled: the shell is gone or a command has run meanwhile (fastfetch.zsh then counts GEN up)
+    [ -z "$SPID" ] || [ -d "/proc/$SPID" ] || exit 1
+    if [ -n "$GEN" ]; then
+        g=; read -r g < "$WD/live-gen" 2>/dev/null
+        [ "$g" = "$GEN" ] || exit 1
+    fi
+    cfg=
+    for c in "${CONFIGS[@]}"; do [ "${c##*/}" = "$CUR" ] && cfg=$c; done
+    [ -n "$cfg" ] && [ -f "$WD/$CUR.out" ] || { echo refit; exit 0; }
+    # An image belongs to it, but this window has none (yet): better redraw everything through redraw
+    if [ -n "${SRCOF[$cfg]:-}" ] && [ -z "$WANT_SRC" ]; then echo refit; exit 0; fi
+    slurp BASE "$WD/$CUR.out"
+    t0=$(now_ms)
+    NEW=$(run_ff "$cfg"); NEW=${NEW%x}
+    ms=$(( $(now_ms) - t0 ))
+    [ -n "$NEW" ] || exit 1
+    IFS="$TAB" read -r bsig blen < <(shape "$BASE")
+    IFS="$TAB" read -r nsig nlen < <(shape "$NEW")
+    if [ "$nsig" != "$bsig" ] || [ "${nlen:-0}" -gt "${blen:-0}" ]; then
+        # Different shape (longer line, other number of lines): measure exactly and store it as the new base
+        [ -n "$size_ok" ] && [ -n "$can_measure" ] || { echo refit; exit 0; }
+        NC=; NR=
+        read -r NC NR < <(measure "$NEW")
+        [[ "${NC:-}" =~ ^[0-9]+$ && "${NR:-}" =~ ^[0-9]+$ ]] || { echo refit; exit 0; }
+        printf '%s' "$NEW" > "$WD/$CUR.out.tmp.$$" && mv -f "$WD/$CUR.out.tmp.$$" "$WD/$CUR.out"
+        printf '%s %s\n' "$NC" "$NR" > "$WD/$CUR.size.tmp.$$" && mv -f "$WD/$CUR.size.tmp.$$" "$WD/$CUR.size"
+        # Doesn't fit the window anymore: fastfetch.zsh picks the matching variant
+        fits || { echo refit; exit 0; }
+        [ "$nsig" = "$bsig" ] || FULL=1
+        # Refresh the finished file for redrawing on a resize with the new shape
+        if [ -n "${SRCOF[$cfg]:-}" ]; then
+            [ -s "$WD/img" ] && [ "$(head -n1 "$WD/img")" = "$WANT_SRC" ] && load_img < <(tail -n +2 "$WD/img")
+            if [ ${#IMG[@]} -gt 0 ]; then
+                fix_img "$NEW" "$cfg"
+                printf '%s' "$FIXED" > "$WD/$CUR.fixed.tmp.$$" && mv -f "$WD/$CUR.fixed.tmp.$$" "$WD/$CUR.fixed"
+            fi
+        else
+            printf '%s' "$NEW" > "$WD/$CUR.fixed.tmp.$$" && mv -f "$WD/$CUR.fixed.tmp.$$" "$WD/$CUR.fixed"
+        fi
+    fi
+    if [ -n "$FULL" ]; then
+        with_img "$cfg" "$NEW"
+        printf 'full\t%s\t%s\n' "$CUR" "$ms"
+        printf '%s' "$FIXED"
+    else
+        printf 'live\t%s\t%s\n' "$CUR" "$ms"
+        strip_img "$NEW"
+    fi
+    exit 0
     ;;
 esac
 

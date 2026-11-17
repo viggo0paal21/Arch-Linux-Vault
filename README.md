@@ -40,7 +40,8 @@ Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
 | [`qs`](home/.local/bin/qs), [`quickshell`](home/.local/bin/quickshell) | Wrappers around `/usr/bin/qs` and `/usr/bin/quickshell` with the same fix, so it applies to every Quickshell config |
 | [`check-direct-scanout`](home/.local/bin/check-direct-scanout) | Notification that shows whether Hyprland's direct scanout is active (`Super + Home`) |
 | [`qs-dock`](home/.local/bin/qs-dock), [`qs-glass-apply`](home/.local/bin/qs-glass-apply) | Dock launcher for nwg-dock-hyprland and the "App glass" / "App opacity" helper, see the [Quickshell Guide](Quickshell%20Guide.md) |
-| [`kitty-shell/`](home/.local/bin/kitty-shell) | kitty starts zsh through this wrapper (`shell` line in [`kitty/kitty.conf`](kitty/kitty.conf)). It shows fastfetch before the first prompt when Quickshell Settings > Commands > "Fastfetch in kitty" is on |
+| [`qs-font-apply`](home/.local/bin/qs-font-apply), [`qs-font-revert`](home/.local/bin/qs-font-revert) | Quickshell Settings > Appearance > "System font": sets the UI font for GTK 3/4 (settings.ini + gsettings), xsettingsd, qt5ct/qt6ct and fontconfig (`sans-serif` / `system-ui`). The first run saves the old state; `qs-font-revert` restores it and removes the menu again |
+| [`kitty-shell/`](home/.local/bin/kitty-shell) | kitty starts zsh through this wrapper (`shell` line in [`kitty/kitty.conf`](kitty/kitty.conf)). It shows fastfetch before the first prompt when Quickshell Settings > Commands > "Fastfetch in kitty" is on. While only fastfetch is visible its values update live about once a second (the image stays, no flicker); typing `fastfetch` brings it back like at the start, live again |
 | [`fastfetch-show`](home/.local/bin/fastfetch-show), [`fastfetch-fit`](home/.local/bin/fastfetch-fit), [`fastfetch-logo`](home/.local/bin/fastfetch-logo) | fastfetch for kitty: picks the biggest variant from [`fastfetch/variants/`](fastfetch/variants) that fits the window, shows it instantly from the last kitty's snapshot and swaps in the fresh values right after, redraws a smaller one when the window shrinks, and cycles the images from Settings > Commands > "Fastfetch images" (one per new kitty, pixel-exact for the cell size) |
 | [`fastfetch-revert-variants`](home/.local/bin/fastfetch-revert-variants) | Rolls the variants feature back to the local `*.bak-variants` backups (only useful on the machine that has them) |
 
@@ -276,7 +277,7 @@ for d in */; do case "$d" in home/|etc/|quickshell-old-design/) ;; *) cp -r "$d"
 # scripts for ~/.local/bin (Quickshell start script + wrappers, check-direct-scanout, qs-dock, qs-glass-apply,
 # the fastfetch scripts and the kitty-shell/ folder; "/." also copies subfolders and hidden files):
 mkdir -p ~/.local/bin && cp -r home/.local/bin/. ~/.local/bin/
-chmod +x ~/.local/bin/{qs-start,qs,quickshell,check-direct-scanout,qs-dock,qs-glass-apply,fastfetch-show,fastfetch-fit,fastfetch-logo,fastfetch-revert-variants,kitty-shell/zsh}
+chmod +x ~/.local/bin/{qs-start,qs,quickshell,check-direct-scanout,qs-dock,qs-glass-apply,qs-font-apply,qs-font-revert,fastfetch-show,fastfetch-fit,fastfetch-logo,fastfetch-revert-variants,kitty-shell/zsh}
 
 # fastfetch in kitty: needs zsh, python3 and ImageMagick (magick). Put your images into
 # ~/.config/fastfetch/logos (not in the repo, they are big). kitty/kitty.conf and fastfetch/config.jsonc

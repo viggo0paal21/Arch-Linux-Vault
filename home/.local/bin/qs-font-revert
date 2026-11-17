@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+# qs-font-revert: undoes only the "System font" feature, the bigger settings window stays.
+#   1. Restores the system font state from before the first qs-font-apply (GTK 3/4, gsettings, xsettingsd,
+#      qt5ct/qt6ct, fontconfig) and the previous shell font (uiFont in the Quickshell settings).
+#   2. Removes the "System font" menu from Quickshell again: SettingsPanel.qml comes back from
+#      SettingsPanel.qml.bak-fontmenu (= bigger window, without the font menu), FontSelect.qml is removed.
+import json
+import os
+import shutil
+import subprocess
+import tempfile
+
+HOME = os.path.expanduser("~")
+CFG = os.environ.get("XDG_CONFIG_HOME") or os.path.join(HOME, ".config")
+BACKUP = os.path.join(HOME, ".local", "state", "qs-font", "backup")
+FC = os.path.join(CFG, "fontconfig", "conf.d", "60-qs-system-font.conf")
+SETTINGS = os.path.join(HOME, ".local", "state", "quickshell", "by-shell", "oled-bw", "settings.json")
+QS = os.path.join(CFG, "quickshell", "modules", "settings")
+
+
+def copy_into(src, path):
+    # Writes into the real file (gtk-4.0 files can be symlinks), atomically
+    real = os.path.realpath(path)
+    os.makedirs(os.path.dirname(real), exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(real), prefix=".qs-font-")
+    os.close(fd)
+    shutil.copy2(src, tmp)
+    os.replace(tmp, real)
+
+
+def restore_fonts():
+    mf = os.path.join(BACKUP, "manifest.json")
+    if not os.path.exists(mf):
+        print("Font: nothing to undo (System font was never changed).")
+        return
+    with open(mf) as f:
+        m = json.load(f)
+    for path, name in m.get("files", {}).items():
+        if name:
+            copy_into(os.path.join(BACKUP, name), path)
+        elif os.path.exists(path):
+            os.remove(path)  # did not exist before
+    if m.get("fontconfig"):
+        copy_into(os.path.join(BACKUP, "fontconfig"), FC)
+    elif os.path.exists(FC):
+        os.remove(FC)
+    if shutil.which("gsettings"):
+        for key, val in m.get("gsettings", {}).items():
+            if val:
+                subprocess.run(["gsettings", "set", "org.gnome.desktop.interface", key, val], capture_output=True)
+    subprocess.run(["pkill", "-HUP", "-x", "xsettingsd"], capture_output=True)
+    shell = m.get("shellFont") or ""
+    if shell and os.path.exists(SETTINGS):
+        with open(SETTINGS) as f:
+            s = json.load(f)
+        s["uiFont"] = shell
+        fd, tmp = tempfile.mkstemp(dir=os.path.dirname(SETTINGS), prefix=".qs-font-")
+        with os.fdopen(fd, "w") as f:
+            json.dump(s, f, indent=4)
+            f.write("\n")
+        os.replace(tmp, SETTINGS)
+    shutil.rmtree(BACKUP)
+    print("Font: previous state restored (GTK, gsettings, fontconfig, shell font '%s')." % (shell or "unchanged"))
+
+
+def remove_menu():
+    bak = os.path.join(QS, "SettingsPanel.qml.bak-fontmenu")
+    if os.path.exists(bak):
+        copy_into(bak, os.path.join(QS, "SettingsPanel.qml"))
+        print("Quickshell: 'System font' menu removed, the bigger settings window stays.")
+    else:
+        print("Quickshell: SettingsPanel.qml.bak-fontmenu fehlt, Settings-Datei nicht angefasst.")
+    sel = os.path.join(QS, "FontSelect.qml")
+    if os.path.exists(sel):
+        os.remove(sel)
+
+
+restore_fonts()
+remove_menu()
+print("Open apps show the old font after a restart.")
