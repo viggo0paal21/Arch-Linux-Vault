@@ -52,6 +52,10 @@ The settings window has four top tabs, each with its pages on the left:
 | **Apps** | Opacity (per app), kitty (fastfetch in kitty, fastfetch images) |
 | **System** | Wallpaper, Font (system font for every app) |
 
+Every top tab remembers its last page. The selection box (top tabs, page list, segmented buttons) glides to the
+new item like the launcher selection, and a slightly dimmer hover box follows the mouse the same way. Rows that
+appear (for example when a switch reveals extra options) fade in while the rows below glide down instead of snapping.
+
 ### Transparency (Settings → Quickshell → Appearance → Transparency)
 
 | Mode | What it does |

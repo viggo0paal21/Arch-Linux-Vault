@@ -308,6 +308,10 @@ Item {
                 radius: Theme.radiusSm
                 color: itemArea.pressed ? Theme.pressed : (item.index === root.sel ? Theme.fill : "transparent")
 
+                Behavior on color {
+                    CAnim {}
+                }
+
                 Txt {
                     x: 10
                     anchors.verticalCenter: parent.verticalCenter

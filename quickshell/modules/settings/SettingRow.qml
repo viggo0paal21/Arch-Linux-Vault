@@ -65,6 +65,12 @@ Item {
         anchors.left: parent.left
         anchors.leftMargin: root.appIcon !== "" ? 2 + 30 + 14 : 2
         opacity: root.locked ? 0.5 : 1
+
+        Behavior on opacity {
+            Anim {
+                duration: Theme.ctlFast
+            }
+        }
         anchors.right: slot.left
         anchors.rightMargin: 28
         anchors.verticalCenter: parent.verticalCenter
@@ -95,5 +101,11 @@ Item {
         height: childrenRect.height
         enabled: !root.locked
         opacity: root.locked ? 0.4 : 1
+
+        Behavior on opacity {
+            Anim {
+                duration: Theme.ctlFast
+            }
+        }
     }
 }

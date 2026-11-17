@@ -248,16 +248,27 @@ OverlayPanel {
         while (i < flat.length && !(flat[i][0] === panel.section && flat[i][1] === panel.tab))
             i++;
         const n = flat[((i < flat.length ? i : 0) + delta + flat.length) % flat.length];
+        if (n[0] !== panel.section)
+            panel.rememberTab();
         panel.section = n[0];
         panel.tab = n[1];
     }
 
-    // Ober-Tab wechseln: dort weiter, wo man zuletzt war
+    // Switch top tab: continue where you left off (first page the first time)
     function openSection(s) {
         if (s === panel.section)
             return;
+        panel.rememberTab();
+        const t = Math.min(panel.lastTabs[s] || 0, panel.sections[s].pages.length - 1);
         panel.section = s;
-        panel.tab = Math.min(panel.lastTabs[s] || 0, panel.sections[s].pages.length - 1);
+        panel.tab = t;
+    }
+
+    // Remember the current top tab's page before leaving it
+    function rememberTab() {
+        const l = panel.lastTabs.slice();
+        l[panel.section] = panel.tab;
+        panel.lastTabs = l;
     }
 
     open: Ui.panel === "settings"
@@ -269,12 +280,11 @@ OverlayPanel {
     onPageChanged: {
         flick.contentY = 0;
         tabIn.restart();
-        const l = panel.lastTabs.slice();
-        l[panel.section] = panel.tab;
-        panel.lastTabs = l;
         if (panel.section === 1 && panel.open)
             hyprLiveReader.running = true;
     }
+    // New top tab: the page list on the left fades in again (the highlight jumps along with it)
+    onSectionChanged: sideIn.restart()
 
     component SwitchCtl: Toggle {
         anchors.right: parent ? parent.right : undefined
@@ -439,6 +449,75 @@ OverlayPanel {
                 font.weight: Theme.uiWeightStrong
             }
 
+            // Hover: slightly dimmer box that glides under the mouse from top tab to top tab (like in the launcher).
+            // Appears right under the mouse (fades in), only glides along after that.
+            Rectangle {
+                id: secHover
+
+                property int idx: 0
+                readonly property Item it: secRepeater.count > idx ? secRepeater.itemAt(idx) : null
+
+                x: sectionRow.x + (it ? it.x : 0)
+                y: sectionRow.y
+                width: it ? it.width : 0
+                height: card.tabHeight
+                radius: Theme.radius
+                color: secHoverArea.pressed ? Theme.pressed : Theme.hover
+                opacity: secHoverArea.containsMouse ? 1 : 0
+
+                Behavior on x {
+                    enabled: secHover.opacity > 0.01
+
+                    SmoothedAnimation {
+                        velocity: 400
+                        duration: Theme.ctlFast
+                    }
+                }
+                Behavior on width {
+                    enabled: secHover.opacity > 0.01
+
+                    SmoothedAnimation {
+                        velocity: 400
+                        duration: Theme.ctlFast
+                    }
+                }
+                Behavior on opacity {
+                    Anim {
+                        duration: Theme.ctlFast
+                    }
+                }
+                Behavior on color {
+                    CAnim {}
+                }
+            }
+
+            // Bright highlight of the current top tab: glides like the selection in the launcher
+            Rectangle {
+                id: secHighlight
+
+                readonly property Item cur: secRepeater.count > panel.section ? secRepeater.itemAt(panel.section) : null
+
+                x: sectionRow.x + (cur ? cur.x : 0)
+                y: sectionRow.y
+                width: cur ? cur.width : 0
+                height: card.tabHeight
+                radius: Theme.radius
+                color: Theme.fillStrong
+
+                Behavior on x {
+                    SmoothedAnimation {
+                        velocity: 400
+                        duration: Theme.ctlFast
+                    }
+                }
+                Behavior on width {
+                    SmoothedAnimation {
+                        velocity: 400
+                        duration: Theme.ctlFast
+                    }
+                }
+            }
+
             // Top tabs, aligned with the options column
             Row {
                 id: sectionRow
@@ -448,6 +527,8 @@ OverlayPanel {
                 spacing: 4
 
                 Repeater {
+                    id: secRepeater
+
                     model: panel.sections
 
                     delegate: Item {
@@ -459,22 +540,6 @@ OverlayPanel {
 
                         width: Math.ceil(secRow.implicitWidth) + 28
                         height: card.tabHeight
-
-                        Rectangle {
-                            anchors.fill: parent
-                            radius: Theme.radius
-                            color: secItem.current ? Theme.fillStrong : (secArea.pressed ? Theme.pressed : Theme.hover)
-                            opacity: secItem.current || secArea.containsMouse ? 1 : 0
-
-                            Behavior on opacity {
-                                Anim {
-                                    duration: Theme.ctlFast
-                                }
-                            }
-                            Behavior on color {
-                                CAnim {}
-                            }
-                        }
 
                         Row {
                             id: secRow
@@ -488,25 +553,48 @@ OverlayPanel {
                                 text: secItem.modelData.icon
                                 color: secItem.current ? Theme.fg : Theme.textMuted
                                 font.pixelSize: Theme.iconSize - 2
+
+                                Behavior on color {
+                                    CAnim {}
+                                }
                             }
 
                             Txt {
                                 anchors.verticalCenter: parent.verticalCenter
                                 text: secItem.modelData.name
                                 color: secItem.current ? Theme.fg : Theme.textDim
+
+                                Behavior on color {
+                                    CAnim {}
+                                }
                             }
-                        }
-
-                        MouseArea {
-                            id: secArea
-
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: panel.openSection(secItem.index)
                         }
                     }
                 }
+            }
+
+            // One mouse area over all top tabs (including the gaps between them): the hover box glides without flickering
+            MouseArea {
+                id: secHoverArea
+
+                function indexAt(mx) {
+                    for (let i = 0; i < secRepeater.count; i++) {
+                        const it = secRepeater.itemAt(i);
+                        if (it && mx < it.x + it.width + sectionRow.spacing / 2)
+                            return i;
+                    }
+                    return Math.max(0, secRepeater.count - 1);
+                }
+
+                x: sectionRow.x
+                y: sectionRow.y
+                width: sectionRow.width
+                height: sectionRow.height
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onEntered: secHover.idx = indexAt(mouseX)
+                onPositionChanged: mouse => secHover.idx = indexAt(mouse.x)
+                onClicked: mouse => panel.openSection(indexAt(mouse.x))
             }
 
             IconButton {
@@ -539,81 +627,142 @@ OverlayPanel {
             width: 250
             height: parent.height - y - 14
 
-            ListView {
+            Item {
                 id: tabList
 
-                width: parent.width
-                height: count * card.tabHeight + (count - 1) * spacing
-                spacing: 2
-                interactive: false
-                model: panel.tabs
-                currentIndex: panel.tab
-                highlightMoveDuration: Theme.ctlFast
-                highlightFollowsCurrentItem: true
+                property real shift: 0
 
-                highlight: Rectangle {
-                    width: tabList.width
-                    radius: Theme.radius
-                    color: Theme.fillStrong
+                width: parent.width
+                height: tabCol.height
+                // New top tab: briefly fade in as a texture (text stays sharp)
+                layer.enabled: sideIn.running
+                layer.smooth: true
+
+                transform: Translate {
+                    y: tabList.shift
                 }
 
-                delegate: Item {
-                    id: tabRow
+                // Hover: slightly dimmer box that glides under the mouse from page to page (like in the launcher).
+                // Appears right under the mouse (fades in), only glides along after that.
+                Rectangle {
+                    id: tabHover
 
-                    required property var modelData
-                    required property int index
-                    readonly property bool current: tabRow.index === panel.tab
-                    readonly property var info: panel.pageInfo[tabRow.modelData] || ({
-                            name: tabRow.modelData,
-                            icon: ""
-                        })
+                    property int idx: 0
 
-                    width: tabList.width
+                    width: parent.width
                     height: card.tabHeight
+                    y: Math.max(0, Math.min(tabHover.idx, panel.tabs.length - 1)) * (card.tabHeight + tabCol.spacing)
+                    radius: Theme.radius
+                    color: tabHoverArea.pressed ? Theme.pressed : Theme.hover
+                    opacity: tabHoverArea.containsMouse ? 1 : 0
 
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: Theme.radius
-                        color: Theme.hover
-                        opacity: tabArea.containsMouse && !tabRow.current ? 1 : 0
+                    Behavior on y {
+                        enabled: tabHover.opacity > 0.01
 
-                        Behavior on opacity {
-                            Anim {
-                                duration: Theme.ctlFast
+                        SmoothedAnimation {
+                            velocity: 400
+                            duration: Theme.ctlFast
+                        }
+                    }
+                    Behavior on opacity {
+                        Anim {
+                            duration: Theme.ctlFast
+                        }
+                    }
+                    Behavior on color {
+                        CAnim {}
+                    }
+                }
+
+                // Bright highlight of the current page: glides like the selection in the launcher. When the
+                // top tab changes it jumps (the whole list fades in again then).
+                Rectangle {
+                    width: parent.width
+                    height: card.tabHeight
+                    y: Math.max(0, Math.min(panel.tab, panel.tabs.length - 1)) * (card.tabHeight + tabCol.spacing)
+                    radius: Theme.radius
+                    color: Theme.fillStrong
+
+                    Behavior on y {
+                        enabled: !sideIn.running
+
+                        SmoothedAnimation {
+                            velocity: 400
+                            duration: Theme.ctlFast
+                        }
+                    }
+                }
+
+                Column {
+                    id: tabCol
+
+                    width: parent.width
+                    spacing: 2
+
+                    Repeater {
+                        model: panel.tabs
+
+                        delegate: Item {
+                            id: tabRow
+
+                            required property var modelData
+                            required property int index
+                            readonly property bool current: tabRow.index === panel.tab
+                            readonly property var info: panel.pageInfo[tabRow.modelData] || ({
+                                    name: tabRow.modelData,
+                                    icon: ""
+                                })
+
+                            width: tabCol.width
+                            height: card.tabHeight
+
+                            Glyph {
+                                id: tabIcon
+
+                                anchors.left: parent.left
+                                anchors.leftMargin: 14
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: 22
+                                text: tabRow.info.icon
+                                color: tabRow.current ? Theme.fg : Theme.textMuted
+                                font.pixelSize: Theme.iconSize - 2
+
+                                Behavior on color {
+                                    CAnim {}
+                                }
+                            }
+
+                            Txt {
+                                anchors.left: tabIcon.right
+                                anchors.leftMargin: 12
+                                anchors.right: parent.right
+                                anchors.rightMargin: 12
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: tabRow.info.name
+                                color: tabRow.current ? Theme.fg : Theme.textDim
+
+                                Behavior on color {
+                                    CAnim {}
+                                }
                             }
                         }
                     }
+                }
 
-                    Glyph {
-                        id: tabIcon
+                // One mouse area over the whole list (including the gaps between rows): no flickering
+                MouseArea {
+                    id: tabHoverArea
 
-                        anchors.left: parent.left
-                        anchors.leftMargin: 14
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: 22
-                        text: tabRow.info.icon
-                        color: tabRow.current ? Theme.fg : Theme.textMuted
-                        font.pixelSize: Theme.iconSize - 2
+                    function indexAt(my) {
+                        return Math.max(0, Math.min(panel.tabs.length - 1, Math.floor(my / (card.tabHeight + tabCol.spacing))));
                     }
 
-                    Txt {
-                        anchors.left: tabIcon.right
-                        anchors.leftMargin: 12
-                        anchors.right: parent.right
-                        anchors.rightMargin: 12
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: tabRow.info.name
-                        color: tabRow.current ? Theme.fg : Theme.textDim
-                    }
-
-                    MouseArea {
-                        id: tabArea
-
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: panel.tab = tabRow.index
-                    }
+                    anchors.fill: tabCol
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onEntered: tabHover.idx = indexAt(mouseY)
+                    onPositionChanged: mouse => tabHover.idx = indexAt(mouse.y)
+                    onClicked: mouse => panel.tab = indexAt(mouse.y)
                 }
             }
 
@@ -670,6 +819,8 @@ OverlayPanel {
                 height: card.tabHeight
 
                 Txt {
+                    id: pageTitle
+
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
                     text: (panel.pageInfo[panel.page] || {}).name || ""
@@ -726,6 +877,27 @@ OverlayPanel {
                         width: parent.width
                         spacing: 10
                         visible: panel.page === "appearance"
+
+                        // Rows that appear fade in, the ones below glide smoothly after (instant on a page switch,
+                        // the whole page glides then)
+                        add: Transition {
+                            NumberAnimation {
+                                property: "opacity"
+                                from: 0
+                                to: 1
+                                duration: tabIn.running ? 0 : Theme.ctlMed
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.curveSmooth
+                            }
+                        }
+                        move: Transition {
+                            NumberAnimation {
+                                property: "y"
+                                duration: tabIn.running ? 0 : Theme.ctlMed
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.curveSmooth
+                            }
+                        }
 
                         // Section title
                         Txt {
@@ -1025,6 +1197,27 @@ OverlayPanel {
                         width: parent.width
                         spacing: 10
                         visible: panel.page === "bar"
+
+                        // Rows that appear fade in, the ones below glide smoothly after (instant on a page switch,
+                        // the whole page glides then)
+                        add: Transition {
+                            NumberAnimation {
+                                property: "opacity"
+                                from: 0
+                                to: 1
+                                duration: tabIn.running ? 0 : Theme.ctlMed
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.curveSmooth
+                            }
+                        }
+                        move: Transition {
+                            NumberAnimation {
+                                property: "y"
+                                duration: tabIn.running ? 0 : Theme.ctlMed
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.curveSmooth
+                            }
+                        }
 
                         // Section title
                         Txt {
@@ -1751,6 +1944,27 @@ OverlayPanel {
                         spacing: 10
                         visible: panel.page === "notifications"
 
+                        // Rows that appear fade in, the ones below glide smoothly after (instant on a page switch,
+                        // the whole page glides then)
+                        add: Transition {
+                            NumberAnimation {
+                                property: "opacity"
+                                from: 0
+                                to: 1
+                                duration: tabIn.running ? 0 : Theme.ctlMed
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.curveSmooth
+                            }
+                        }
+                        move: Transition {
+                            NumberAnimation {
+                                property: "y"
+                                duration: tabIn.running ? 0 : Theme.ctlMed
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.curveSmooth
+                            }
+                        }
+
                         SettingRow {
                             width: parent.width
                             label: "Do not disturb"
@@ -1807,6 +2021,27 @@ OverlayPanel {
                         width: parent.width
                         spacing: 10
                         visible: panel.page === "animations"
+
+                        // Rows that appear fade in, the ones below glide smoothly after (instant on a page switch,
+                        // the whole page glides then)
+                        add: Transition {
+                            NumberAnimation {
+                                property: "opacity"
+                                from: 0
+                                to: 1
+                                duration: tabIn.running ? 0 : Theme.ctlMed
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.curveSmooth
+                            }
+                        }
+                        move: Transition {
+                            NumberAnimation {
+                                property: "y"
+                                duration: tabIn.running ? 0 : Theme.ctlMed
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.curveSmooth
+                            }
+                        }
 
                         SettingRow {
                             width: parent.width
@@ -1958,6 +2193,27 @@ OverlayPanel {
                         spacing: 10
                         visible: panel.page === "performance"
 
+                        // Rows that appear fade in, the ones below glide smoothly after (instant on a page switch,
+                        // the whole page glides then)
+                        add: Transition {
+                            NumberAnimation {
+                                property: "opacity"
+                                from: 0
+                                to: 1
+                                duration: tabIn.running ? 0 : Theme.ctlMed
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.curveSmooth
+                            }
+                        }
+                        move: Transition {
+                            NumberAnimation {
+                                property: "y"
+                                duration: tabIn.running ? 0 : Theme.ctlMed
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.curveSmooth
+                            }
+                        }
+
                         // Vulkan or OpenGL. Can only be chosen at startup: switching saves the choice and
                         // restarts Quickshell (~/.local/bin/qs-restart, which reads it via ~/.config/quickshell/render-env.sh).
                         SettingRow {
@@ -2033,6 +2289,27 @@ OverlayPanel {
                         spacing: 10
                         visible: panel.page === "commands"
 
+                        // Rows that appear fade in, the ones below glide smoothly after (instant on a page switch,
+                        // the whole page glides then)
+                        add: Transition {
+                            NumberAnimation {
+                                property: "opacity"
+                                from: 0
+                                to: 1
+                                duration: tabIn.running ? 0 : Theme.ctlMed
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.curveSmooth
+                            }
+                        }
+                        move: Transition {
+                            NumberAnimation {
+                                property: "y"
+                                duration: tabIn.running ? 0 : Theme.ctlMed
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.curveSmooth
+                            }
+                        }
+
                         SettingRow {
                             width: parent.width
                             label: "Terminal"
@@ -2067,6 +2344,27 @@ OverlayPanel {
                         width: parent.width
                         spacing: 10
                         visible: panel.page === "hyprWindows"
+
+                        // Rows that appear fade in, the ones below glide smoothly after (instant on a page switch,
+                        // the whole page glides then)
+                        add: Transition {
+                            NumberAnimation {
+                                property: "opacity"
+                                from: 0
+                                to: 1
+                                duration: tabIn.running ? 0 : Theme.ctlMed
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.curveSmooth
+                            }
+                        }
+                        move: Transition {
+                            NumberAnimation {
+                                property: "y"
+                                duration: tabIn.running ? 0 : Theme.ctlMed
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.curveSmooth
+                            }
+                        }
 
                         // Note at the top, counts as a section title (no separator line below)
                         Txt {
@@ -2113,6 +2411,11 @@ OverlayPanel {
                                     enabled: Config.opts.hyprRounding >= 0
                                     opacity: enabled ? 1 : 0.35
                                     onClicked: panel.hyprReset("hyprRounding")
+                                    Behavior on opacity {
+                                        Anim {
+                                            duration: Theme.ctlFast
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -2143,6 +2446,11 @@ OverlayPanel {
                                     enabled: Config.opts.hyprShadow >= 0
                                     opacity: enabled ? 1 : 0.35
                                     onClicked: panel.hyprReset("hyprShadow")
+                                    Behavior on opacity {
+                                        Anim {
+                                            duration: Theme.ctlFast
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -2181,6 +2489,11 @@ OverlayPanel {
                                     enabled: Config.opts.hyprBlurSize >= 0
                                     opacity: enabled ? 1 : 0.35
                                     onClicked: panel.hyprReset("hyprBlurSize")
+                                    Behavior on opacity {
+                                        Anim {
+                                            duration: Theme.ctlFast
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -2219,6 +2532,11 @@ OverlayPanel {
                                     enabled: Config.opts.hyprBlurPasses >= 0
                                     opacity: enabled ? 1 : 0.35
                                     onClicked: panel.hyprReset("hyprBlurPasses")
+                                    Behavior on opacity {
+                                        Anim {
+                                            duration: Theme.ctlFast
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -2231,6 +2549,27 @@ OverlayPanel {
                         width: parent.width
                         spacing: 10
                         visible: panel.page === "hyprLayout"
+
+                        // Rows that appear fade in, the ones below glide smoothly after (instant on a page switch,
+                        // the whole page glides then)
+                        add: Transition {
+                            NumberAnimation {
+                                property: "opacity"
+                                from: 0
+                                to: 1
+                                duration: tabIn.running ? 0 : Theme.ctlMed
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.curveSmooth
+                            }
+                        }
+                        move: Transition {
+                            NumberAnimation {
+                                property: "y"
+                                duration: tabIn.running ? 0 : Theme.ctlMed
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.curveSmooth
+                            }
+                        }
 
                         // On: Hyprland with smart gaps, smart borders and a square single window, top 19 px.
                         // Off: all of that gone (the bar handles 1 window), top 10 px.
@@ -2295,6 +2634,11 @@ OverlayPanel {
                                     enabled: Config.opts.hyprDirectScanout >= 0
                                     opacity: enabled ? 1 : 0.35
                                     onClicked: panel.hyprReset("hyprDirectScanout")
+                                    Behavior on opacity {
+                                        Anim {
+                                            duration: Theme.ctlFast
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -2307,6 +2651,27 @@ OverlayPanel {
                         width: parent.width
                         spacing: 10
                         visible: panel.page === "appsOpacity"
+
+                        // Rows that appear fade in, the ones below glide smoothly after (instant on a page switch,
+                        // the whole page glides then)
+                        add: Transition {
+                            NumberAnimation {
+                                property: "opacity"
+                                from: 0
+                                to: 1
+                                duration: tabIn.running ? 0 : Theme.ctlMed
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.curveSmooth
+                            }
+                        }
+                        move: Transition {
+                            NumberAnimation {
+                                property: "y"
+                                duration: tabIn.running ? 0 : Theme.ctlMed
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.curveSmooth
+                            }
+                        }
 
                         SettingRow {
                             width: parent.width
@@ -2371,6 +2736,11 @@ OverlayPanel {
                                     width: 400 - 38 - 14
                                     enabled: true
                                     opacity: enabled ? 1 : 0.4
+                                    Behavior on opacity {
+                                        Anim {
+                                            duration: Theme.ctlFast
+                                        }
+                                    }
                                     from: 25
                                     to: 100
                                     stepSize: 5
@@ -2402,6 +2772,11 @@ OverlayPanel {
                                     width: 400 - 38 - 14
                                     enabled: true
                                     opacity: enabled ? 1 : 0.4
+                                    Behavior on opacity {
+                                        Anim {
+                                            duration: Theme.ctlFast
+                                        }
+                                    }
                                     from: 25
                                     to: 100
                                     stepSize: 5
@@ -2434,6 +2809,11 @@ OverlayPanel {
                                     width: 400 - 38 - 14
                                     enabled: panel.appOn("appGlassNautilus")
                                     opacity: enabled ? 1 : 0.4
+                                    Behavior on opacity {
+                                        Anim {
+                                            duration: Theme.ctlFast
+                                        }
+                                    }
                                     from: 25
                                     to: 100
                                     stepSize: 5
@@ -2466,6 +2846,11 @@ OverlayPanel {
                                     width: 400 - 38 - 14
                                     enabled: panel.appOn("appGlassDialogs")
                                     opacity: enabled ? 1 : 0.4
+                                    Behavior on opacity {
+                                        Anim {
+                                            duration: Theme.ctlFast
+                                        }
+                                    }
                                     from: 25
                                     to: 100
                                     stepSize: 5
@@ -2498,6 +2883,11 @@ OverlayPanel {
                                     width: 400 - 38 - 14
                                     enabled: panel.appOn("appGlassVesktop")
                                     opacity: enabled ? 1 : 0.4
+                                    Behavior on opacity {
+                                        Anim {
+                                            duration: Theme.ctlFast
+                                        }
+                                    }
                                     from: 25
                                     to: 100
                                     stepSize: 5
@@ -2530,6 +2920,11 @@ OverlayPanel {
                                     width: 400 - 38 - 14
                                     enabled: panel.appOn("appGlassFirefox")
                                     opacity: enabled ? 1 : 0.4
+                                    Behavior on opacity {
+                                        Anim {
+                                            duration: Theme.ctlFast
+                                        }
+                                    }
                                     from: 25
                                     to: 100
                                     stepSize: 5
@@ -2548,6 +2943,27 @@ OverlayPanel {
                         width: parent.width
                         spacing: 10
                         visible: panel.page === "appsKitty"
+
+                        // Rows that appear fade in, the ones below glide smoothly after (instant on a page switch,
+                        // the whole page glides then)
+                        add: Transition {
+                            NumberAnimation {
+                                property: "opacity"
+                                from: 0
+                                to: 1
+                                duration: tabIn.running ? 0 : Theme.ctlMed
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.curveSmooth
+                            }
+                        }
+                        move: Transition {
+                            NumberAnimation {
+                                property: "y"
+                                duration: tabIn.running ? 0 : Theme.ctlMed
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.curveSmooth
+                            }
+                        }
 
                         // kitty starts through ~/.local/bin/kitty-shell/zsh (kitty.conf: shell ...), which reads the value
                         // for every new window. So it applies right away to the next kitty, no restart needed.
@@ -2846,6 +3262,27 @@ OverlayPanel {
                         width: parent.width
                         spacing: 12
                         visible: panel.page === "wallpaper"
+
+                        // Rows that appear fade in, the ones below glide smoothly after (instant on a page switch,
+                        // the whole page glides then)
+                        add: Transition {
+                            NumberAnimation {
+                                property: "opacity"
+                                from: 0
+                                to: 1
+                                duration: tabIn.running ? 0 : Theme.ctlMed
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.curveSmooth
+                            }
+                        }
+                        move: Transition {
+                            NumberAnimation {
+                                property: "y"
+                                duration: tabIn.running ? 0 : Theme.ctlMed
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.curveSmooth
+                            }
+                        }
 
                         onLiveChanged: Walls.wanted = live
 
@@ -3288,6 +3725,27 @@ OverlayPanel {
                         spacing: 10
                         visible: panel.page === "systemFont"
 
+                        // Rows that appear fade in, the ones below glide smoothly after (instant on a page switch,
+                        // the whole page glides then)
+                        add: Transition {
+                            NumberAnimation {
+                                property: "opacity"
+                                from: 0
+                                to: 1
+                                duration: tabIn.running ? 0 : Theme.ctlMed
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.curveSmooth
+                            }
+                        }
+                        move: Transition {
+                            NumberAnimation {
+                                property: "y"
+                                duration: tabIn.running ? 0 : Theme.ctlMed
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.curveSmooth
+                            }
+                        }
+
                         SettingRow {
                             width: parent.width
                             label: "System font"
@@ -3335,6 +3793,41 @@ OverlayPanel {
 
             NumberAnimation {
                 target: pages
+                property: "shift"
+                from: 10
+                to: 0
+                duration: Theme.ctlMed
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Theme.curveSmooth
+            }
+
+            NumberAnimation {
+                target: pageTitle
+                property: "opacity"
+                from: 0
+                to: 1
+                duration: Theme.ctlMed
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Theme.curveSmooth
+            }
+        }
+
+        // New top tab: the page list on the left briefly glides in from below (like a new page)
+        ParallelAnimation {
+            id: sideIn
+
+            NumberAnimation {
+                target: tabList
+                property: "opacity"
+                from: 0
+                to: 1
+                duration: Theme.ctlMed
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Theme.curveSmooth
+            }
+
+            NumberAnimation {
+                target: tabList
                 property: "shift"
                 from: 10
                 to: 0
