@@ -7,17 +7,21 @@ import qs.config
 import qs.components
 import qs.services
 
-// Settings: tabs on the left in the launcher's style, options on the right with plenty of space.
-// Everything applies immediately and is saved automatically.
-// Keyboard: Tab / Shift+Tab or arrow up/down switch tabs, Esc closes.
+// Settings: the top tabs (Quickshell, Hyprland, Apps, System) at the top, their pages on the left styled like the
+// launcher, the options on the right with lots of room. Everything applies right away and saves automatically.
+// Keyboard: Tab / Shift+Tab or arrow up/down go through all pages, Esc closes.
 OverlayPanel {
     id: panel
 
+    // Top tab (index in sections) and the page in it (index in sections[..].pages)
+    property int section: 0
     property int tab: 0
+    // Last open page per top tab
+    property var lastTabs: [0, 0, 0, 0]
 
-    // App opacity: writes the opacity into kitty (always) and with App glass also into Nautilus, GTK3 dialogs,
-    // Vesktop and Firefox via ~/.local/bin/qs-glass-apply. Started through python3 (no exec bit needed). The
-    // script reads appGlass / appOpacity from settings.json itself, queues itself (flock) and always applies the
+    // Apps > Opacity: writes the opacity through ~/.local/bin/qs-glass-apply into kitty, Nautilus, GTK3 dialogs,
+    // Vesktop and Firefox (every app with its own value, -1 = like "All apps"). Started through python3 (needs no
+    // exec permission). The script reads the values from settings.json itself, queues itself (flock) and always takes
     // most recently saved state. Debounced. Tidal (SONE) is set by services/Hypr.qml (Hyprland rule).
     property Timer appGlassDebounce: Timer {
         interval: 300
@@ -26,38 +30,129 @@ OverlayPanel {
     function runAppGlass() {
         Quickshell.execDetached(["python3", Quickshell.env("HOME") + "/.local/bin/qs-glass-apply"]);
     }
-    readonly property var tabs: [
+    readonly property var sections: [
         {
-            name: "Appearance",
-            hint: "Transparency, corners, fonts, icons",
-            icon: Icons.palette
+            name: "Quickshell",
+            icon: Icons.qsShell,
+            pages: ["appearance", "bar", "notifications", "animations", "performance", "commands"]
         },
         {
-            name: "Wallpaper",
-            hint: "Pick your wallpaper, with previews",
-            icon: Icons.image
+            name: "Hyprland",
+            icon: Icons.hyprland,
+            pages: ["hyprWindows", "hyprLayout"]
         },
         {
-            name: "Bar",
-            hint: "Size, look and what it shows",
-            icon: Icons.dockTop
+            name: "Apps",
+            icon: Icons.apps,
+            pages: ["appsOpacity", "appsKitty"]
         },
         {
-            name: "Behavior",
-            hint: "Notifications, OSD, volume",
-            icon: Icons.cogOutline
-        },
-        {
-            name: "Commands",
-            hint: "Terminal and lock screen",
-            icon: Icons.consoleLine
-        },
-        {
-            name: "Animations",
-            hint: "Curves and speed for everything",
-            icon: Icons.play
+            name: "System",
+            icon: Icons.desktopTower,
+            pages: Config.opts.systemFontMenu ? ["wallpaper", "systemFont"] : ["wallpaper"]
         }
     ]
+    readonly property var pageInfo: ({
+            appearance: { name: "Appearance", icon: Icons.palette },
+            bar: { name: "Bar", icon: Icons.dockTop },
+            notifications: { name: "Notifications & OSD", icon: Icons.bellOutline },
+            animations: { name: "Animations", icon: Icons.play },
+            performance: { name: "Performance", icon: Icons.speedometer },
+            commands: { name: "Commands", icon: Icons.consoleLine },
+            hyprWindows: { name: "Windows", icon: Icons.roundedCorner },
+            hyprLayout: { name: "Layout & rendering", icon: Icons.viewQuilt },
+            appsOpacity: { name: "Opacity", icon: Icons.opacityDrop },
+            appsKitty: { name: "kitty", icon: Icons.terminal },
+            wallpaper: { name: "Wallpaper", icon: Icons.image },
+            systemFont: { name: "Font", icon: Icons.formatFont }
+        })
+    readonly property var tabs: panel.sections[panel.section].pages
+    readonly property string page: panel.tabs[Math.max(0, Math.min(panel.tab, panel.tabs.length - 1))]
+
+    // ---------- Apps > Opacity ----------
+    // Value of an app: its own value or (-1) the one from "All apps"
+    function appOp(key) {
+        const v = Config.opts[key];
+        return v >= 0 ? v : Config.opts.appOpacity;
+    }
+    // On/off of an app: its own value or (-1) like the old "App glass"
+    function appOn(key) {
+        const v = Config.opts[key];
+        return v >= 0 ? v === 1 : Config.opts.appGlass;
+    }
+    readonly property var appOpacityKeys: ["appOpacityKitty", "appOpacityTidal", "appOpacityNautilus", "appOpacityDialogs", "appOpacityVesktop", "appOpacityFirefox"]
+    function setAllApps(v) {
+        Config.opts.appOpacity = v;
+        for (const k of panel.appOpacityKeys)
+            Config.opts[k] = -1;
+        panel.appGlassDebounce.restart();
+    }
+    function setApp(key, v) {
+        Config.opts[key] = v;
+        panel.appGlassDebounce.restart();
+    }
+    function toggleApp(key) {
+        Config.opts[key] = panel.appOn(key) ? 0 : 1;
+        panel.appGlassDebounce.restart();
+    }
+    // Icon of an app from its desktop entry (first match), otherwise the name itself as the icon name
+    function appIconFor(names) {
+        for (const n of names) {
+            const e = DesktopEntries.heuristicLookup(n);
+            if (e && e.icon)
+                return e.icon;
+        }
+        return names[0];
+    }
+
+    // ---------- Hyprland ----------
+    // Current values from Hyprland (hyprctl getoption), for rows without their own value (-1 = hyprland.lua applies).
+    // Read when a Hyprland tab opens and after a reset.
+    property var hyprLive: ({})
+    function hyprVal(key, option, fallback) {
+        const v = Config.opts[key];
+        if (v >= 0)
+            return v;
+        const l = panel.hyprLive[option];
+        return l !== undefined ? l : fallback;
+    }
+    // Remove the own value: services/Hypr.qml reloads Hyprland (then hyprland.lua applies), read again afterwards
+    function hyprReset(key) {
+        Config.opts[key] = -1;
+        hyprLiveDelay.restart();
+    }
+
+    Process {
+        id: hyprLiveReader
+
+        command: ["sh", "-c", "for o in decoration:rounding decoration:shadow:enabled decoration:blur:size decoration:blur:passes render:direct_scanout; do printf '%s ' \"$o\"; hyprctl -j getoption \"$o\" | tr -d '\\n'; echo; done"]
+        stdout: SplitParser {
+            onRead: line => {
+                const i = line.indexOf(" ");
+                if (i < 0)
+                    return;
+                let j;
+                try {
+                    j = JSON.parse(line.slice(i + 1));
+                } catch (e) {
+                    return;
+                }
+                const v = j.int !== undefined ? j.int : (j.float !== undefined ? j.float : (j.bool !== undefined ? (j.bool ? 1 : 0) : undefined));
+                if (typeof v !== "number")
+                    return;
+                const m = Object.assign({}, panel.hyprLive);
+                m[line.slice(0, i)] = v;
+                panel.hyprLive = m;
+            }
+        }
+    }
+
+    Timer {
+        id: hyprLiveDelay
+
+        interval: 700
+        onTriggered: hyprLiveReader.running = true
+    }
 
     // All animation values back to the defaults
     // Glass blur: read the values from Hyprland (Settings > Bar > Glass blur values > From Hyprland)
@@ -135,12 +230,34 @@ OverlayPanel {
     }
 
     onOpenChanged: {
-        if (panel.open)
+        if (panel.open) {
             systemFontReader.running = true;
+            if (panel.section === 1)
+                hyprLiveReader.running = true;
+        }
     }
 
+    // Durch alle Seiten aller Ober-Tabs (Tab / Pfeiltasten)
     function switchTab(delta) {
-        panel.tab = (panel.tab + delta + panel.tabs.length) % panel.tabs.length;
+        const flat = [];
+        for (let s = 0; s < panel.sections.length; s++) {
+            for (let t = 0; t < panel.sections[s].pages.length; t++)
+                flat.push([s, t]);
+        }
+        let i = 0;
+        while (i < flat.length && !(flat[i][0] === panel.section && flat[i][1] === panel.tab))
+            i++;
+        const n = flat[((i < flat.length ? i : 0) + delta + flat.length) % flat.length];
+        panel.section = n[0];
+        panel.tab = n[1];
+    }
+
+    // Ober-Tab wechseln: dort weiter, wo man zuletzt war
+    function openSection(s) {
+        if (s === panel.section)
+            return;
+        panel.section = s;
+        panel.tab = Math.min(panel.lastTabs[s] || 0, panel.sections[s].pages.length - 1);
     }
 
     open: Ui.panel === "settings"
@@ -149,9 +266,14 @@ OverlayPanel {
     dimOpacity: 0.45
     ns: "qs-settings"
     onDismissed: Ui.close()
-    onTabChanged: {
+    onPageChanged: {
         flick.contentY = 0;
         tabIn.restart();
+        const l = panel.lastTabs.slice();
+        l[panel.section] = panel.tab;
+        panel.lastTabs = l;
+        if (panel.section === 1 && panel.open)
+            hyprLiveReader.running = true;
     }
 
     component SwitchCtl: Toggle {
@@ -300,35 +422,126 @@ OverlayPanel {
         Keys.onDownPressed: panel.switchTab(1)
         Keys.onUpPressed: panel.switchTab(-1)
 
-        // ---------- Left: tabs ----------
+        // ---------- Oben: Titel, Ober-Tabs, Schliessen ----------
+        Item {
+            id: topBar
+
+            x: 14
+            y: 14
+            width: parent.width - 28
+            height: 48
+
+            Txt {
+                x: 14
+                anchors.verticalCenter: parent.verticalCenter
+                text: "Settings"
+                font.pixelSize: Theme.fontLg + 3
+                font.weight: Theme.uiWeightStrong
+            }
+
+            // Top tabs, aligned with the options column
+            Row {
+                id: sectionRow
+
+                x: content.x - topBar.x - 14
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 4
+
+                Repeater {
+                    model: panel.sections
+
+                    delegate: Item {
+                        id: secItem
+
+                        required property var modelData
+                        required property int index
+                        readonly property bool current: secItem.index === panel.section
+
+                        width: Math.ceil(secRow.implicitWidth) + 28
+                        height: card.tabHeight
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: Theme.radius
+                            color: secItem.current ? Theme.fillStrong : (secArea.pressed ? Theme.pressed : Theme.hover)
+                            opacity: secItem.current || secArea.containsMouse ? 1 : 0
+
+                            Behavior on opacity {
+                                Anim {
+                                    duration: Theme.ctlFast
+                                }
+                            }
+                            Behavior on color {
+                                CAnim {}
+                            }
+                        }
+
+                        Row {
+                            id: secRow
+
+                            x: 14
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 10
+
+                            Glyph {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: secItem.modelData.icon
+                                color: secItem.current ? Theme.fg : Theme.textMuted
+                                font.pixelSize: Theme.iconSize - 2
+                            }
+
+                            Txt {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: secItem.modelData.name
+                                color: secItem.current ? Theme.fg : Theme.textDim
+                            }
+                        }
+
+                        MouseArea {
+                            id: secArea
+
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: panel.openSection(secItem.index)
+                        }
+                    }
+                }
+            }
+
+            IconButton {
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                size: 36
+                icon: Icons.close
+                fg: Theme.textDim
+                onClicked: Ui.close()
+            }
+        }
+
+        // Line below the header
+        Rectangle {
+            id: topLine
+
+            x: 14
+            y: topBar.y + topBar.height + 10
+            width: parent.width - 28
+            height: 1
+            color: Theme.hairline
+        }
+
+        // ---------- Links: Seiten des Ober-Tabs ----------
         Item {
             id: sidebar
 
             x: 14
-            y: 14
+            y: topLine.y + 1 + 14
             width: 250
-            height: parent.height - 28
-
-            Row {
-                id: sideHeader
-
-                x: 14
-                height: 48
-                spacing: 12
-
-                Txt {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: "Settings"
-                    font.pixelSize: Theme.fontLg + 3
-                    font.weight: Theme.uiWeightStrong
-                }
-            }
+            height: parent.height - y - 14
 
             ListView {
                 id: tabList
 
-                anchors.top: sideHeader.bottom
-                anchors.topMargin: 14
                 width: parent.width
                 height: count * card.tabHeight + (count - 1) * spacing
                 spacing: 2
@@ -350,6 +563,10 @@ OverlayPanel {
                     required property var modelData
                     required property int index
                     readonly property bool current: tabRow.index === panel.tab
+                    readonly property var info: panel.pageInfo[tabRow.modelData] || ({
+                            name: tabRow.modelData,
+                            icon: ""
+                        })
 
                     width: tabList.width
                     height: card.tabHeight
@@ -374,19 +591,18 @@ OverlayPanel {
                         anchors.leftMargin: 14
                         anchors.verticalCenter: parent.verticalCenter
                         width: 22
-                        text: tabRow.modelData.icon
+                        text: tabRow.info.icon
                         color: tabRow.current ? Theme.fg : Theme.textMuted
                         font.pixelSize: Theme.iconSize - 2
                     }
 
-                    // Just the name; the short description ("hint") is no longer shown below it
                     Txt {
                         anchors.left: tabIcon.right
                         anchors.leftMargin: 12
                         anchors.right: parent.right
                         anchors.rightMargin: 12
                         anchors.verticalCenter: parent.verticalCenter
-                        text: tabRow.modelData.name
+                        text: tabRow.info.name
                         color: tabRow.current ? Theme.fg : Theme.textDim
                     }
 
@@ -432,42 +648,33 @@ OverlayPanel {
             id: divider
 
             x: sidebar.x + sidebar.width + 14
-            y: 14
+            y: sidebar.y
             width: 1
-            height: parent.height - 28
+            height: sidebar.height
             color: Theme.hairline
         }
 
-        // ---------- Right: options of the tab ----------
+        // ---------- Right: options of the page ----------
         Item {
             id: content
 
             x: divider.x + 1 + 22
-            y: 14
+            y: sidebar.y
             width: parent.width - x - 14
-            height: parent.height - 28
+            height: sidebar.height
 
             Item {
                 id: contentHeader
 
                 width: parent.width
-                height: 48
+                height: card.tabHeight
 
                 Txt {
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
-                    text: panel.tabs[panel.tab].name
+                    text: (panel.pageInfo[panel.page] || {}).name || ""
                     font.pixelSize: Theme.fontLg + 3
                     font.weight: Theme.uiWeightStrong
-                }
-
-                IconButton {
-                    anchors.right: parent.right
-                    anchors.verticalCenter: parent.verticalCenter
-                    size: 36
-                    icon: Icons.close
-                    fg: Theme.textDim
-                    onClicked: Ui.close()
                 }
             }
 
@@ -489,9 +696,22 @@ OverlayPanel {
                     property real shift: 0
 
                     width: flick.width
-                    height: [pageAppearance, pageWallpaper, pageBar, pageBehavior, pageCommands, pageAnimations][panel.tab].implicitHeight
+                    height: (({
+                                appearance: pageAppearance,
+                                bar: pageBar,
+                                notifications: pageNotifications,
+                                animations: pageAnimations,
+                                performance: pagePerformance,
+                                commands: pageCommands,
+                                hyprWindows: pageHyprWindows,
+                                hyprLayout: pageHyprLayout,
+                                appsOpacity: pageAppsOpacity,
+                                appsKitty: pageAppsKitty,
+                                wallpaper: pageWallpaper,
+                                systemFont: pageSystemFont
+                            })[panel.page] || pageAppearance).implicitHeight
 
-                    // Tab switch: glides subpixel, as a texture meanwhile (text sharp)
+                    // Page change: glides smoothly, drawn as a texture meanwhile (sharp text)
                     layer.enabled: tabIn.running
                     layer.smooth: true
 
@@ -499,13 +719,27 @@ OverlayPanel {
                         y: pages.shift
                     }
 
-                    // ----- Appearance -----
+                    // ----- Quickshell > Appearance -----
                     Column {
                         id: pageAppearance
 
                         width: parent.width
                         spacing: 10
-                        visible: panel.tab === 0
+                        visible: panel.page === "appearance"
+
+                        // Section title
+                        Txt {
+                            readonly property bool isHeader: true
+
+                            width: parent.width
+                            topPadding: 0
+                            text: "Glass"
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fontSm
+                            font.weight: Theme.uiWeightStrong
+                            font.capitalization: Font.AllUppercase
+                            font.letterSpacing: 0.8
+                        }
 
                         SettingRow {
                             width: parent.width
@@ -536,18 +770,6 @@ OverlayPanel {
 
                         SettingRow {
                             width: parent.width
-                            visible: Config.opts.transparency === "everywhere"
-                            label: "Exclude kitty terminal"
-                            description: "Kitty windows don't count for the bar, so it stays translucent while only kitty is open"
-
-                            SwitchCtl {
-                                checked: Config.opts.barExcludeKitty
-                                onToggled: Config.opts.barExcludeKitty = !Config.opts.barExcludeKitty
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
                             visible: Config.opts.transparency !== "off"
                             label: "Opacity"
                             description: "How solid translucent surfaces are, 100 % = black"
@@ -564,72 +786,6 @@ OverlayPanel {
 
                         SettingRow {
                             width: parent.width
-                            label: "App glass"
-                            description: "Translucent look for Nautilus, file dialogs, Vesktop and Firefox too. Off = those as before (kitty, Tidal and blur settings stay)"
-
-                            SwitchCtl {
-                                checked: Config.opts.appGlass
-                                onToggled: {
-                                    Config.opts.appGlass = !Config.opts.appGlass;
-                                    panel.appGlassDebounce.restart();
-                                }
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            label: "App opacity"
-                            description: "kitty and Tidal, with App glass also Nautilus, file dialogs, Vesktop, Firefox. 100 % = solid. Tidal fades as a whole (text too), kitty only its background"
-
-                            RangeControl {
-                                from: 25
-                                to: 100
-                                stepSize: 5
-                                value: Config.opts.appOpacity
-                                suffix: " %"
-                                onEdited: v => {
-                                    Config.opts.appOpacity = v;
-                                    panel.appGlassDebounce.restart();
-                                }
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            label: "Blur size"
-                            description: "Hyprland blur behind all windows, panels and popups (decoration:blur:size). Applied live"
-
-                            RangeControl {
-                                from: 1
-                                to: 30
-                                stepSize: 1
-                                value: Config.opts.hyprBlurSize
-                                onEdited: v => {
-                                    Config.opts.hyprBlurSize = v;
-                                    Config.opts.glassBlurSize = v;
-                                }
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            label: "Blur passes"
-                            description: "decoration:blur:passes, more passes = softer blur but more GPU work. Applied live"
-
-                            RangeControl {
-                                from: 1
-                                to: 8
-                                stepSize: 1
-                                value: Config.opts.hyprBlurPasses
-                                onEdited: v => {
-                                    Config.opts.hyprBlurPasses = v;
-                                    Config.opts.glassBlurPasses = v;
-                                }
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
                             visible: Config.opts.transparency === "popups"
                             label: "Solid popups with windows"
                             description: "Popups turn black as soon as 1 or more windows are open (floating ones don't count)"
@@ -640,57 +796,18 @@ OverlayPanel {
                             }
                         }
 
-                        SettingRow {
+                        // Section title
+                        Txt {
+                            readonly property bool isHeader: true
+
                             width: parent.width
-                            visible: Config.opts.transparency === "everywhere"
-                            label: "Solid bar with windows"
-                            description: Config.opts.barSolidOnlySingle ? "The bar is black with exactly 1 window, translucent with none or 2 and more (floating ones don't count)" : "The bar turns black as soon as 1 or more windows are open (floating ones don't count)"
-
-                            Row {
-                                anchors.right: parent.right
-                                spacing: 10
-
-                                // "Only 1": black only with exactly 1 window
-                                Txt {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: "Only 1"
-                                    color: Theme.textMuted
-                                    font.pixelSize: Theme.fontSm
-                                    opacity: Config.opts.barSolidWithWindows ? 1 : 0.4
-                                }
-
-                                Toggle {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    width: 30
-                                    height: 18
-                                    enabled: Config.opts.barSolidWithWindows
-                                    opacity: Config.opts.barSolidWithWindows ? 1 : 0.4
-                                    checked: Config.opts.barSolidOnlySingle
-                                    onToggled: Config.opts.barSolidOnlySingle = !Config.opts.barSolidOnlySingle
-                                }
-
-                                Item {
-                                    width: 8
-                                    height: 1
-                                }
-
-                                Toggle {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    checked: Config.opts.barSolidWithWindows
-                                    onToggled: Config.opts.barSolidWithWindows = !Config.opts.barSolidWithWindows
-                                }
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            label: "Smooth text"
-                            description: "Text and icons glide without pixel steps while moving (glyphs look a bit softer)"
-
-                            SwitchCtl {
-                                checked: Config.opts.smoothText
-                                onToggled: Config.opts.smoothText = !Config.opts.smoothText
-                            }
+                            topPadding: 18
+                            text: "Shape & text"
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fontSm
+                            font.weight: Theme.uiWeightStrong
+                            font.capitalization: Font.AllUppercase
+                            font.letterSpacing: 0.8
                         }
 
                         SettingRow {
@@ -736,30 +853,16 @@ OverlayPanel {
 
                         SettingRow {
                             width: parent.width
-                            label: "System font"
-                            description: "Every app (GTK, Qt, Firefox, Electron) and the shell. Open apps use it after a restart"
+                            label: "Shell font"
+                            description: "Only Quickshell. System > Font sets it too"
 
                             FontSelect {
-                                objectName: "systemFontSelect"
                                 width: parent.width
-                                value: panel.systemFont
+                                value: Config.opts.uiFont
                                 menuParent: card
                                 scrollArea: flick
-                                active: panel.open && panel.tab === 0
-                                onPicked: family => panel.applySystemFont(family)
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            label: "Shell font"
-                            description: "Only Quickshell (System font sets it too). Must be installed (fc-list)"
-
-                            InputField {
-                                width: parent.width
-                                text: Config.opts.uiFont
-                                placeholder: "Inter"
-                                onCommitted: value => Config.opts.uiFont = value.trim() !== "" ? value.trim() : Config.defaults.uiFont
+                                active: panel.open && panel.page === "appearance"
+                                onPicked: family => Config.opts.uiFont = family
                             }
                         }
 
@@ -774,6 +877,20 @@ OverlayPanel {
                                 placeholder: "JetBrainsMono Nerd Font Propo"
                                 onCommitted: value => Config.opts.uiIconFont = value.trim() !== "" ? value.trim() : Config.defaults.uiIconFont
                             }
+                        }
+
+                        // Section title
+                        Txt {
+                            readonly property bool isHeader: true
+
+                            width: parent.width
+                            topPadding: 18
+                            text: "Colors & icons"
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fontSm
+                            font.weight: Theme.uiWeightStrong
+                            font.capitalization: Font.AllUppercase
+                            font.letterSpacing: 0.8
                         }
 
                         SettingRow {
@@ -901,18 +1018,1834 @@ OverlayPanel {
                         }
                     }
 
-                    // ----- Wallpaper -----
+                    // ----- Quickshell > Bar -----
+                    Column {
+                        id: pageBar
+
+                        width: parent.width
+                        spacing: 10
+                        visible: panel.page === "bar"
+
+                        // Section title
+                        Txt {
+                            readonly property bool isHeader: true
+
+                            width: parent.width
+                            topPadding: 0
+                            text: "Size & position"
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fontSm
+                            font.weight: Theme.uiWeightStrong
+                            font.capitalization: Font.AllUppercase
+                            font.letterSpacing: 0.8
+                        }
+
+                        // Thickness docked (top, moves both) and floating (bottom, floating only). Reset = defaults
+                        SettingRow {
+                            id: heightRow
+
+                            readonly property bool dynamic: Config.opts.barFloating && Config.opts.barFloatingDynamic
+                            readonly property int labelWidth: 64
+                            readonly property real sliderWidth: heightCol.width - heightRow.labelWidth - resetBtn.width - 20
+
+                            width: parent.width
+                            implicitHeight: Math.max(64, heightCol.height + 28, heightRow.textsHeight + 26)
+                            label: "Bar height"
+                            description: heightRow.dynamic ? "Docked moves both, Floating only the floating bar. Docked is 2 px taller on purpose: with one window the bar covers the top 2 px of that window, so no gap or flickering line shows between them (also while docking), and the icons sit exactly in the middle" : ""
+                            controlWidth: 400
+
+                            Column {
+                                id: heightCol
+
+                                width: parent.width
+                                spacing: 10
+
+                                Row {
+                                    visible: heightRow.dynamic
+                                    spacing: 10
+
+                                    Txt {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        width: heightRow.labelWidth
+                                        text: "Docked"
+                                        color: Theme.textMuted
+                                        font.pixelSize: Theme.fontSm
+                                    }
+
+                                    RangeControl {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        width: heightRow.sliderWidth
+                                        from: 28
+                                        to: 48
+                                        value: Config.opts.barDockedHeight
+                                        suffix: " px"
+                                        onEdited: v => {
+                                            const d = v - Config.opts.barDockedHeight;
+                                            Config.opts.barDockedHeight = v;
+                                            Config.opts.barHeight = Math.max(28, Math.min(48, Config.opts.barHeight + d));
+                                        }
+                                    }
+
+                                    Item {
+                                        width: resetBtn.width
+                                        height: 1
+                                    }
+                                }
+
+                                Row {
+                                    spacing: 10
+
+                                    Txt {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        width: heightRow.labelWidth
+                                        text: Config.opts.barFloating ? "Floating" : "Height"
+                                        color: Theme.textMuted
+                                        font.pixelSize: Theme.fontSm
+                                    }
+
+                                    RangeControl {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        width: heightRow.sliderWidth
+                                        from: 28
+                                        to: 48
+                                        value: Config.opts.barHeight
+                                        suffix: " px"
+                                        onEdited: v => Config.opts.barHeight = v
+                                    }
+
+                                    IconButton {
+                                        id: resetBtn
+
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        size: 30
+                                        icon: String.fromCodePoint(0xF0450)
+                                        iconSize: Theme.fontSm
+                                        label: "Reset"
+                                        idleColor: Theme.fill
+                                        onClicked: {
+                                            Config.opts.barHeight = Config.defaults.barHeight;
+                                            Config.opts.barDockedHeight = Config.defaults.barDockedHeight;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Floating bar"
+                            description: "Gap to the screen edge and rounded corners"
+
+                            SwitchCtl {
+                                checked: Config.opts.barFloating
+                                onToggled: Config.opts.barFloating = !Config.opts.barFloating
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            visible: Config.opts.barFloating
+                            label: "Dynamic"
+                            description: "Docks with exactly 1 tiled window, floats with none or 2 and more (floating windows never count)"
+
+                            SwitchCtl {
+                                checked: Config.opts.barFloatingDynamic
+                                onToggled: Config.opts.barFloatingDynamic = !Config.opts.barFloatingDynamic
+                            }
+                        }
+
+                        // On: stepless dock animation (between pixels, like Hyprland windows), content a touch softer
+                        // while moving. Off: whole pixels, always crisp (previous behavior).
+                        SettingRow {
+                            width: parent.width
+                            visible: Config.opts.barFloating
+                            label: "Subpixel glide"
+                            description: "Smoother dock animation that moves between pixels like Hyprland windows. Icons are a touch softer only while moving. Off = whole pixels, always crisp"
+
+                            SwitchCtl {
+                                checked: Config.opts.barGlide
+                                onToggled: Config.opts.barGlide = !Config.opts.barGlide
+                            }
+                        }
+
+                        // Height of the floating bar above the top edge, reset to the default
+                        SettingRow {
+                            width: parent.width
+                            visible: Config.opts.barFloating
+                            label: "Floating position"
+                            description: "Distance of the floating bar from the top edge. Higher values also shrink the gap to the windows"
+                            controlWidth: 400
+
+                            Row {
+                                spacing: 10
+
+                                RangeControl {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 400 - posResetBtn.width - 10
+                                    from: 0
+                                    to: 20
+                                    value: Config.opts.barFloatOffset
+                                    suffix: " px"
+                                    onEdited: v => Config.opts.barFloatOffset = v
+                                }
+
+                                IconButton {
+                                    id: posResetBtn
+
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    size: 30
+                                    icon: String.fromCodePoint(0xF0450)
+                                    iconSize: Theme.fontSm
+                                    label: "Reset"
+                                    idleColor: Theme.fill
+                                    onClicked: Config.opts.barFloatOffset = Config.defaults.barFloatOffset
+                                }
+                            }
+                        }
+
+                        // Side gap of the floating bar to the screen edge (where it ends left/right)
+                        SettingRow {
+                            width: parent.width
+                            visible: Config.opts.barFloating
+                            label: "Floating side gap"
+                            description: "Where the floating bar ends on the left and right. Match it to your Hyprland gaps_out to line it up with the windows"
+                            controlWidth: 400
+
+                            Row {
+                                spacing: 10
+
+                                RangeControl {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 400 - sideResetBtn.width - 10
+                                    from: 0
+                                    to: 40
+                                    value: Config.opts.barFloatSide
+                                    suffix: " px"
+                                    onEdited: v => Config.opts.barFloatSide = v
+                                }
+
+                                IconButton {
+                                    id: sideResetBtn
+
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    size: 30
+                                    icon: String.fromCodePoint(0xF0450)
+                                    iconSize: Theme.fontSm
+                                    label: "Reset"
+                                    idleColor: Theme.fill
+                                    onClicked: Config.opts.barFloatSide = Config.defaults.barFloatSide
+                                }
+                            }
+                        }
+
+                        // Section title
+                        Txt {
+                            readonly property bool isHeader: true
+
+                            width: parent.width
+                            topPadding: 18
+                            text: "Background"
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fontSm
+                            font.weight: Theme.uiWeightStrong
+                            font.capitalization: Font.AllUppercase
+                            font.letterSpacing: 0.8
+                        }
+
+                        // Bar black instead of glass as soon as windows are open (before: two switches "Solid bar with windows" + "Only 1").
+                        // Only with Transparency "Everywhere", otherwise the bar is black anyway.
+                        SettingRow {
+                            width: parent.width
+                            visible: Config.opts.transparency === "everywhere"
+                            label: "Black with windows"
+                            description: "Never: always glass. 1 window: black with exactly 1 tiled window, glass with none or 2 and more. Any: black as soon as a window is open. Floating windows never count"
+                            controlWidth: 330
+
+                            Segmented {
+                                width: parent.width
+                                options: [
+                                    {
+                                        value: "never",
+                                        label: "Never"
+                                    },
+                                    {
+                                        value: "single",
+                                        label: "1 window"
+                                    },
+                                    {
+                                        value: "any",
+                                        label: "Any"
+                                    }
+                                ]
+                                value: !Config.opts.barSolidWithWindows ? "never" : (Config.opts.barSolidOnlySingle ? "single" : "any")
+                                onPicked: v => {
+                                    Config.opts.barSolidWithWindows = v !== "never";
+                                    if (v !== "never")
+                                        Config.opts.barSolidOnlySingle = v === "single";
+                                }
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            visible: Config.opts.transparency === "everywhere"
+                            label: "Exclude kitty terminal"
+                            description: "Kitty windows don't count for the bar, so it stays translucent while only kitty is open"
+
+                            SwitchCtl {
+                                checked: Config.opts.barExcludeKitty
+                                onToggled: Config.opts.barExcludeKitty = !Config.opts.barExcludeKitty
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Transparent when empty"
+                            description: Config.opts.barBoxes ? "Always on with Group boxes (only the boxes show while the workspace is empty)" : "No windows on the workspace = see-through, 1 or more = black"
+                            locked: Config.opts.barBoxes
+
+                            SwitchCtl {
+                                checked: Config.opts.barAutoTransparent || Config.opts.barBoxes
+                                onToggled: Config.opts.barAutoTransparent = !Config.opts.barAutoTransparent
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Bar border line"
+
+                            SwitchCtl {
+                                checked: Config.opts.barBorder
+                                onToggled: Config.opts.barBorder = !Config.opts.barBorder
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Group boxes"
+                            description: "Puts every group in the bar (launcher, workspaces, tray, system info, status, power) in its own box. Turns on Transparent when empty"
+
+                            SwitchCtl {
+                                checked: Config.opts.barBoxes
+                                onToggled: Config.opts.barBoxes = !Config.opts.barBoxes
+                            }
+                        }
+
+                        // Box color: clicking the color opens the color picker
+                        Column {
+                            id: boxColorBlock
+
+                            property bool open: false
+
+                            width: parent.width
+                            visible: Config.opts.barBoxes
+                            spacing: 10
+
+                            SettingRow {
+                                width: parent.width
+                                label: "Box color"
+                                description: "Click the color to open the picker"
+                                controlWidth: 220
+
+                                Row {
+                                    anchors.right: parent.right
+                                    spacing: 10
+
+                                    Rectangle {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        width: 110
+                                        height: 30
+                                        radius: Theme.radiusSm
+                                        color: Config.opts.barBoxColor
+                                        border.width: 1
+                                        border.color: boxColorArea.containsMouse || boxColorBlock.open ? Theme.textDim : Theme.hairlineStrong
+
+                                        Txt {
+                                            anchors.centerIn: parent
+                                            text: Config.opts.barBoxColor
+                                            font.pixelSize: Theme.fontSm
+                                            color: (parent.color.r * 0.3 + parent.color.g * 0.59 + parent.color.b * 0.11) * parent.color.a > 0.5 ? "#000000" : "#ffffff"
+                                        }
+
+                                        MouseArea {
+                                            id: boxColorArea
+
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: boxColorBlock.open = !boxColorBlock.open
+                                        }
+                                    }
+
+                                    IconButton {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        size: 30
+                                        icon: String.fromCodePoint(0xF0450)
+                                        iconSize: Theme.fontSm
+                                        label: "Reset"
+                                        idleColor: Theme.fill
+                                        onClicked: Config.opts.barBoxColor = Config.defaults.barBoxColor
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                width: parent.width
+                                height: boxPicker.implicitHeight + 36
+                                visible: boxColorBlock.open
+                                radius: Theme.radius
+                                color: Theme.fill
+
+                                ColorPicker {
+                                    id: boxPicker
+
+                                    anchors.top: parent.top
+                                    anchors.topMargin: 18
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    width: Math.min(440, parent.width - 36)
+                                    color: Config.opts.barBoxColor
+                                    onPicked: v => Config.opts.barBoxColor = v
+                                }
+                            }
+                        }
+
+                        // Who blurs the bar's glass: the bar itself (shell glass, wallpaper file, pixel-exact like kitty)
+                        // or Hyprland (layer blur with xray: any wallpaper program, animated ones too). Switching recreates the
+                        // bar, because Hyprland's rules depend on the layer name.
+                        SettingRow {
+                            width: parent.width
+                            label: "Glass blur"
+                            description: Config.opts.barShellGlass ? "Own (experimental): the bar blurs the wallpaper itself, pixel-exact like kitty. Only static wallpapers from waypaper / awww, needs the qsglass-bar rule in hyprland.lua. Only use it if Hyprland's blur gives you problems" : "Hyprland (default): Hyprland blurs the background behind the bar like behind kitty, with any wallpaper program and animated wallpapers too. Own is experimental, only for problems with this"
+                            controlWidth: 360
+
+                            Segmented {
+                                width: parent.width
+                                options: [
+                                    {
+                                        value: "hyprland",
+                                        label: "Hyprland"
+                                    },
+                                    {
+                                        value: "own",
+                                        label: "Own (experimental)"
+                                    }
+                                ]
+                                value: Config.opts.barShellGlass ? "own" : "hyprland"
+                                onPicked: v => Config.opts.barShellGlass = v === "own"
+                            }
+                        }
+
+                        // Glass blur like Hyprland (decoration:blur). Same values as in hyprland.lua = same look as kitty.
+                        SettingRow {
+                            width: parent.width
+                            visible: Config.opts.barShellGlass
+                            label: "Glass blur values"
+                            description: "Same as decoration:blur in hyprland.lua. Use the same values there and here and the bar looks exactly like a blurred window. Read them from Hyprland or reset to Hyprland's defaults"
+                            controlWidth: 400
+
+                            Row {
+                                anchors.right: parent.right
+                                spacing: 10
+
+                                IconButton {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    size: 30
+                                    icon: String.fromCodePoint(0xF04E6)
+                                    iconSize: Theme.fontSm
+                                    label: "From Hyprland"
+                                    idleColor: Theme.fill
+                                    onClicked: hyprBlurReader.running = true
+                                }
+
+                                IconButton {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    size: 30
+                                    icon: String.fromCodePoint(0xF0450)
+                                    iconSize: Theme.fontSm
+                                    label: "Defaults"
+                                    idleColor: Theme.fill
+                                    onClicked: {
+                                        for (const k of panel.glassBlurKeys)
+                                            Config.opts[k] = Config.defaults[k];
+                                    }
+                                }
+                            }
+                        }
+
+                        Repeater {
+                            model: [
+                                { key: "glassBlurSize", label: "Glass blur size", desc: "decoration:blur:size, how far the blur reaches", from: 0, to: 100, step: 1, dec: 0 },
+                                { key: "glassBlurPasses", label: "Glass blur passes", desc: "decoration:blur:passes. Hyprland uses 1 to 8", from: 1, to: 8, step: 1, dec: 0 },
+                                { key: "glassBlurContrast", label: "Glass contrast", desc: "decoration:blur:contrast", from: 0, to: 2, step: 0.0001, dec: 4 },
+                                { key: "glassBlurBrightness", label: "Glass brightness", desc: "decoration:blur:brightness", from: 0, to: 2, step: 0.0001, dec: 4 },
+                                { key: "glassBlurVibrancy", label: "Glass vibrancy", desc: "decoration:blur:vibrancy, makes the colors more saturated", from: 0, to: 1, step: 0.0001, dec: 4 },
+                                { key: "glassBlurVibrancyDarkness", label: "Glass vibrancy darkness", desc: "decoration:blur:vibrancy_darkness, vibrancy on dark colors", from: 0, to: 1, step: 0.0001, dec: 4 },
+                                { key: "glassBlurNoise", label: "Glass noise", desc: "decoration:blur:noise", from: 0, to: 1, step: 0.0001, dec: 4 }
+                            ]
+
+                            delegate: SettingRow {
+                                id: blurRow
+
+                                required property var modelData
+
+                                width: parent ? parent.width : 0
+                                visible: Config.opts.barShellGlass
+                                label: blurRow.modelData.label
+                                description: blurRow.modelData.desc
+                                controlWidth: 400
+
+                                Row {
+                                    spacing: 10
+
+                                    RangeControl {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        width: 400 - blurReset.width - 10
+                                        from: blurRow.modelData.from
+                                        to: blurRow.modelData.to
+                                        stepSize: blurRow.modelData.step
+                                        decimals: blurRow.modelData.dec
+                                        value: Config.opts[blurRow.modelData.key]
+                                        onEdited: v => Config.opts[blurRow.modelData.key] = v
+                                    }
+
+                                    IconButton {
+                                        id: blurReset
+
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        size: 30
+                                        icon: String.fromCodePoint(0xF0450)
+                                        iconSize: Theme.fontSm
+                                        label: "Reset"
+                                        idleColor: Theme.fill
+                                        onClicked: Config.opts[blurRow.modelData.key] = Config.defaults[blurRow.modelData.key]
+                                    }
+                                }
+                            }
+                        }
+
+                        // Section title
+                        Txt {
+                            readonly property bool isHeader: true
+
+                            width: parent.width
+                            topPadding: 18
+                            text: "Content"
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fontSm
+                            font.weight: Theme.uiWeightStrong
+                            font.capitalization: Font.AllUppercase
+                            font.letterSpacing: 0.8
+                        }
+
+                        // Launcher icon on the left of the bar: Arch or Tux, as big tiles showing the real icon
+                        SettingRow {
+                            width: parent.width
+                            implicitHeight: 112
+                            label: "Launcher icon"
+                            description: "The icon in the top left corner of the bar"
+                            controlWidth: 2 * 96 + 12
+
+                            Row {
+                                anchors.right: parent.right
+                                spacing: 12
+
+                                Repeater {
+                                    model: [
+                                        { key: "arch", glyph: Icons.arch, name: "Arch" },
+                                        { key: "tux", glyph: Icons.tux, name: "Tux" }
+                                    ]
+
+                                    delegate: Rectangle {
+                                        id: iconTile
+
+                                        required property var modelData
+                                        readonly property bool selected: Config.opts.launcherIcon === modelData.key
+
+                                        width: 96
+                                        height: 84
+                                        radius: Theme.radius
+                                        color: iconTile.selected ? Theme.accent : (iconTileArea.pressed ? Theme.pressed : (iconTileArea.containsMouse ? Theme.hover : Theme.fillStrong))
+                                        border.width: 1
+                                        border.color: iconTile.selected ? Theme.accent : (iconTileArea.containsMouse ? Theme.textDim : Theme.hairlineStrong)
+                                        scale: iconTileArea.pressed ? 0.96 : (iconTileArea.containsMouse && !iconTile.selected ? 1.04 : 1)
+
+                                        Behavior on color {
+                                            CAnim {}
+                                        }
+                                        Behavior on border.color {
+                                            CAnim {}
+                                        }
+                                        Behavior on scale {
+                                            Anim {
+                                                duration: Theme.ctlFast
+                                            }
+                                        }
+
+                                        Column {
+                                            anchors.centerIn: parent
+                                            spacing: 6
+
+                                            Glyph {
+                                                anchors.horizontalCenter: parent.horizontalCenter
+                                                text: iconTile.modelData.glyph
+                                                font.pixelSize: 34
+                                                color: iconTile.selected ? Theme.accentFg : Theme.fg
+                                            }
+
+                                            Txt {
+                                                anchors.horizontalCenter: parent.horizontalCenter
+                                                text: iconTile.modelData.name
+                                                font.pixelSize: Theme.fontSm
+                                                color: iconTile.selected ? Theme.accentFg : Theme.textDim
+                                            }
+                                        }
+
+                                        // Check mark top right on the active tile
+                                        Rectangle {
+                                            anchors.top: parent.top
+                                            anchors.right: parent.right
+                                            anchors.margins: 6
+                                            width: 18
+                                            height: 18
+                                            radius: 9
+                                            color: Theme.accentFg
+                                            opacity: iconTile.selected ? 1 : 0
+                                            scale: iconTile.selected ? 1 : 0.4
+
+                                            Behavior on opacity {
+                                                Anim {
+                                                    duration: Theme.ctlFast
+                                                }
+                                            }
+                                            Behavior on scale {
+                                                Anim {
+                                                    duration: Theme.ctlMed
+                                                }
+                                            }
+
+                                            Txt {
+                                                anchors.centerIn: parent
+                                                text: "\u2713"
+                                                font.pixelSize: 11
+                                                color: Theme.accent
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            id: iconTileArea
+
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: Config.opts.launcherIcon = iconTile.modelData.key
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Size of the launcher icon on the left of the bar
+                        SettingRow {
+                            width: parent.width
+                            label: "Launcher icon size"
+                            description: "Size of the Arch / Tux icon in the bar"
+                            controlWidth: 400
+
+                            Row {
+                                spacing: 10
+
+                                RangeControl {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 400 - logoSizeResetBtn.width - 10
+                                    from: 10
+                                    to: 26
+                                    value: Config.opts.launcherIconSize
+                                    suffix: " px"
+                                    onEdited: v => Config.opts.launcherIconSize = v
+                                }
+
+                                IconButton {
+                                    id: logoSizeResetBtn
+
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    size: 30
+                                    icon: String.fromCodePoint(0xF0450)
+                                    iconSize: Theme.fontSm
+                                    label: "Reset"
+                                    idleColor: Theme.fill
+                                    onClicked: Config.opts.launcherIconSize = Config.defaults.launcherIconSize
+                                }
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Workspaces"
+                            description: "Always shown (occupied ones beyond that too)"
+
+                            RangeControl {
+                                from: 1
+                                to: 10
+                                value: Config.opts.workspaceCount
+                                onEdited: v => Config.opts.workspaceCount = v
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Window title"
+
+                            SwitchCtl {
+                                checked: Config.opts.barShowTitle
+                                onToggled: Config.opts.barShowTitle = !Config.opts.barShowTitle
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "CPU / RAM / temperature"
+                            description: "Shown next to the clock"
+
+                            SwitchCtl {
+                                checked: Config.opts.barShowSysmon
+                                onToggled: Config.opts.barShowSysmon = !Config.opts.barShowSysmon
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Date next to the clock"
+
+                            SwitchCtl {
+                                checked: Config.opts.barShowDate
+                                onToggled: Config.opts.barShowDate = !Config.opts.barShowDate
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Show seconds"
+
+                            SwitchCtl {
+                                checked: Config.opts.clockSeconds
+                                onToggled: Config.opts.clockSeconds = !Config.opts.clockSeconds
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "24-hour clock"
+
+                            SwitchCtl {
+                                checked: Config.opts.clock24h
+                                onToggled: Config.opts.clock24h = !Config.opts.clock24h
+                            }
+                        }
+                    }
+
+                    // ----- Quickshell > Notifications & OSD -----
+                    Column {
+                        id: pageNotifications
+
+                        width: parent.width
+                        spacing: 10
+                        visible: panel.page === "notifications"
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Do not disturb"
+                            description: "Only critical notifications pop up"
+
+                            SwitchCtl {
+                                checked: Config.opts.dnd
+                                onToggled: Config.opts.dnd = !Config.opts.dnd
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Popup duration"
+
+                            RangeControl {
+                                from: 2
+                                to: 15
+                                value: Config.opts.notifTimeout
+                                suffix: " s"
+                                onEdited: v => Config.opts.notifTimeout = v
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Volume OSD"
+
+                            SwitchCtl {
+                                checked: Config.opts.osdEnabled
+                                onToggled: Config.opts.osdEnabled = !Config.opts.osdEnabled
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Volume step"
+                            description: "Scroll wheel on the bar and IPC"
+
+                            RangeControl {
+                                from: 1
+                                to: 10
+                                value: Config.opts.volumeStep
+                                suffix: " %"
+                                onEdited: v => Config.opts.volumeStep = v
+                            }
+                        }
+                    }
+
+                    // ----- Quickshell > Animations -----
+                    Column {
+                        id: pageAnimations
+
+                        width: parent.width
+                        spacing: 10
+                        visible: panel.page === "animations"
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Animations"
+
+                            SwitchCtl {
+                                checked: Config.opts.animations
+                                onToggled: Config.opts.animations = !Config.opts.animations
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Global duration"
+                            description: "Applies to everything below except bar docking. Lower = faster"
+                            controlWidth: 420
+
+                            RangeControl {
+                                from: 0.25
+                                to: 2
+                                stepSize: 0.05
+                                decimals: 2
+                                value: Config.opts.animScale
+                                suffix: "×"
+                                onEdited: v => Config.opts.animScale = v
+                            }
+                        }
+
+                        SettingRow {
+                            id: dockRow
+
+                            width: parent.width
+                            label: "Bar docking"
+                            description: "Dynamic floating bar. Same curve as the windows in hyprland.lua keeps them in step"
+                            controlWidth: 420
+                            implicitHeight: Math.max(64, dockCol.height + 28)
+
+                            Column {
+                                id: dockCol
+
+                                width: parent.width
+                                spacing: 8
+
+                                RangeControl {
+                                    width: parent.width
+                                    from: 150
+                                    to: 700
+                                    stepSize: 10
+                                    value: Config.opts.barDockDuration
+                                    suffix: " ms"
+                                    onEdited: v => Config.opts.barDockDuration = v
+                                }
+
+                                Row {
+                                    spacing: 8
+
+                                    Txt {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: "Curve"
+                                        color: Theme.textMuted
+                                        font.pixelSize: Theme.fontSm
+                                    }
+
+                                    CurvePick {
+                                        value: Config.opts.animBarCurve
+                                        onPicked: v => Config.opts.animBarCurve = v
+                                    }
+                                }
+                            }
+                        }
+
+                        AnimRow {
+                            label: "Dashboard & control center"
+                            speed: Config.opts.animPanelSpeed
+                            labelA: "Open"
+                            curveA: Config.opts.animPanelOpen
+                            labelB: "Close"
+                            curveB: Config.opts.animPanelClose
+                            onSpeedEdited: v => Config.opts.animPanelSpeed = v
+                            onCurveAPicked: v => Config.opts.animPanelOpen = v
+                            onCurveBPicked: v => Config.opts.animPanelClose = v
+                        }
+
+                        AnimRow {
+                            label: "Launcher, settings & power menu"
+                            speed: Config.opts.animOverlaySpeed
+                            labelA: "Open"
+                            curveA: Config.opts.animOverlayOpen
+                            labelB: "Close"
+                            curveB: Config.opts.animOverlayClose
+                            onSpeedEdited: v => Config.opts.animOverlaySpeed = v
+                            onCurveAPicked: v => Config.opts.animOverlayOpen = v
+                            onCurveBPicked: v => Config.opts.animOverlayClose = v
+                        }
+
+                        AnimRow {
+                            label: "Notifications"
+                            speed: Config.opts.animNotifSpeed
+                            labelA: "Slide in"
+                            curveA: Config.opts.animNotifCurve
+                            onSpeedEdited: v => Config.opts.animNotifSpeed = v
+                            onCurveAPicked: v => Config.opts.animNotifCurve = v
+                        }
+
+                        AnimRow {
+                            label: "Workspaces"
+                            speed: Config.opts.animWsSpeed
+                            curveA: Config.opts.animWsCurve
+                            onSpeedEdited: v => Config.opts.animWsSpeed = v
+                            onCurveAPicked: v => Config.opts.animWsCurve = v
+                        }
+
+                        AnimRow {
+                            label: "Volume & brightness popup"
+                            speed: Config.opts.animOsdSpeed
+                            onSpeedEdited: v => Config.opts.animOsdSpeed = v
+                        }
+
+                        AnimRow {
+                            label: "Buttons, switches & hover"
+                            speed: Config.opts.animCtlSpeed
+                            curveA: Config.opts.animCtlCurve
+                            onSpeedEdited: v => Config.opts.animCtlSpeed = v
+                            onCurveAPicked: v => Config.opts.animCtlCurve = v
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Reset all animations"
+                            description: "Back to the defaults (the setup this tab was built with)"
+
+                            IconButton {
+                                anchors.right: parent.right
+                                size: 30
+                                icon: String.fromCodePoint(0xF0450)
+                                iconSize: Theme.fontSm
+                                label: "Reset"
+                                idleColor: Theme.fill
+                                onClicked: panel.resetAnimations()
+                            }
+                        }
+                    }
+
+                    // ----- Quickshell > Performance -----
+                    Column {
+                        id: pagePerformance
+
+                        width: parent.width
+                        spacing: 10
+                        visible: panel.page === "performance"
+
+                        // Vulkan or OpenGL. Can only be chosen at startup: switching saves the choice and
+                        // restarts Quickshell (~/.local/bin/qs-restart, which reads it via ~/.config/quickshell/render-env.sh).
+                        SettingRow {
+                            readonly property string running: Quickshell.env("QSG_RHI_BACKEND") === "opengl" ? "OpenGL" : "Vulkan"
+
+                            width: parent.width
+                            label: "Renderer"
+                            description: "OpenGL is the default. Switching restarts the shell · running: " + running
+                            controlWidth: 220
+
+                            Segmented {
+                                width: parent.width
+                                options: [
+                                    {
+                                        value: "opengl",
+                                        label: "OpenGL"
+                                    },
+                                    {
+                                        value: "vulkan",
+                                        label: "Vulkan"
+                                    }
+                                ]
+                                value: Config.opts.renderBackend
+                                onPicked: v => {
+                                    if (v === Config.opts.renderBackend)
+                                        return;
+                                    Config.opts.renderBackend = v;
+                                    // Wait briefly until the setting is saved, then restart
+                                    Quickshell.execDetached(["sh", "-c", "sleep 0.6; r=\"$HOME/.local/bin/qs-restart\"; [ -x \"$r\" ] && exec \"$r\"; pkill -x quickshell; sleep 1; setsid -f \"$HOME/.local/bin/qs-start\" >/dev/null 2>&1 </dev/null"]);
+                                }
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "FPS counter"
+                            description: "Frame rate and longest frame gap, top right"
+
+                            SwitchCtl {
+                                checked: Config.opts.fpsCounter
+                                onToggled: Config.opts.fpsCounter = !Config.opts.fpsCounter
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "GPU monitor (nvidia-smi)"
+                            description: "Only runs while the dashboard is open"
+
+                            SwitchCtl {
+                                checked: Config.opts.gpuMonitor
+                                onToggled: Config.opts.gpuMonitor = !Config.opts.gpuMonitor
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Smooth text"
+                            description: "Text and icons glide without pixel steps while moving (glyphs look a bit softer)"
+
+                            SwitchCtl {
+                                checked: Config.opts.smoothText
+                                onToggled: Config.opts.smoothText = !Config.opts.smoothText
+                            }
+                        }
+                    }
+
+                    // ----- Quickshell > Commands -----
+                    Column {
+                        id: pageCommands
+
+                        width: parent.width
+                        spacing: 10
+                        visible: panel.page === "commands"
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Terminal"
+                            description: "For terminal apps, nmtui and bluetoothctl"
+
+                            InputField {
+                                width: parent.width
+                                text: Config.opts.terminal
+                                placeholder: "kitty"
+                                onCommitted: value => Config.opts.terminal = value.trim() !== "" ? value.trim() : Config.defaults.terminal
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Lock screen"
+                            description: "Used by Lock in the power menu and control center"
+
+                            InputField {
+                                width: parent.width
+                                text: Config.opts.lockCommand
+                                placeholder: "hyprlock"
+                                onCommitted: value => Config.opts.lockCommand = value.trim() !== "" ? value.trim() : Config.defaults.lockCommand
+                            }
+                        }
+                    }
+
+                    // ----- Hyprland > Windows -----
+                    Column {
+                        id: pageHyprWindows
+
+                        width: parent.width
+                        spacing: 10
+                        visible: panel.page === "hyprWindows"
+
+                        // Note at the top, counts as a section title (no separator line below)
+                        Txt {
+                            readonly property bool isHeader: true
+
+                            width: parent.width
+                            text: "Applied live on top of hyprland.lua, the file itself stays unchanged. Reset = back to the value from hyprland.lua (Hyprland reloads once)"
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fontSm
+                            wrapMode: Text.Wrap
+                            bottomPadding: 6
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Corner rounding"
+                            description: "Rounded window corners (decoration:rounding). A single window with Dynamic Hyprland integration stays square" + (Config.opts.hyprRounding >= 0 ? " · set here" : " · from hyprland.lua")
+                            controlWidth: 400
+
+                            Row {
+                                spacing: 10
+
+                                RangeControl {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 400 - reset_hyprRounding.width - 10
+                                    from: 0
+                                    to: 20
+                                    value: panel.hyprVal("hyprRounding", "decoration:rounding", 10)
+                                    suffix: " px"
+                                    onEdited: v => {
+                                        Config.opts.hyprRounding = v;
+                                    }
+                                }
+
+                                IconButton {
+                                    id: reset_hyprRounding
+
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    size: 30
+                                    icon: String.fromCodePoint(0xF0450)
+                                    iconSize: Theme.fontSm
+                                    label: "Reset"
+                                    idleColor: Theme.fill
+                                    enabled: Config.opts.hyprRounding >= 0
+                                    opacity: enabled ? 1 : 0.35
+                                    onClicked: panel.hyprReset("hyprRounding")
+                                }
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Shadows"
+                            description: "Drop shadows under windows (decoration:shadow:enabled)" + (Config.opts.hyprShadow >= 0 ? " · set here" : " · from hyprland.lua")
+                            controlWidth: 400
+
+                            Row {
+                                anchors.right: parent.right
+                                spacing: 14
+
+                                Toggle {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    checked: panel.hyprVal("hyprShadow", "decoration:shadow:enabled", 0) > 0
+                                    onToggled: Config.opts.hyprShadow = panel.hyprVal("hyprShadow", "decoration:shadow:enabled", 0) > 0 ? 0 : 1
+                                }
+
+                                IconButton {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    size: 30
+                                    icon: String.fromCodePoint(0xF0450)
+                                    iconSize: Theme.fontSm
+                                    label: "Reset"
+                                    idleColor: Theme.fill
+                                    enabled: Config.opts.hyprShadow >= 0
+                                    opacity: enabled ? 1 : 0.35
+                                    onClicked: panel.hyprReset("hyprShadow")
+                                }
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Blur size"
+                            description: "Blur behind all windows, panels and popups (decoration:blur:size)" + (Config.opts.hyprBlurSize >= 0 ? " · set here" : " · from hyprland.lua")
+                            controlWidth: 400
+
+                            Row {
+                                spacing: 10
+
+                                RangeControl {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 400 - reset_hyprBlurSize.width - 10
+                                    from: 1
+                                    to: 30
+                                    value: panel.hyprVal("hyprBlurSize", "decoration:blur:size", 10)
+                                    suffix: ""
+                                    onEdited: v => {
+                                        Config.opts.hyprBlurSize = v;
+                                        Config.opts.glassBlurSize = v;
+                                    }
+                                }
+
+                                IconButton {
+                                    id: reset_hyprBlurSize
+
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    size: 30
+                                    icon: String.fromCodePoint(0xF0450)
+                                    iconSize: Theme.fontSm
+                                    label: "Reset"
+                                    idleColor: Theme.fill
+                                    enabled: Config.opts.hyprBlurSize >= 0
+                                    opacity: enabled ? 1 : 0.35
+                                    onClicked: panel.hyprReset("hyprBlurSize")
+                                }
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Blur passes"
+                            description: "decoration:blur:passes, more passes = softer blur but more GPU work" + (Config.opts.hyprBlurPasses >= 0 ? " · set here" : " · from hyprland.lua")
+                            controlWidth: 400
+
+                            Row {
+                                spacing: 10
+
+                                RangeControl {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 400 - reset_hyprBlurPasses.width - 10
+                                    from: 1
+                                    to: 8
+                                    value: panel.hyprVal("hyprBlurPasses", "decoration:blur:passes", 3)
+                                    suffix: ""
+                                    onEdited: v => {
+                                        Config.opts.hyprBlurPasses = v;
+                                        Config.opts.glassBlurPasses = v;
+                                    }
+                                }
+
+                                IconButton {
+                                    id: reset_hyprBlurPasses
+
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    size: 30
+                                    icon: String.fromCodePoint(0xF0450)
+                                    iconSize: Theme.fontSm
+                                    label: "Reset"
+                                    idleColor: Theme.fill
+                                    enabled: Config.opts.hyprBlurPasses >= 0
+                                    opacity: enabled ? 1 : 0.35
+                                    onClicked: panel.hyprReset("hyprBlurPasses")
+                                }
+                            }
+                        }
+                    }
+
+                    // ----- Hyprland > Layout & rendering -----
+                    Column {
+                        id: pageHyprLayout
+
+                        width: parent.width
+                        spacing: 10
+                        visible: panel.page === "hyprLayout"
+
+                        // On: Hyprland with smart gaps, smart borders and a square single window, top 19 px.
+                        // Off: all of that gone (the bar handles 1 window), top 10 px.
+                        // hyprland.lua reads "hyprDynamic" when it loads, so "hyprctl reload" after switching.
+                        SettingRow {
+                            width: parent.width
+                            label: "Dynamic Hyprland integration"
+                            description: Config.opts.hyprDynamic ? "Smart gaps and borders: a single window fills the screen without gaps, border and rounding, the docked bar sits right on it. Top gap 19 px for the floating bar" : "No smart gaps, smart borders or square single windows, the bar handles 1 window alone. Top gap 10 px"
+
+                            SwitchCtl {
+                                checked: Config.opts.hyprDynamic
+                                onToggled: {
+                                    Config.opts.hyprDynamic = !Config.opts.hyprDynamic;
+                                    // Wait briefly until the setting is saved, then reload Hyprland
+                                    Quickshell.execDetached(["sh", "-c", "sleep 0.5; hyprctl reload >/dev/null 2>&1"]);
+                                }
+                            }
+                        }
+
+                        // Direct scanout: fullscreen apps go straight to the screen, skipping the compositor (less latency).
+                        // render:direct_scanout 0 = off, 1 = on, 2 = auto (only apps that report themselves as a game)
+                        SettingRow {
+                            width: parent.width
+                            label: "Direct scanout"
+                            description: "Fullscreen apps go straight to the screen, skipping the compositor (less latency). Games: only apps that report themselves as a game" + (Config.opts.hyprDirectScanout >= 0 ? " · set here" : " · from hyprland.lua")
+                            controlWidth: 400
+
+                            Row {
+                                anchors.right: parent.right
+                                spacing: 10
+
+                                Segmented {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 400 - reset_hyprDirectScanout.width - 10
+                                    options: [
+                                        {
+                                            value: "0",
+                                            label: "Off"
+                                        },
+                                        {
+                                            value: "2",
+                                            label: "Games"
+                                        },
+                                        {
+                                            value: "1",
+                                            label: "On"
+                                        }
+                                    ]
+                                    value: String(panel.hyprVal("hyprDirectScanout", "render:direct_scanout", 0))
+                                    onPicked: v => Config.opts.hyprDirectScanout = Number(v)
+                                }
+
+                                IconButton {
+                                    id: reset_hyprDirectScanout
+
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    size: 30
+                                    icon: String.fromCodePoint(0xF0450)
+                                    iconSize: Theme.fontSm
+                                    label: "Reset"
+                                    idleColor: Theme.fill
+                                    enabled: Config.opts.hyprDirectScanout >= 0
+                                    opacity: enabled ? 1 : 0.35
+                                    onClicked: panel.hyprReset("hyprDirectScanout")
+                                }
+                            }
+                        }
+                    }
+
+                    // ----- Apps > Opacity -----
+                    Column {
+                        id: pageAppsOpacity
+
+                        width: parent.width
+                        spacing: 10
+                        visible: panel.page === "appsOpacity"
+
+                        SettingRow {
+                            width: parent.width
+                            label: "All apps"
+                            description: "Sets every app below to the same value. 100 % = solid"
+                            controlWidth: 400
+
+                            Row {
+                                anchors.right: parent.right
+                                spacing: 14
+
+                                Item {
+                                    width: 38
+                                    height: 1
+                                }
+
+                                RangeControl {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 400 - 38 - 14
+                                    from: 25
+                                    to: 100
+                                    stepSize: 5
+                                    value: Config.opts.appOpacity
+                                    suffix: " %"
+                                    onEdited: v => panel.setAllApps(v)
+                                }
+                            }
+                        }
+
+                        // Section title
+                        Txt {
+                            readonly property bool isHeader: true
+
+                            width: parent.width
+                            topPadding: 18
+                            text: "Apps"
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fontSm
+                            font.weight: Theme.uiWeightStrong
+                            font.capitalization: Font.AllUppercase
+                            font.letterSpacing: 0.8
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            appIcon: panel.appIconFor(["kitty"])
+                            label: "kitty"
+                            description: "Terminal background, text stays solid. Live"
+                            controlWidth: 400
+
+                            Row {
+                                anchors.right: parent.right
+                                spacing: 14
+
+                                Item {
+                                    width: 38
+                                    height: 1
+                                }
+
+                                RangeControl {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 400 - 38 - 14
+                                    enabled: true
+                                    opacity: enabled ? 1 : 0.4
+                                    from: 25
+                                    to: 100
+                                    stepSize: 5
+                                    value: panel.appOp("appOpacityKitty")
+                                    suffix: " %"
+                                    onEdited: v => panel.setApp("appOpacityKitty", v)
+                                }
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            appIcon: panel.appIconFor(["io.github.lullabyx.sone", "sone", "tidal"])
+                            label: "Tidal (SONE)"
+                            description: "The whole window fades, text too (Hyprland rule). Live"
+                            controlWidth: 400
+
+                            Row {
+                                anchors.right: parent.right
+                                spacing: 14
+
+                                Item {
+                                    width: 38
+                                    height: 1
+                                }
+
+                                RangeControl {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 400 - 38 - 14
+                                    enabled: true
+                                    opacity: enabled ? 1 : 0.4
+                                    from: 25
+                                    to: 100
+                                    stepSize: 5
+                                    value: panel.appOp("appOpacityTidal")
+                                    suffix: " %"
+                                    onEdited: v => panel.setApp("appOpacityTidal", v)
+                                }
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            appIcon: panel.appIconFor(["org.gnome.Nautilus", "nautilus"])
+                            label: "Files (Nautilus)"
+                            description: "Off = as before. Next window (Nautilus restarts in the background if no window is open)"
+                            controlWidth: 400
+
+                            Row {
+                                anchors.right: parent.right
+                                spacing: 14
+
+                                Toggle {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    checked: panel.appOn("appGlassNautilus")
+                                    onToggled: panel.toggleApp("appGlassNautilus")
+                                }
+
+                                RangeControl {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 400 - 38 - 14
+                                    enabled: panel.appOn("appGlassNautilus")
+                                    opacity: enabled ? 1 : 0.4
+                                    from: 25
+                                    to: 100
+                                    stepSize: 5
+                                    value: panel.appOp("appOpacityNautilus")
+                                    suffix: " %"
+                                    onEdited: v => panel.setApp("appOpacityNautilus", v)
+                                }
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            appIcon: panel.appIconFor(["document-open", "folder-open", "folder"])
+                            label: "File dialogs"
+                            description: "Open / Save dialogs, Thunar and other GTK3 apps. Off = as before. Next dialog"
+                            controlWidth: 400
+
+                            Row {
+                                anchors.right: parent.right
+                                spacing: 14
+
+                                Toggle {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    checked: panel.appOn("appGlassDialogs")
+                                    onToggled: panel.toggleApp("appGlassDialogs")
+                                }
+
+                                RangeControl {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 400 - 38 - 14
+                                    enabled: panel.appOn("appGlassDialogs")
+                                    opacity: enabled ? 1 : 0.4
+                                    from: 25
+                                    to: 100
+                                    stepSize: 5
+                                    value: panel.appOp("appOpacityDialogs")
+                                    suffix: " %"
+                                    onEdited: v => panel.setApp("appOpacityDialogs", v)
+                                }
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            appIcon: panel.appIconFor(["vesktop", "dev.vencord.Vesktop", "discord"])
+                            label: "Vesktop"
+                            description: "Off = as before. Live, menus stay a bit denser"
+                            controlWidth: 400
+
+                            Row {
+                                anchors.right: parent.right
+                                spacing: 14
+
+                                Toggle {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    checked: panel.appOn("appGlassVesktop")
+                                    onToggled: panel.toggleApp("appGlassVesktop")
+                                }
+
+                                RangeControl {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 400 - 38 - 14
+                                    enabled: panel.appOn("appGlassVesktop")
+                                    opacity: enabled ? 1 : 0.4
+                                    from: 25
+                                    to: 100
+                                    stepSize: 5
+                                    value: panel.appOp("appOpacityVesktop")
+                                    suffix: " %"
+                                    onEdited: v => panel.setApp("appOpacityVesktop", v)
+                                }
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            appIcon: panel.appIconFor(["firefox", "org.mozilla.firefox"])
+                            label: "Firefox"
+                            description: "New tab and empty pages, the toolbars too. Off = as before. After a Firefox restart"
+                            controlWidth: 400
+
+                            Row {
+                                anchors.right: parent.right
+                                spacing: 14
+
+                                Toggle {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    checked: panel.appOn("appGlassFirefox")
+                                    onToggled: panel.toggleApp("appGlassFirefox")
+                                }
+
+                                RangeControl {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 400 - 38 - 14
+                                    enabled: panel.appOn("appGlassFirefox")
+                                    opacity: enabled ? 1 : 0.4
+                                    from: 25
+                                    to: 100
+                                    stepSize: 5
+                                    value: panel.appOp("appOpacityFirefox")
+                                    suffix: " %"
+                                    onEdited: v => panel.setApp("appOpacityFirefox", v)
+                                }
+                            }
+                        }
+                    }
+
+                    // ----- Apps > kitty -----
+                    Column {
+                        id: pageAppsKitty
+
+                        width: parent.width
+                        spacing: 10
+                        visible: panel.page === "appsKitty"
+
+                        // kitty starts through ~/.local/bin/kitty-shell/zsh (kitty.conf: shell ...), which reads the value
+                        // for every new window. So it applies right away to the next kitty, no restart needed.
+                        SettingRow {
+                            width: parent.width
+                            label: "Fastfetch in kitty"
+                            description: "Show fastfetch every time a new kitty window opens"
+
+                            SwitchCtl {
+                                checked: Config.opts.kittyFastfetch
+                                onToggled: Config.opts.kittyFastfetch = !Config.opts.kittyFastfetch
+                            }
+                        }
+
+                        // Images for fastfetch: 4 slots, one per new kitty in this order
+                        // (~/.local/bin/fastfetch-logo reads fastfetchLogo1..4). Clicking a slot opens the picker below it
+                        // (images from ~/.config/fastfetch/logos and ~/Pictures), right-click clears it.
+                        Column {
+                            id: ffLogos
+
+                            // Slot currently being picked for (0..3), -1 = picker closed
+                            property int picking: -1
+                            readonly property var slots: [Config.opts.fastfetchLogo1, Config.opts.fastfetchLogo2, Config.opts.fastfetchLogo3, Config.opts.fastfetchLogo4]
+                            readonly property string logosDir: Quickshell.env("HOME") + "/.config/fastfetch/logos"
+                            readonly property string picturesDir: Quickshell.env("HOME") + "/Pictures"
+                            // All selectable images, first the logos folder, then ~/Pictures
+                            readonly property var choices: {
+                                const l = [];
+                                for (let i = 0; i < ffLogosModel.count; i++)
+                                    l.push(ffLogosModel.get(i, "filePath"));
+                                for (let i = 0; i < ffPicturesModel.count; i++)
+                                    l.push(ffPicturesModel.get(i, "filePath"));
+                                return l;
+                            }
+
+                            function setSlot(i, path) {
+                                if (i === 0)
+                                    Config.opts.fastfetchLogo1 = path;
+                                else if (i === 1)
+                                    Config.opts.fastfetchLogo2 = path;
+                                else if (i === 2)
+                                    Config.opts.fastfetchLogo3 = path;
+                                else if (i === 3)
+                                    Config.opts.fastfetchLogo4 = path;
+                                // Prepare it for fastfetch right away (huge images take a few seconds),
+                                // so the next kitty doesn't have to wait for it
+                                if (path !== "")
+                                    Quickshell.execDetached([Quickshell.env("HOME") + "/.local/bin/fastfetch-logo", "prepare", path]);
+                            }
+
+                            // Path as a URL (spaces, # etc. in the file name)
+                            function url(path) {
+                                return path !== "" ? "file://" + path.split("/").map(encodeURIComponent).join("/") : "";
+                            }
+
+                            width: parent.width
+                            spacing: 10
+
+                            FolderListModel {
+                                id: ffLogosModel
+
+                                folder: "file://" + ffLogos.logosDir
+                                nameFilters: ["*.png", "*.jpg", "*.jpeg", "*.webp"]
+                                caseSensitive: false
+                                showDirs: false
+                                sortField: FolderListModel.Name
+                            }
+
+                            FolderListModel {
+                                id: ffPicturesModel
+
+                                folder: "file://" + ffLogos.picturesDir
+                                nameFilters: ["*.png", "*.jpg", "*.jpeg", "*.webp"]
+                                caseSensitive: false
+                                showDirs: false
+                                sortField: FolderListModel.Name
+                            }
+
+                            SettingRow {
+                                width: parent.width
+                                label: "Fastfetch images"
+                                description: "One per new kitty window, in this order. Click a slot to pick, right-click to clear. All empty = every image in ~/.config/fastfetch/logos"
+                                controlWidth: 4 * 60 + 3 * 8
+
+                                Row {
+                                    spacing: 8
+
+                                    Repeater {
+                                        model: 4
+
+                                        delegate: Item {
+                                            id: ffSlot
+
+                                            required property int index
+                                            readonly property string path: ffLogos.slots[index] || ""
+                                            readonly property bool picking: ffLogos.picking === index
+
+                                            width: 60
+                                            height: 60
+
+                                            ClippingRectangle {
+                                                anchors.fill: parent
+                                                radius: Theme.radius
+                                                color: Theme.fillStrong
+
+                                                Image {
+                                                    anchors.fill: parent
+                                                    anchors.margins: 4
+                                                    source: ffLogos.url(ffSlot.path)
+                                                    sourceSize.width: 112
+                                                    sourceSize.height: 112
+                                                    fillMode: Image.PreserveAspectFit
+                                                    asynchronous: true
+                                                    smooth: true
+                                                }
+
+                                                Glyph {
+                                                    anchors.centerIn: parent
+                                                    visible: ffSlot.path === ""
+                                                    text: Icons.plus
+                                                    color: Theme.textMuted
+                                                }
+                                            }
+
+                                            Txt {
+                                                anchors.left: parent.left
+                                                anchors.top: parent.top
+                                                anchors.leftMargin: 5
+                                                anchors.topMargin: 2
+                                                text: String(ffSlot.index + 1)
+                                                color: Theme.textDim
+                                                font.pixelSize: Theme.fontSm - 1
+                                            }
+
+                                            Rectangle {
+                                                anchors.fill: parent
+                                                radius: Theme.radius
+                                                color: "transparent"
+                                                border.width: ffSlot.picking ? 2 : 1
+                                                border.color: ffSlot.picking ? Theme.accent : (ffSlotArea.containsMouse ? Theme.textMuted : Theme.hairline)
+
+                                                Behavior on border.color {
+                                                    CAnim {}
+                                                }
+                                            }
+
+                                            MouseArea {
+                                                id: ffSlotArea
+
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                                onClicked: mouse => {
+                                                    if (mouse.button === Qt.RightButton) {
+                                                        ffLogos.setSlot(ffSlot.index, "");
+                                                        return;
+                                                    }
+                                                    ffLogos.picking = ffSlot.picking ? -1 : ffSlot.index;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Picker for the clicked slot
+                            Rectangle {
+                                width: parent.width
+                                visible: ffLogos.picking >= 0
+                                height: visible ? ffPick.implicitHeight + 24 : 0
+                                radius: Theme.radius
+                                color: Theme.fill
+
+                                Column {
+                                    id: ffPick
+
+                                    x: 12
+                                    y: 12
+                                    width: parent.width - 24
+                                    spacing: 10
+
+                                    Item {
+                                        width: parent.width
+                                        height: 28
+
+                                        Txt {
+                                            anchors.left: parent.left
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            text: "Image " + (ffLogos.picking + 1) + " · from ~/.config/fastfetch/logos and ~/Pictures"
+                                            color: Theme.textMuted
+                                            font.pixelSize: Theme.fontSm
+                                        }
+
+                                        IconButton {
+                                            anchors.right: ffPickClose.left
+                                            anchors.rightMargin: 6
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            size: 28
+                                            icon: Icons.image
+                                            idleColor: Theme.fill
+                                            // Open the folder in the file manager to put images into it
+                                            onClicked: Quickshell.execDetached(["sh", "-c", "mkdir -p \"$1\" && exec xdg-open \"$1\"", "sh", ffLogos.logosDir])
+                                        }
+
+                                        IconButton {
+                                            id: ffPickClose
+
+                                            anchors.right: parent.right
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            size: 28
+                                            icon: Icons.close
+                                            idleColor: Theme.fill
+                                            onClicked: ffLogos.picking = -1
+                                        }
+                                    }
+
+                                    Flow {
+                                        width: parent.width
+                                        spacing: 8
+
+                                        Repeater {
+                                            model: ffLogos.picking >= 0 ? ffLogos.choices : []
+
+                                            delegate: Item {
+                                                id: ffChoice
+
+                                                required property string modelData
+                                                readonly property bool chosen: ffLogos.slots[ffLogos.picking] === modelData
+
+                                                width: 72
+                                                height: 72
+
+                                                ClippingRectangle {
+                                                    anchors.fill: parent
+                                                    radius: Theme.radius
+                                                    color: Theme.fillStrong
+
+                                                    Image {
+                                                        anchors.fill: parent
+                                                        anchors.margins: 4
+                                                        source: ffLogos.url(ffChoice.modelData)
+                                                        sourceSize.width: 136
+                                                        sourceSize.height: 136
+                                                        fillMode: Image.PreserveAspectFit
+                                                        asynchronous: true
+                                                        smooth: true
+                                                    }
+                                                }
+
+                                                Rectangle {
+                                                    anchors.fill: parent
+                                                    radius: Theme.radius
+                                                    color: "transparent"
+                                                    border.width: ffChoice.chosen ? 2 : 1
+                                                    border.color: ffChoice.chosen ? Theme.accent : (ffChoiceArea.containsMouse ? Theme.textMuted : Theme.hairline)
+                                                }
+
+                                                MouseArea {
+                                                    id: ffChoiceArea
+
+                                                    anchors.fill: parent
+                                                    hoverEnabled: true
+                                                    cursorShape: Qt.PointingHandCursor
+                                                    onClicked: {
+                                                        ffLogos.setSlot(ffLogos.picking, ffChoice.modelData);
+                                                        ffLogos.picking = -1;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    Txt {
+                                        width: parent.width
+                                        visible: ffLogos.choices.length === 0
+                                        text: "No images yet. Put some into ~/.config/fastfetch/logos or ~/Pictures."
+                                        color: Theme.textMuted
+                                        font.pixelSize: Theme.fontSm
+                                        wrapMode: Text.Wrap
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // ----- System > Wallpaper -----
                     // The current image large at the top, below it search, sorting, random and all images from the
                     // waypaper folder as tiles. A click sets the image (waypaper/awww, see services/Walls.qml).
                     // Tiles and thumbnails only exist while the tab is open.
                     Column {
                         id: pageWallpaper
 
-                        readonly property bool live: panel.tab === 1 && panel.progress > 0
+                        readonly property bool live: panel.page === "wallpaper" && panel.progress > 0
 
                         width: parent.width
                         spacing: 12
-                        visible: panel.tab === 1
+                        visible: panel.page === "wallpaper"
 
                         onLiveChanged: Walls.wanted = live
 
@@ -1347,1237 +3280,27 @@ OverlayPanel {
                         }
                     }
 
-                    // ----- Bar -----
+                    // ----- System > Font -----
                     Column {
-                        id: pageBar
+                        id: pageSystemFont
 
                         width: parent.width
                         spacing: 10
-                        visible: panel.tab === 2
+                        visible: panel.page === "systemFont"
 
-                        // Thickness docked (top, moves both) and floating (bottom, floating only). Reset = defaults
                         SettingRow {
-                            id: heightRow
-
-                            readonly property bool dynamic: Config.opts.barFloating && Config.opts.barFloatingDynamic
-                            readonly property int labelWidth: 64
-                            readonly property real sliderWidth: heightCol.width - heightRow.labelWidth - resetBtn.width - 20
-
                             width: parent.width
-                            implicitHeight: Math.max(64, heightCol.height + 28)
-                            label: "Bar height"
-                            description: heightRow.dynamic ? "Docked moves both, Floating only the floating bar" : ""
-                            controlWidth: 400
+                            label: "System font"
+                            description: "Every app (GTK, Qt, Firefox, Electron) and the shell. Open apps use it after a restart"
 
-                            Column {
-                                id: heightCol
-
+                            FontSelect {
+                                objectName: "systemFontSelect"
                                 width: parent.width
-                                spacing: 10
-
-                                Row {
-                                    visible: heightRow.dynamic
-                                    spacing: 10
-
-                                    Txt {
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        width: heightRow.labelWidth
-                                        text: "Docked"
-                                        color: Theme.textMuted
-                                        font.pixelSize: Theme.fontSm
-                                    }
-
-                                    RangeControl {
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        width: heightRow.sliderWidth
-                                        from: 28
-                                        to: 48
-                                        value: Config.opts.barDockedHeight
-                                        suffix: " px"
-                                        onEdited: v => {
-                                            const d = v - Config.opts.barDockedHeight;
-                                            Config.opts.barDockedHeight = v;
-                                            Config.opts.barHeight = Math.max(28, Math.min(48, Config.opts.barHeight + d));
-                                        }
-                                    }
-
-                                    Item {
-                                        width: resetBtn.width
-                                        height: 1
-                                    }
-                                }
-
-                                Row {
-                                    spacing: 10
-
-                                    Txt {
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        width: heightRow.labelWidth
-                                        text: Config.opts.barFloating ? "Floating" : "Height"
-                                        color: Theme.textMuted
-                                        font.pixelSize: Theme.fontSm
-                                    }
-
-                                    RangeControl {
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        width: heightRow.sliderWidth
-                                        from: 28
-                                        to: 48
-                                        value: Config.opts.barHeight
-                                        suffix: " px"
-                                        onEdited: v => Config.opts.barHeight = v
-                                    }
-
-                                    IconButton {
-                                        id: resetBtn
-
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        size: 30
-                                        icon: String.fromCodePoint(0xF0450)
-                                        iconSize: Theme.fontSm
-                                        label: "Reset"
-                                        idleColor: Theme.fill
-                                        onClicked: {
-                                            Config.opts.barHeight = Config.defaults.barHeight;
-                                            Config.opts.barDockedHeight = Config.defaults.barDockedHeight;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            label: "Floating bar"
-                            description: "Gap to the screen edge and rounded corners"
-
-                            SwitchCtl {
-                                checked: Config.opts.barFloating
-                                onToggled: Config.opts.barFloating = !Config.opts.barFloating
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            visible: Config.opts.barFloating
-                            label: "Dynamic"
-                            description: "Docks with exactly 1 tiled window, floats with none or 2 and more (floating windows never count)"
-
-                            SwitchCtl {
-                                checked: Config.opts.barFloatingDynamic
-                                onToggled: Config.opts.barFloatingDynamic = !Config.opts.barFloatingDynamic
-                            }
-                        }
-
-                        // On: Hyprland with smart gaps, smart borders and a square single window, rounding 10, top gap 19 px.
-                        // Off: all of that gone (the bar handles 1 window), rounding 5, top gap 10 px.
-                        // hyprland.lua reads "hyprDynamic" when it loads, so "hyprctl reload" after switching.
-                        SettingRow {
-                            width: parent.width
-                            label: "Dynamic Hyprland integration"
-                            description: Config.opts.hyprDynamic ? "Hyprland's smart gaps and borders: a single window fills the screen without border and rounding. Rounding 10, top gap 19" : "Hyprland skips smart gaps, smart borders and square single windows, the bar handles 1 window. Rounding 5, top gap 10"
-
-                            SwitchCtl {
-                                checked: Config.opts.hyprDynamic
-                                onToggled: {
-                                    Config.opts.hyprDynamic = !Config.opts.hyprDynamic;
-                                    // Wait briefly until the setting is saved, then reload Hyprland
-                                    Quickshell.execDetached(["sh", "-c", "sleep 0.5; hyprctl reload >/dev/null 2>&1"]);
-                                }
-                            }
-                        }
-
-                        // On: stepless dock animation (between pixels, like Hyprland windows), content a touch softer
-                        // while moving. Off: whole pixels, always crisp (previous behavior).
-                        SettingRow {
-                            width: parent.width
-                            visible: Config.opts.barFloating
-                            label: "Subpixel glide"
-                            description: "Smoother dock animation that moves between pixels like Hyprland windows. Icons are a touch softer only while moving. Off = whole pixels, always crisp"
-
-                            SwitchCtl {
-                                checked: Config.opts.barGlide
-                                onToggled: Config.opts.barGlide = !Config.opts.barGlide
-                            }
-                        }
-
-                        // Who blurs the bar's glass: the bar itself (shell glass, wallpaper file, pixel-exact like kitty)
-                        // or Hyprland (layer blur with xray: any wallpaper program, animated ones too). Switching recreates the
-                        // bar, because Hyprland's rules depend on the layer name.
-                        SettingRow {
-                            width: parent.width
-                            label: "Glass blur"
-                            description: "Own: the bar blurs the wallpaper itself, pixel-exact like kitty (static wallpaper from waypaper / awww, needs the qsglass-bar rule in hyprland.lua). Hyprland: Hyprland blurs the background behind the bar like behind kitty (any wallpaper program, animated wallpapers too)"
-                            controlWidth: 330
-
-                            Segmented {
-                                width: parent.width
-                                options: [
-                                    {
-                                        value: "own",
-                                        label: "Own"
-                                    },
-                                    {
-                                        value: "hyprland",
-                                        label: "Hyprland"
-                                    }
-                                ]
-                                value: Config.opts.barShellGlass ? "own" : "hyprland"
-                                onPicked: v => Config.opts.barShellGlass = v === "own"
-                            }
-                        }
-
-                        // Glass blur like Hyprland (decoration:blur). Same values as in hyprland.lua = same look as kitty.
-                        SettingRow {
-                            width: parent.width
-                            visible: Config.opts.barShellGlass
-                            label: "Glass blur values"
-                            description: "Same as decoration:blur in hyprland.lua. Use the same values there and here and the bar looks exactly like a blurred window. Read them from Hyprland or reset to Hyprland's defaults"
-                            controlWidth: 400
-
-                            Row {
-                                anchors.right: parent.right
-                                spacing: 10
-
-                                IconButton {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    size: 30
-                                    icon: String.fromCodePoint(0xF04E6)
-                                    iconSize: Theme.fontSm
-                                    label: "From Hyprland"
-                                    idleColor: Theme.fill
-                                    onClicked: hyprBlurReader.running = true
-                                }
-
-                                IconButton {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    size: 30
-                                    icon: String.fromCodePoint(0xF0450)
-                                    iconSize: Theme.fontSm
-                                    label: "Defaults"
-                                    idleColor: Theme.fill
-                                    onClicked: {
-                                        for (const k of panel.glassBlurKeys)
-                                            Config.opts[k] = Config.defaults[k];
-                                    }
-                                }
-                            }
-                        }
-
-                        Repeater {
-                            model: [
-                                { key: "glassBlurSize", label: "Glass blur size", desc: "decoration:blur:size, how far the blur reaches", from: 0, to: 100, step: 1, dec: 0 },
-                                { key: "glassBlurPasses", label: "Glass blur passes", desc: "decoration:blur:passes. Hyprland uses 1 to 8", from: 1, to: 8, step: 1, dec: 0 },
-                                { key: "glassBlurContrast", label: "Glass contrast", desc: "decoration:blur:contrast", from: 0, to: 2, step: 0.0001, dec: 4 },
-                                { key: "glassBlurBrightness", label: "Glass brightness", desc: "decoration:blur:brightness", from: 0, to: 2, step: 0.0001, dec: 4 },
-                                { key: "glassBlurVibrancy", label: "Glass vibrancy", desc: "decoration:blur:vibrancy, makes the colors more saturated", from: 0, to: 1, step: 0.0001, dec: 4 },
-                                { key: "glassBlurVibrancyDarkness", label: "Glass vibrancy darkness", desc: "decoration:blur:vibrancy_darkness, vibrancy on dark colors", from: 0, to: 1, step: 0.0001, dec: 4 },
-                                { key: "glassBlurNoise", label: "Glass noise", desc: "decoration:blur:noise", from: 0, to: 1, step: 0.0001, dec: 4 }
-                            ]
-
-                            delegate: SettingRow {
-                                id: blurRow
-
-                                required property var modelData
-
-                                width: parent ? parent.width : 0
-                                visible: Config.opts.barShellGlass
-                                label: blurRow.modelData.label
-                                description: blurRow.modelData.desc
-                                controlWidth: 400
-
-                                Row {
-                                    spacing: 10
-
-                                    RangeControl {
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        width: 400 - blurReset.width - 10
-                                        from: blurRow.modelData.from
-                                        to: blurRow.modelData.to
-                                        stepSize: blurRow.modelData.step
-                                        decimals: blurRow.modelData.dec
-                                        value: Config.opts[blurRow.modelData.key]
-                                        onEdited: v => Config.opts[blurRow.modelData.key] = v
-                                    }
-
-                                    IconButton {
-                                        id: blurReset
-
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        size: 30
-                                        icon: String.fromCodePoint(0xF0450)
-                                        iconSize: Theme.fontSm
-                                        label: "Reset"
-                                        idleColor: Theme.fill
-                                        onClicked: Config.opts[blurRow.modelData.key] = Config.defaults[blurRow.modelData.key]
-                                    }
-                                }
-                            }
-                        }
-
-                        // Height of the floating bar above the top edge, reset to the default
-                        SettingRow {
-                            width: parent.width
-                            visible: Config.opts.barFloating
-                            label: "Floating position"
-                            description: "Distance of the floating bar from the top edge. Higher values also shrink the gap to the windows"
-                            controlWidth: 400
-
-                            Row {
-                                spacing: 10
-
-                                RangeControl {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    width: 400 - posResetBtn.width - 10
-                                    from: 0
-                                    to: 20
-                                    value: Config.opts.barFloatOffset
-                                    suffix: " px"
-                                    onEdited: v => Config.opts.barFloatOffset = v
-                                }
-
-                                IconButton {
-                                    id: posResetBtn
-
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    size: 30
-                                    icon: String.fromCodePoint(0xF0450)
-                                    iconSize: Theme.fontSm
-                                    label: "Reset"
-                                    idleColor: Theme.fill
-                                    onClicked: Config.opts.barFloatOffset = Config.defaults.barFloatOffset
-                                }
-                            }
-                        }
-
-                        // Side gap of the floating bar to the screen edge (where it ends left/right)
-                        SettingRow {
-                            width: parent.width
-                            visible: Config.opts.barFloating
-                            label: "Floating side gap"
-                            description: "Where the floating bar ends on the left and right. Match it to your Hyprland gaps_out to line it up with the windows"
-                            controlWidth: 400
-
-                            Row {
-                                spacing: 10
-
-                                RangeControl {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    width: 400 - sideResetBtn.width - 10
-                                    from: 0
-                                    to: 40
-                                    value: Config.opts.barFloatSide
-                                    suffix: " px"
-                                    onEdited: v => Config.opts.barFloatSide = v
-                                }
-
-                                IconButton {
-                                    id: sideResetBtn
-
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    size: 30
-                                    icon: String.fromCodePoint(0xF0450)
-                                    iconSize: Theme.fontSm
-                                    label: "Reset"
-                                    idleColor: Theme.fill
-                                    onClicked: Config.opts.barFloatSide = Config.defaults.barFloatSide
-                                }
-                            }
-                        }
-
-                        // Launcher icon on the left of the bar: Arch or Tux, as big tiles showing the real icon
-                        SettingRow {
-                            width: parent.width
-                            implicitHeight: 112
-                            label: "Launcher icon"
-                            description: "The icon in the top left corner of the bar"
-                            controlWidth: 2 * 96 + 12
-
-                            Row {
-                                anchors.right: parent.right
-                                spacing: 12
-
-                                Repeater {
-                                    model: [
-                                        { key: "arch", glyph: Icons.arch, name: "Arch" },
-                                        { key: "tux", glyph: Icons.tux, name: "Tux" }
-                                    ]
-
-                                    delegate: Rectangle {
-                                        id: iconTile
-
-                                        required property var modelData
-                                        readonly property bool selected: Config.opts.launcherIcon === modelData.key
-
-                                        width: 96
-                                        height: 84
-                                        radius: Theme.radius
-                                        color: iconTile.selected ? Theme.accent : (iconTileArea.pressed ? Theme.pressed : (iconTileArea.containsMouse ? Theme.hover : Theme.fillStrong))
-                                        border.width: 1
-                                        border.color: iconTile.selected ? Theme.accent : (iconTileArea.containsMouse ? Theme.textDim : Theme.hairlineStrong)
-                                        scale: iconTileArea.pressed ? 0.96 : (iconTileArea.containsMouse && !iconTile.selected ? 1.04 : 1)
-
-                                        Behavior on color {
-                                            CAnim {}
-                                        }
-                                        Behavior on border.color {
-                                            CAnim {}
-                                        }
-                                        Behavior on scale {
-                                            Anim {
-                                                duration: Theme.ctlFast
-                                            }
-                                        }
-
-                                        Column {
-                                            anchors.centerIn: parent
-                                            spacing: 6
-
-                                            Glyph {
-                                                anchors.horizontalCenter: parent.horizontalCenter
-                                                text: iconTile.modelData.glyph
-                                                font.pixelSize: 34
-                                                color: iconTile.selected ? Theme.accentFg : Theme.fg
-                                            }
-
-                                            Txt {
-                                                anchors.horizontalCenter: parent.horizontalCenter
-                                                text: iconTile.modelData.name
-                                                font.pixelSize: Theme.fontSm
-                                                color: iconTile.selected ? Theme.accentFg : Theme.textDim
-                                            }
-                                        }
-
-                                        // Check mark top right on the active tile
-                                        Rectangle {
-                                            anchors.top: parent.top
-                                            anchors.right: parent.right
-                                            anchors.margins: 6
-                                            width: 18
-                                            height: 18
-                                            radius: 9
-                                            color: Theme.accentFg
-                                            opacity: iconTile.selected ? 1 : 0
-                                            scale: iconTile.selected ? 1 : 0.4
-
-                                            Behavior on opacity {
-                                                Anim {
-                                                    duration: Theme.ctlFast
-                                                }
-                                            }
-                                            Behavior on scale {
-                                                Anim {
-                                                    duration: Theme.ctlMed
-                                                }
-                                            }
-
-                                            Txt {
-                                                anchors.centerIn: parent
-                                                text: "\u2713"
-                                                font.pixelSize: 11
-                                                color: Theme.accent
-                                            }
-                                        }
-
-                                        MouseArea {
-                                            id: iconTileArea
-
-                                            anchors.fill: parent
-                                            hoverEnabled: true
-                                            cursorShape: Qt.PointingHandCursor
-                                            onClicked: Config.opts.launcherIcon = iconTile.modelData.key
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // Size of the launcher icon on the left of the bar
-                        SettingRow {
-                            width: parent.width
-                            label: "Launcher icon size"
-                            description: "Size of the Arch / Tux icon in the bar"
-                            controlWidth: 400
-
-                            Row {
-                                spacing: 10
-
-                                RangeControl {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    width: 400 - logoSizeResetBtn.width - 10
-                                    from: 10
-                                    to: 26
-                                    value: Config.opts.launcherIconSize
-                                    suffix: " px"
-                                    onEdited: v => Config.opts.launcherIconSize = v
-                                }
-
-                                IconButton {
-                                    id: logoSizeResetBtn
-
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    size: 30
-                                    icon: String.fromCodePoint(0xF0450)
-                                    iconSize: Theme.fontSm
-                                    label: "Reset"
-                                    idleColor: Theme.fill
-                                    onClicked: Config.opts.launcherIconSize = Config.defaults.launcherIconSize
-                                }
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            label: "Group boxes"
-                            description: "Puts every group in the bar (launcher, workspaces, tray, system info, status, power) in its own box"
-
-                            SwitchCtl {
-                                checked: Config.opts.barBoxes
-                                onToggled: Config.opts.barBoxes = !Config.opts.barBoxes
-                            }
-                        }
-
-                        // Box color: clicking the color opens the color picker
-                        Column {
-                            id: boxColorBlock
-
-                            property bool open: false
-
-                            width: parent.width
-                            visible: Config.opts.barBoxes
-                            spacing: 10
-
-                            SettingRow {
-                                width: parent.width
-                                label: "Box color"
-                                description: "Click the color to open the picker"
-                                controlWidth: 220
-
-                                Row {
-                                    anchors.right: parent.right
-                                    spacing: 10
-
-                                    Rectangle {
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        width: 110
-                                        height: 30
-                                        radius: Theme.radiusSm
-                                        color: Config.opts.barBoxColor
-                                        border.width: 1
-                                        border.color: boxColorArea.containsMouse || boxColorBlock.open ? Theme.textDim : Theme.hairlineStrong
-
-                                        Txt {
-                                            anchors.centerIn: parent
-                                            text: Config.opts.barBoxColor
-                                            font.pixelSize: Theme.fontSm
-                                            color: (parent.color.r * 0.3 + parent.color.g * 0.59 + parent.color.b * 0.11) * parent.color.a > 0.5 ? "#000000" : "#ffffff"
-                                        }
-
-                                        MouseArea {
-                                            id: boxColorArea
-
-                                            anchors.fill: parent
-                                            hoverEnabled: true
-                                            cursorShape: Qt.PointingHandCursor
-                                            onClicked: boxColorBlock.open = !boxColorBlock.open
-                                        }
-                                    }
-
-                                    IconButton {
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        size: 30
-                                        icon: String.fromCodePoint(0xF0450)
-                                        iconSize: Theme.fontSm
-                                        label: "Reset"
-                                        idleColor: Theme.fill
-                                        onClicked: Config.opts.barBoxColor = Config.defaults.barBoxColor
-                                    }
-                                }
-                            }
-
-                            Rectangle {
-                                width: parent.width
-                                height: boxPicker.implicitHeight + 36
-                                visible: boxColorBlock.open
-                                radius: Theme.radius
-                                color: Theme.fill
-
-                                ColorPicker {
-                                    id: boxPicker
-
-                                    anchors.top: parent.top
-                                    anchors.topMargin: 18
-                                    anchors.horizontalCenter: parent.horizontalCenter
-                                    width: Math.min(440, parent.width - 36)
-                                    color: Config.opts.barBoxColor
-                                    onPicked: v => Config.opts.barBoxColor = v
-                                }
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            label: "Bar border line"
-
-                            SwitchCtl {
-                                checked: Config.opts.barBorder
-                                onToggled: Config.opts.barBorder = !Config.opts.barBorder
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            label: "Transparent when empty"
-                            description: "No windows on the workspace = see-through, 1 or more = black"
-
-                            SwitchCtl {
-                                checked: Config.opts.barAutoTransparent
-                                onToggled: Config.opts.barAutoTransparent = !Config.opts.barAutoTransparent
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            label: "Window title"
-
-                            SwitchCtl {
-                                checked: Config.opts.barShowTitle
-                                onToggled: Config.opts.barShowTitle = !Config.opts.barShowTitle
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            label: "CPU / RAM / temperature"
-                            description: "Shown next to the clock"
-
-                            SwitchCtl {
-                                checked: Config.opts.barShowSysmon
-                                onToggled: Config.opts.barShowSysmon = !Config.opts.barShowSysmon
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            label: "Date next to the clock"
-
-                            SwitchCtl {
-                                checked: Config.opts.barShowDate
-                                onToggled: Config.opts.barShowDate = !Config.opts.barShowDate
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            label: "Show seconds"
-
-                            SwitchCtl {
-                                checked: Config.opts.clockSeconds
-                                onToggled: Config.opts.clockSeconds = !Config.opts.clockSeconds
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            label: "24-hour clock"
-
-                            SwitchCtl {
-                                checked: Config.opts.clock24h
-                                onToggled: Config.opts.clock24h = !Config.opts.clock24h
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            label: "Workspaces"
-                            description: "Always shown (occupied ones beyond that too)"
-
-                            RangeControl {
-                                from: 1
-                                to: 10
-                                value: Config.opts.workspaceCount
-                                onEdited: v => Config.opts.workspaceCount = v
-                            }
-                        }
-                    }
-
-                    // ----- Behavior -----
-                    Column {
-                        id: pageBehavior
-
-                        width: parent.width
-                        spacing: 10
-                        visible: panel.tab === 3
-
-                        SettingRow {
-                            width: parent.width
-                            label: "Do not disturb"
-                            description: "Only critical notifications pop up"
-
-                            SwitchCtl {
-                                checked: Config.opts.dnd
-                                onToggled: Config.opts.dnd = !Config.opts.dnd
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            label: "Popup duration"
-
-                            RangeControl {
-                                from: 2
-                                to: 15
-                                value: Config.opts.notifTimeout
-                                suffix: " s"
-                                onEdited: v => Config.opts.notifTimeout = v
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            label: "Volume OSD"
-
-                            SwitchCtl {
-                                checked: Config.opts.osdEnabled
-                                onToggled: Config.opts.osdEnabled = !Config.opts.osdEnabled
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            label: "Volume step"
-                            description: "Scroll wheel on the bar and IPC"
-
-                            RangeControl {
-                                from: 1
-                                to: 10
-                                value: Config.opts.volumeStep
-                                suffix: " %"
-                                onEdited: v => Config.opts.volumeStep = v
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            label: "GPU monitor (nvidia-smi)"
-                            description: "Only runs while the dashboard is open"
-
-                            SwitchCtl {
-                                checked: Config.opts.gpuMonitor
-                                onToggled: Config.opts.gpuMonitor = !Config.opts.gpuMonitor
-                            }
-                        }
-
-                        // Vulkan or OpenGL. Can only be chosen at startup: switching saves the choice and
-                        // restarts Quickshell (~/.local/bin/qs-restart, which reads it via ~/.config/quickshell/render-env.sh).
-                        SettingRow {
-                            readonly property string running: Quickshell.env("QSG_RHI_BACKEND") === "opengl" ? "OpenGL" : "Vulkan"
-
-                            width: parent.width
-                            label: "Renderer"
-                            description: "Switching restarts the shell · running: " + running
-                            controlWidth: 220
-
-                            Segmented {
-                                width: parent.width
-                                options: [
-                                    {
-                                        value: "vulkan",
-                                        label: "Vulkan"
-                                    },
-                                    {
-                                        value: "opengl",
-                                        label: "OpenGL"
-                                    }
-                                ]
-                                value: Config.opts.renderBackend
-                                onPicked: v => {
-                                    if (v === Config.opts.renderBackend)
-                                        return;
-                                    Config.opts.renderBackend = v;
-                                    // Wait briefly until the setting is saved, then restart
-                                    Quickshell.execDetached(["sh", "-c", "sleep 0.6; r=\"$HOME/.local/bin/qs-restart\"; [ -x \"$r\" ] && exec \"$r\"; pkill -x quickshell; sleep 1; setsid -f \"$HOME/.local/bin/qs-start\" >/dev/null 2>&1 </dev/null"]);
-                                }
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            label: "FPS counter"
-                            description: "Frame rate and longest frame gap, top right"
-
-                            SwitchCtl {
-                                checked: Config.opts.fpsCounter
-                                onToggled: Config.opts.fpsCounter = !Config.opts.fpsCounter
-                            }
-                        }
-                    }
-
-                    // ----- Commands -----
-                    Column {
-                        id: pageCommands
-
-                        width: parent.width
-                        spacing: 10
-                        visible: panel.tab === 4
-
-                        SettingRow {
-                            width: parent.width
-                            label: "Terminal"
-                            description: "For terminal apps, nmtui and bluetoothctl"
-
-                            InputField {
-                                width: parent.width
-                                text: Config.opts.terminal
-                                placeholder: "kitty"
-                                onCommitted: value => Config.opts.terminal = value.trim() !== "" ? value.trim() : Config.defaults.terminal
-                            }
-                        }
-
-                        // kitty starts through ~/.local/bin/kitty-shell/zsh (kitty.conf: shell ...), which reads the value
-                        // for every new window. So it applies right away to the next kitty, no restart needed.
-                        SettingRow {
-                            width: parent.width
-                            label: "Fastfetch in kitty"
-                            description: "Show fastfetch every time a new kitty window opens"
-
-                            SwitchCtl {
-                                checked: Config.opts.kittyFastfetch
-                                onToggled: Config.opts.kittyFastfetch = !Config.opts.kittyFastfetch
-                            }
-                        }
-
-                        // Images for fastfetch: 4 slots, one per new kitty in this order
-                        // (~/.local/bin/fastfetch-logo reads fastfetchLogo1..4). Clicking a slot opens the picker below it
-                        // (images from ~/.config/fastfetch/logos and ~/Pictures), right-click clears it.
-                        Column {
-                            id: ffLogos
-
-                            // Slot currently being picked for (0..3), -1 = picker closed
-                            property int picking: -1
-                            readonly property var slots: [Config.opts.fastfetchLogo1, Config.opts.fastfetchLogo2, Config.opts.fastfetchLogo3, Config.opts.fastfetchLogo4]
-                            readonly property string logosDir: Quickshell.env("HOME") + "/.config/fastfetch/logos"
-                            readonly property string picturesDir: Quickshell.env("HOME") + "/Pictures"
-                            // All selectable images, first the logos folder, then ~/Pictures
-                            readonly property var choices: {
-                                const l = [];
-                                for (let i = 0; i < ffLogosModel.count; i++)
-                                    l.push(ffLogosModel.get(i, "filePath"));
-                                for (let i = 0; i < ffPicturesModel.count; i++)
-                                    l.push(ffPicturesModel.get(i, "filePath"));
-                                return l;
-                            }
-
-                            function setSlot(i, path) {
-                                if (i === 0)
-                                    Config.opts.fastfetchLogo1 = path;
-                                else if (i === 1)
-                                    Config.opts.fastfetchLogo2 = path;
-                                else if (i === 2)
-                                    Config.opts.fastfetchLogo3 = path;
-                                else if (i === 3)
-                                    Config.opts.fastfetchLogo4 = path;
-                                // Prepare it for fastfetch right away (huge images take a few seconds),
-                                // so the next kitty doesn't have to wait for it
-                                if (path !== "")
-                                    Quickshell.execDetached([Quickshell.env("HOME") + "/.local/bin/fastfetch-logo", "prepare", path]);
-                            }
-
-                            // Path as a URL (spaces, # etc. in the file name)
-                            function url(path) {
-                                return path !== "" ? "file://" + path.split("/").map(encodeURIComponent).join("/") : "";
-                            }
-
-                            width: parent.width
-                            spacing: 10
-
-                            FolderListModel {
-                                id: ffLogosModel
-
-                                folder: "file://" + ffLogos.logosDir
-                                nameFilters: ["*.png", "*.jpg", "*.jpeg", "*.webp"]
-                                caseSensitive: false
-                                showDirs: false
-                                sortField: FolderListModel.Name
-                            }
-
-                            FolderListModel {
-                                id: ffPicturesModel
-
-                                folder: "file://" + ffLogos.picturesDir
-                                nameFilters: ["*.png", "*.jpg", "*.jpeg", "*.webp"]
-                                caseSensitive: false
-                                showDirs: false
-                                sortField: FolderListModel.Name
-                            }
-
-                            SettingRow {
-                                width: parent.width
-                                label: "Fastfetch images"
-                                description: "One per new kitty window, in this order. Click a slot to pick, right-click to clear. All empty = every image in ~/.config/fastfetch/logos"
-                                controlWidth: 4 * 60 + 3 * 8
-
-                                Row {
-                                    spacing: 8
-
-                                    Repeater {
-                                        model: 4
-
-                                        delegate: Item {
-                                            id: ffSlot
-
-                                            required property int index
-                                            readonly property string path: ffLogos.slots[index] || ""
-                                            readonly property bool picking: ffLogos.picking === index
-
-                                            width: 60
-                                            height: 60
-
-                                            ClippingRectangle {
-                                                anchors.fill: parent
-                                                radius: Theme.radius
-                                                color: Theme.fillStrong
-
-                                                Image {
-                                                    anchors.fill: parent
-                                                    anchors.margins: 4
-                                                    source: ffLogos.url(ffSlot.path)
-                                                    sourceSize.width: 112
-                                                    sourceSize.height: 112
-                                                    fillMode: Image.PreserveAspectFit
-                                                    asynchronous: true
-                                                    smooth: true
-                                                }
-
-                                                Glyph {
-                                                    anchors.centerIn: parent
-                                                    visible: ffSlot.path === ""
-                                                    text: Icons.plus
-                                                    color: Theme.textMuted
-                                                }
-                                            }
-
-                                            Txt {
-                                                anchors.left: parent.left
-                                                anchors.top: parent.top
-                                                anchors.leftMargin: 5
-                                                anchors.topMargin: 2
-                                                text: String(ffSlot.index + 1)
-                                                color: Theme.textDim
-                                                font.pixelSize: Theme.fontSm - 1
-                                            }
-
-                                            Rectangle {
-                                                anchors.fill: parent
-                                                radius: Theme.radius
-                                                color: "transparent"
-                                                border.width: ffSlot.picking ? 2 : 1
-                                                border.color: ffSlot.picking ? Theme.accent : (ffSlotArea.containsMouse ? Theme.textMuted : Theme.hairline)
-
-                                                Behavior on border.color {
-                                                    CAnim {}
-                                                }
-                                            }
-
-                                            MouseArea {
-                                                id: ffSlotArea
-
-                                                anchors.fill: parent
-                                                hoverEnabled: true
-                                                cursorShape: Qt.PointingHandCursor
-                                                acceptedButtons: Qt.LeftButton | Qt.RightButton
-                                                onClicked: mouse => {
-                                                    if (mouse.button === Qt.RightButton) {
-                                                        ffLogos.setSlot(ffSlot.index, "");
-                                                        return;
-                                                    }
-                                                    ffLogos.picking = ffSlot.picking ? -1 : ffSlot.index;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            // Picker for the clicked slot
-                            Rectangle {
-                                width: parent.width
-                                visible: ffLogos.picking >= 0
-                                height: visible ? ffPick.implicitHeight + 24 : 0
-                                radius: Theme.radius
-                                color: Theme.fill
-
-                                Column {
-                                    id: ffPick
-
-                                    x: 12
-                                    y: 12
-                                    width: parent.width - 24
-                                    spacing: 10
-
-                                    Item {
-                                        width: parent.width
-                                        height: 28
-
-                                        Txt {
-                                            anchors.left: parent.left
-                                            anchors.verticalCenter: parent.verticalCenter
-                                            text: "Image " + (ffLogos.picking + 1) + " · from ~/.config/fastfetch/logos and ~/Pictures"
-                                            color: Theme.textMuted
-                                            font.pixelSize: Theme.fontSm
-                                        }
-
-                                        IconButton {
-                                            anchors.right: ffPickClose.left
-                                            anchors.rightMargin: 6
-                                            anchors.verticalCenter: parent.verticalCenter
-                                            size: 28
-                                            icon: Icons.image
-                                            idleColor: Theme.fill
-                                            // Open the folder in the file manager to put images into it
-                                            onClicked: Quickshell.execDetached(["sh", "-c", "mkdir -p \"$1\" && exec xdg-open \"$1\"", "sh", ffLogos.logosDir])
-                                        }
-
-                                        IconButton {
-                                            id: ffPickClose
-
-                                            anchors.right: parent.right
-                                            anchors.verticalCenter: parent.verticalCenter
-                                            size: 28
-                                            icon: Icons.close
-                                            idleColor: Theme.fill
-                                            onClicked: ffLogos.picking = -1
-                                        }
-                                    }
-
-                                    Flow {
-                                        width: parent.width
-                                        spacing: 8
-
-                                        Repeater {
-                                            model: ffLogos.picking >= 0 ? ffLogos.choices : []
-
-                                            delegate: Item {
-                                                id: ffChoice
-
-                                                required property string modelData
-                                                readonly property bool chosen: ffLogos.slots[ffLogos.picking] === modelData
-
-                                                width: 72
-                                                height: 72
-
-                                                ClippingRectangle {
-                                                    anchors.fill: parent
-                                                    radius: Theme.radius
-                                                    color: Theme.fillStrong
-
-                                                    Image {
-                                                        anchors.fill: parent
-                                                        anchors.margins: 4
-                                                        source: ffLogos.url(ffChoice.modelData)
-                                                        sourceSize.width: 136
-                                                        sourceSize.height: 136
-                                                        fillMode: Image.PreserveAspectFit
-                                                        asynchronous: true
-                                                        smooth: true
-                                                    }
-                                                }
-
-                                                Rectangle {
-                                                    anchors.fill: parent
-                                                    radius: Theme.radius
-                                                    color: "transparent"
-                                                    border.width: ffChoice.chosen ? 2 : 1
-                                                    border.color: ffChoice.chosen ? Theme.accent : (ffChoiceArea.containsMouse ? Theme.textMuted : Theme.hairline)
-                                                }
-
-                                                MouseArea {
-                                                    id: ffChoiceArea
-
-                                                    anchors.fill: parent
-                                                    hoverEnabled: true
-                                                    cursorShape: Qt.PointingHandCursor
-                                                    onClicked: {
-                                                        ffLogos.setSlot(ffLogos.picking, ffChoice.modelData);
-                                                        ffLogos.picking = -1;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    Txt {
-                                        width: parent.width
-                                        visible: ffLogos.choices.length === 0
-                                        text: "No images yet. Put some into ~/.config/fastfetch/logos or ~/Pictures."
-                                        color: Theme.textMuted
-                                        font.pixelSize: Theme.fontSm
-                                        wrapMode: Text.Wrap
-                                    }
-                                }
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            label: "Lock screen"
-                            description: "Used by Lock in the power menu and control center"
-
-                            InputField {
-                                width: parent.width
-                                text: Config.opts.lockCommand
-                                placeholder: "hyprlock"
-                                onCommitted: value => Config.opts.lockCommand = value.trim() !== "" ? value.trim() : Config.defaults.lockCommand
-                            }
-                        }
-                    }
-
-                    // ----- Animations -----
-                    Column {
-                        id: pageAnimations
-
-                        width: parent.width
-                        spacing: 10
-                        visible: panel.tab === 5
-
-                        SettingRow {
-                            width: parent.width
-                            label: "Animations"
-
-                            SwitchCtl {
-                                checked: Config.opts.animations
-                                onToggled: Config.opts.animations = !Config.opts.animations
-                            }
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            label: "Global duration"
-                            description: "Applies to everything below except bar docking. Lower = faster"
-                            controlWidth: 420
-
-                            RangeControl {
-                                from: 0.25
-                                to: 2
-                                stepSize: 0.05
-                                decimals: 2
-                                value: Config.opts.animScale
-                                suffix: "×"
-                                onEdited: v => Config.opts.animScale = v
-                            }
-                        }
-
-                        SettingRow {
-                            id: dockRow
-
-                            width: parent.width
-                            label: "Bar docking"
-                            description: "Dynamic floating bar. Same curve as the windows in hyprland.lua keeps them in step"
-                            controlWidth: 420
-                            implicitHeight: Math.max(64, dockCol.height + 28)
-
-                            Column {
-                                id: dockCol
-
-                                width: parent.width
-                                spacing: 8
-
-                                RangeControl {
-                                    width: parent.width
-                                    from: 150
-                                    to: 700
-                                    stepSize: 10
-                                    value: Config.opts.barDockDuration
-                                    suffix: " ms"
-                                    onEdited: v => Config.opts.barDockDuration = v
-                                }
-
-                                Row {
-                                    spacing: 8
-
-                                    Txt {
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        text: "Curve"
-                                        color: Theme.textMuted
-                                        font.pixelSize: Theme.fontSm
-                                    }
-
-                                    CurvePick {
-                                        value: Config.opts.animBarCurve
-                                        onPicked: v => Config.opts.animBarCurve = v
-                                    }
-                                }
-                            }
-                        }
-
-                        AnimRow {
-                            label: "Dashboard & control center"
-                            speed: Config.opts.animPanelSpeed
-                            labelA: "Open"
-                            curveA: Config.opts.animPanelOpen
-                            labelB: "Close"
-                            curveB: Config.opts.animPanelClose
-                            onSpeedEdited: v => Config.opts.animPanelSpeed = v
-                            onCurveAPicked: v => Config.opts.animPanelOpen = v
-                            onCurveBPicked: v => Config.opts.animPanelClose = v
-                        }
-
-                        AnimRow {
-                            label: "Launcher, settings & power menu"
-                            speed: Config.opts.animOverlaySpeed
-                            labelA: "Open"
-                            curveA: Config.opts.animOverlayOpen
-                            labelB: "Close"
-                            curveB: Config.opts.animOverlayClose
-                            onSpeedEdited: v => Config.opts.animOverlaySpeed = v
-                            onCurveAPicked: v => Config.opts.animOverlayOpen = v
-                            onCurveBPicked: v => Config.opts.animOverlayClose = v
-                        }
-
-                        AnimRow {
-                            label: "Notifications"
-                            speed: Config.opts.animNotifSpeed
-                            labelA: "Slide in"
-                            curveA: Config.opts.animNotifCurve
-                            onSpeedEdited: v => Config.opts.animNotifSpeed = v
-                            onCurveAPicked: v => Config.opts.animNotifCurve = v
-                        }
-
-                        AnimRow {
-                            label: "Workspaces"
-                            speed: Config.opts.animWsSpeed
-                            curveA: Config.opts.animWsCurve
-                            onSpeedEdited: v => Config.opts.animWsSpeed = v
-                            onCurveAPicked: v => Config.opts.animWsCurve = v
-                        }
-
-                        AnimRow {
-                            label: "Volume & brightness popup"
-                            speed: Config.opts.animOsdSpeed
-                            onSpeedEdited: v => Config.opts.animOsdSpeed = v
-                        }
-
-                        AnimRow {
-                            label: "Buttons, switches & hover"
-                            speed: Config.opts.animCtlSpeed
-                            curveA: Config.opts.animCtlCurve
-                            onSpeedEdited: v => Config.opts.animCtlSpeed = v
-                            onCurveAPicked: v => Config.opts.animCtlCurve = v
-                        }
-
-                        SettingRow {
-                            width: parent.width
-                            label: "Reset all animations"
-                            description: "Back to the defaults (the setup this tab was built with)"
-
-                            IconButton {
-                                anchors.right: parent.right
-                                size: 30
-                                icon: String.fromCodePoint(0xF0450)
-                                iconSize: Theme.fontSm
-                                label: "Reset"
-                                idleColor: Theme.fill
-                                onClicked: panel.resetAnimations()
+                                value: panel.systemFont
+                                menuParent: card
+                                scrollArea: flick
+                                active: panel.open && panel.page === "systemFont"
+                                onPicked: family => panel.applySystemFont(family)
                             }
                         }
                     }

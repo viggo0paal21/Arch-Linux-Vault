@@ -20,9 +20,9 @@ smooth animations at the full **170 Hz** on an NVIDIA card. It replaces Waybar, 
 | [`quickshell/`](quickshell) | `~/.config/quickshell/` | The shell itself (bar, launcher, control center, dashboard, notifications, OSD, power menu, settings) |
 | [`quickshell-old-design/`](quickshell-old-design) | `~/.config/quickshell/` (instead of `quickshell/`) | Alternative: the same shell with the old design from before the November 2026 redesign. Not updated anymore |
 | [`home/.local/bin/qs-start`](home/.local/bin/qs-start) | `~/.local/bin/` | Start script used by Hyprland's autostart: Vulkan (or OpenGL, see `quickshell/render-env.sh`), wall-clock animations, without MangoHud / lsfg-vk / vkBasalt |
-| [`home/.local/bin/qs-restart`](home/.local/bin/qs-restart) | `~/.local/bin/` | Restarts the shell cleanly (used by Settings → Behavior → Renderer) |
+| [`home/.local/bin/qs-restart`](home/.local/bin/qs-restart) | `~/.local/bin/` | Restarts the shell cleanly (used by Settings → Quickshell → Performance → Renderer) |
 | [`home/.local/bin/qs`](home/.local/bin/qs), [`quickshell`](home/.local/bin/quickshell) | `~/.local/bin/` | Wrappers: same fix for **every** `qs` / `quickshell` call, any config |
-| [`home/.local/bin/qs-glass-apply`](home/.local/bin/qs-glass-apply) | `~/.local/bin/` | Applies **App glass / App opacity / Kitty opacity** to Nautilus, GTK3 dialogs, kitty, Vesktop and Firefox (called by the settings, see below) |
+| [`home/.local/bin/qs-glass-apply`](home/.local/bin/qs-glass-apply) | `~/.local/bin/` | Applies **Settings → Apps → Opacity** to kitty, Nautilus, GTK3 dialogs, Vesktop and Firefox (called by the settings, see below) |
 | [`home/.local/bin/qs-dock`](home/.local/bin/qs-dock) | `~/.local/bin/` | Starts nwg-dock-hyprland to match the bar |
 | [`home/.local/share/dbus-1/services/org.freedesktop.Notifications.service`](home/.local/share/dbus-1/services/org.freedesktop.Notifications.service) | `~/.local/share/dbus-1/services/` | Stops swaync / dunst / mako from being auto-started by D-Bus and taking the notification server away from Quickshell (see section 7) |
 | [`home/.local/state/quickshell/by-shell/oled-bw/settings.json`](home/.local/state/quickshell/by-shell/oled-bw/settings.json) | `~/.local/state/quickshell/by-shell/oled-bw/` | My saved shell settings (radius, bar, font, animation speed, transparency, FPS counter, ...) |
@@ -36,37 +36,54 @@ Changes made for smooth 170 Hz (all inside `quickshell/`):
 | `components/OverlayPanel.qml` | Closed panels stay mapped but invisible and click-through, so opening one no longer creates a new window (that caused a ~90 ms hitch). When a fullscreen window is active they are unmapped, so direct scanout and tearing in games keep working. |
 | `components/DropdownSlot.qml` | Dashboard and control center slide down from under the bar |
 | `modules/dashboard/Dashboard.qml` | The dashboard clock only ticks while the dashboard is open |
-| `FpsOverlay.qml`, `config/Config.qml`, `modules/settings/SettingsPanel.qml` | FPS counter, switchable in Settings → Behavior → **FPS counter** |
+| `FpsOverlay.qml`, `config/Config.qml`, `modules/settings/SettingsPanel.qml` | FPS counter, switchable in Settings → Quickshell → Performance → **FPS counter** |
 | `services/Glass.qml`, `components/Segmented.qml`, `config/Theme.qml`, `services/Hypr.qml` | Transparency with blur, see below |
 | `modules/bar/Bar.qml`, `services/Ui.qml`, `modules/bar/TrayMenu.qml` + the panels | Dynamic floating bar, see below |
 | `components/HyprBlur.qml`, `shaders/`, `tools/glasswall/` | Shell glass: Hyprland's blur rebuilt stage by stage, see below |
 
-### Transparency (Settings → Appearance → Transparency)
+### Settings layout
+
+The settings window has four top tabs, each with its pages on the left:
+
+| Top tab | Pages |
+|---|---|
+| **Quickshell** | Appearance, Bar (size & position, background, content), Notifications & OSD, Animations, Performance (renderer, FPS counter, GPU monitor, smooth text), Commands (terminal, lock screen) |
+| **Hyprland** | Windows (rounding, shadows, blur), Layout & rendering (Dynamic Hyprland integration, direct scanout) |
+| **Apps** | Opacity (per app), kitty (fastfetch in kitty, fastfetch images) |
+| **System** | Wallpaper, Font (system font for every app) |
+
+### Transparency (Settings → Quickshell → Appearance → Transparency)
 
 | Mode | What it does |
 |---|---|
 | **Off** | Everything solid black |
 | **Popups** | Panels, menus, notifications and the OSD are translucent black with Hyprland blur. Extra switch **Solid popups with windows**: popups turn black as soon as 1 or more windows are open on the workspace |
-| **Everywhere** | Same, plus the bar. Extra switch **Solid bar with windows**: the bar turns black as soon as 1 or more windows are open. The small **Only 1** switch next to it makes it black only with exactly 1 window (translucent again with 2 or more) |
+| **Everywhere** | Same, plus the bar. **Black with windows** (Bar page): Never (always glass), 1 window (black with exactly 1 tiled window, glass with none or 2 and more) or Any (black as soon as a window is open) |
 
 **Opacity** (shown when transparency is on) sets how solid the translucent surfaces are: 25–100 %, default 80 %, 100 % = black.
 
-**Exclude kitty terminal** (shown in Everywhere, right under the three modes): kitty windows don't count for the bar, so it stays translucent while only kitty is open.
+**Exclude kitty terminal** (Bar page, shown in Everywhere): kitty windows don't count for the bar, so it stays translucent while only kitty is open.
 
-Floating windows don't count for the two switches. **Transparent when empty** (Bar tab) still works on top: with no windows at all the bar stays fully see-through.
+Floating windows never count. **Transparent when empty** (Bar page) still works on top: with no windows at all the bar stays fully see-through. With **Group boxes** it is always on (only the boxes show while the workspace is empty).
 
-### App glass and blur (Settings → Appearance)
+### App opacity (Settings → Apps → Opacity)
 
-The same translucent look for normal apps, with Hyprland's blur behind it.
+The same translucent look for normal apps, with Hyprland's blur behind it. Every app has its own row with its icon (black and white):
 
-| Setting | What it does |
+| Row | What it does |
 |---|---|
-| **App glass** | On: Nautilus, GTK3 file dialogs ("Save as", "Open"), Thunar, kitty, Vesktop and Firefox get one tinted layer (black at **App opacity**) and everything above it becomes transparent. Off: everything goes back to how it was before (Nautilus to the value from the backup, blocks removed), and **Kitty opacity** shows up instead |
-| **App opacity** | 25–100 %, same math as the shell's Opacity (black at X %), so equal numbers look equal |
-| **Kitty opacity** | kitty's `background_opacity` while App glass is off |
-| **Blur size / Blur passes** | Hyprland's `decoration:blur` for everything (windows, panels, popups), applied live with `hyprctl eval 'hl.config(...)'`. `hyprland.lua` stays untouched; Quickshell sets the values again on start and after every config reload. Also sets the shell-glass values so the bar matches |
+| **All apps** | 25–100 %, sets every app below to the same value. Same math as the shell's Opacity (black at X %), so equal numbers look equal |
+| **kitty** | kitty's `background_opacity` (text stays solid), live |
+| **Tidal (SONE)** | The whole window fades, text too (a Hyprland window rule set by Quickshell), live |
+| **Files (Nautilus)**, **File dialogs** (GTK3 "Save as" / "Open", Thunar), **Vesktop**, **Firefox** | Switch + slider. On: one tinted layer (black at the slider value), everything above it transparent. Off: the app goes back to how it was before (Nautilus to the value from the backup, blocks removed) |
 
-How it works: the settings start `python3 ~/.local/bin/qs-glass-apply`. It reads the three values from `settings.json` and only edits marked spots (first touch of a file makes `<file>.bak-qsglass`):
+Settings keys: `appOpacity` (All apps), `appOpacity<App>` (-1 = like All apps), `appGlass<App>` (1 on, 0 off, -1 = like the old `appGlass` switch).
+
+### Hyprland (Settings → Hyprland)
+
+**Corner rounding**, **Shadows**, **Blur size**, **Blur passes** (Windows page) and **Direct scanout** Off / Games / On plus **Dynamic Hyprland integration** (Layout & rendering page). Applied live with `hyprctl eval 'hl.config(...)'` on top of `hyprland.lua`, which stays untouched; Quickshell sets them again on start and after every config reload. Each row shows whether the value comes from `hyprland.lua` or was set here; **Reset** goes back to the `hyprland.lua` value (Hyprland reloads once). Blur size / passes also set the shell-glass values so the bar matches.
+
+How app opacity works: the settings start `python3 ~/.local/bin/qs-glass-apply`. It reads the values from `settings.json` and only edits marked spots (first touch of a file makes `<file>.bak-qsglass`):
 
 - **GTK4 / Nautilus** `~/.config/gtk-4.0/gtk.css`: only the two opacity numbers
 - **GTK3** `~/.config/gtk-3.0/gtk.css`: a `/* qs-glass:begin … end */` block at the end (overrides the GTK theme, the theme itself is not touched; undecorated windows like the dock stay as they are)
@@ -122,7 +139,7 @@ control center, launcher / settings / power menu, notifications, workspaces, OSD
 curves (click the right / left half of a curve button for the next / previous curve). **Reset all animations** goes
 back to the defaults. The windows in Hyprland keep their own curve from `hyprland.lua`.
 
-**Smooth text** (Settings → Appearance, off by default) draws text with Qt's distance-field renderer so text and icons
+**Smooth text** (Settings → Quickshell → Performance, off by default) draws text with Qt's distance-field renderer so text and icons
 can move by fractions of a pixel. Smoother motion, slightly softer glyphs.
 
 The blur itself comes from Hyprland, so `hyprland.lua` needs it for the Quickshell layers (blur must also be enabled under `decoration`):
@@ -256,9 +273,9 @@ Result: constant **170 fps**, longest gap between two frames **~7 ms**, also whi
 | **Vulkan** | **stable 170 fps, max 7 ms** |
 | **OpenGL now: threaded + `__GL_SYNC_TO_VBLANK=0`** (measured again with the finished shell) | **stable 170 fps, max 9 ms** |
 
-### OpenGL as an option (Settings → Behavior → Renderer)
+### OpenGL or Vulkan (Settings → Quickshell → Performance → Renderer)
 
-Vulkan stays the default. **Renderer → OpenGL** saves `"renderBackend": "opengl"` and restarts the shell
+OpenGL is the default (left), Vulkan the alternative. Switching saves `"renderBackend"` and restarts the shell
 (`~/.local/bin/qs-restart`); `qs-start` and both wrappers read the choice from `~/.config/quickshell/render-env.sh`
 and set `QSG_RHI_BACKEND` accordingly (Qt can only pick the backend at startup).
 
@@ -279,7 +296,7 @@ and set `QSG_RHI_BACKEND` accordingly (Qt can only pick the backend at startup).
 
 ## 4. Measuring the frame rate
 
-Settings → Behavior → **FPS counter**, or:
+Settings → Quickshell → Performance → **FPS counter**, or:
 
 ```bash
 qs ipc call fps toggle
@@ -448,7 +465,7 @@ For stutter, jitter and short freezes see the **[Quickshell Stutter Guide](Quick
 | Shell frozen | `pkill -9 -x 'qs\|quickshell'`, then `setsid -f ~/.local/bin/qs-start >/dev/null 2>&1`. Make sure only one instance runs: `pgrep -ax 'qs\|quickshell'` |
 | Animations look like frame generation (wobbly, jagged edges, uneven motion) | `QSG_USE_SIMPLE_ANIMATION_DRIVER=1` missing: check `tr '\0' '\n' < /proc/$(pgrep -xo 'qs\|quickshell')/environ \| grep SIMPLE`. It has to be in `qs-start` and both wrappers |
 | No blur behind transparent surfaces | The `qs-.*` layer rule needs `blur = true`, and `ignore_alpha` must be below the Opacity value (section 1) |
-| Problems with Vulkan | Settings → Behavior → Renderer → **OpenGL** (restarts the shell, also 170 fps on NVIDIA, see section 3) |
+| Problems with Vulkan | Settings → Quickshell → Performance → Renderer → **OpenGL** (restarts the shell, also 170 fps on NVIDIA, see section 3) |
 | `qt.qpa.wayland.textinput: ... disableSurface ... but 0x0 is focused` when opening or closing a panel | Harmless: panels take the keyboard while open (Esc, typing in the launcher). When they release it, Qt's text-input bookkeeping (for input methods) has already moved on and warns. Typing still works. Hidden by the start script and wrappers with `qt.qpa.wayland.textinput.warning=false` |
 | No notifications / `Could not register notification server` | Another daemon owns the notification server. Find it with `busctl --user status org.freedesktop.Notifications \| grep -E '^(PID\|Comm)='`, kill it, restart Quickshell. To stop D-Bus from auto-starting swaync / dunst / mako again (e.g. when an app sends a notification while Quickshell is down), install the override file from section 1 and reload D-Bus: `busctl --user call org.freedesktop.DBus /org/freedesktop/DBus org.freedesktop.DBus ReloadConfig` |
 | Short freezes (~60 ms) whenever you run a command in a terminal, open/close kitty or focus a window; the FPS counter jumps to 60–130 ms | Quickshell's app list (`DesktopEntries`, used by the launcher) watches the `applications` folders **and all their parent folders**, including your home folder. Any file created, deleted or renamed directly in `~` triggers a full rescan of every `.desktop` file 100 ms later. zsh does exactly that on every command (`~/.zsh_history` lock file + rename). Fix: move the history out of `~`: `mkdir -p ~/.local/state/zsh && mv ~/.zsh_history ~/.local/state/zsh/history`, set `HISTFILE=~/.local/state/zsh/history` in `~/.zshrc`, close all terminals. Check with `inotifywait -m -e create,delete,move ~` that nothing else writes to `~` all the time |

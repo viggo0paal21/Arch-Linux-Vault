@@ -17,7 +17,8 @@ Item {
     signal middleClicked
     signal scrolled(int delta)
 
-    implicitWidth: row.implicitWidth + 20
+    // Whole pixels: text widths are fractional, this way the background and the box (Group boxes) get sharp edges
+    implicitWidth: Math.ceil(row.implicitWidth) + 20
     implicitHeight: 28
 
     Rectangle {
@@ -33,7 +34,9 @@ Item {
     Row {
         id: row
 
-        anchors.centerIn: parent
+        // Horizontally on whole pixels, vertically as before
+        x: Math.round((root.width - row.width) / 2)
+        anchors.verticalCenter: parent.verticalCenter
         spacing: 8
     }
 

@@ -15,9 +15,9 @@ Font like the Waybar: Inter 15px bold, icons from JetBrainsMono Nerd Font Propo.
 | Notifications | Own daemon (replaces dunst/swaync), popups slide in from the right, timeout bar, actions |
 | OSD | Volume indicator bottom center |
 | Power menu | Lock, suspend, log out, reboot, shut down (dangerous ones need a confirmation) |
-| Settings | Everything changeable live and saved (radius, bar, font, transparency, animations, …). "System font" sets the UI font for every app (GTK 3/4, Qt via fontconfig, Firefox, Electron) and the shell; `qs-font-revert` undoes only that |
-| Wallpaper (Settings tab) | Pick the wallpaper from previews: the current one large on top, all images of the waypaper folder as tiles (newest first or by name, search, random). A click sets it via `waypaper --wallpaper` (its awww backend, fill mode and transition). Thumbnails are made once with `vipsthumbnail` (ImageMagick as fallback) into `~/.cache/quickshell/wallthumbs` |
-| Wallpaper colors | Optional (Settings → Appearance): everything that is highlighted in white (buttons, switches, sliders, active workspace, graphs, selection) takes the color of the wallpaper, like Caelestia. Styles Tonal / Vibrant / Exact. Detected automatically on every wallpaper change (awww cache file, `awww query`, waypaper). Black-and-white wallpapers stay black and white, text and surfaces always stay black and white |
+| Settings | Everything changeable live and saved. Four top tabs: **Quickshell** (appearance, bar, notifications & OSD, animations, performance, commands), **Hyprland** (rounding, shadows, blur, direct scanout, Dynamic Hyprland integration, applied live on top of hyprland.lua), **Apps** (per-app opacity with black & white app icons, fastfetch in kitty), **System** (wallpaper, system font for every app; `qs-font-revert` undoes only that) |
+| Wallpaper (Settings → System) | Pick the wallpaper from previews: the current one large on top, all images of the waypaper folder as tiles (newest first or by name, search, random). A click sets it via `waypaper --wallpaper` (its awww backend, fill mode and transition). Thumbnails are made once with `vipsthumbnail` (ImageMagick as fallback) into `~/.cache/quickshell/wallthumbs` |
+| Wallpaper colors | Optional (Settings → Quickshell → Appearance): everything that is highlighted in white (buttons, switches, sliders, active workspace, graphs, selection) takes the color of the wallpaper, like Caelestia. Styles Tonal / Vibrant / Exact. Detected automatically on every wallpaper change (awww cache file, `awww query`, waypaper). Black-and-white wallpapers stay black and white, text and surfaces always stay black and white |
 | Background | Optional rounded screen corners (the wallpaper itself comes from waypaper / awww) |
 
 Every monitor gets its own bar.
@@ -35,7 +35,7 @@ cp -r quickshell ~/.config/quickshell
 
 Back up an existing `~/.config/quickshell` first. Full steps (start script, settings, NVIDIA): [Quickshell Guide](../Quickshell%20Guide.md).
 
-For the shell glass (Settings → Bar), build the small wallpaper helper once (needs `rust`). Without it the bar falls back
+For the shell glass (Settings → Quickshell → Bar → Glass blur → Own, experimental), build the small wallpaper helper once (needs `rust`). Without it the bar falls back
 to decoding the wallpaper itself, which looks very slightly different from awww:
 
 ```bash

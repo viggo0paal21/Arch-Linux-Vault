@@ -15,7 +15,6 @@ Singleton {
     readonly property var defaults: ({
         radius: 7,
         barHeight: 35,
-        barDockedExtra: 0,
         barDockedHeight: 37,
         barDockDuration: 300,
         smoothText: false,
@@ -53,9 +52,23 @@ Singleton {
         glassOpacity: 55,
         appGlass: true,
         appOpacity: 65,
-        kittyOpacity: 65,
-        hyprBlurSize: 10,
-        hyprBlurPasses: 3,
+        // Settings > Apps > Opacity: -1 = like "All apps" (appOpacity) or App glass (appGlass)
+        appOpacityKitty: -1,
+        appOpacityTidal: -1,
+        appOpacityNautilus: -1,
+        appOpacityDialogs: -1,
+        appOpacityVesktop: -1,
+        appOpacityFirefox: -1,
+        appGlassNautilus: -1,
+        appGlassDialogs: -1,
+        appGlassVesktop: -1,
+        appGlassFirefox: -1,
+        // Settings > Hyprland: -1 = value from hyprland.lua
+        hyprBlurSize: -1,
+        hyprBlurPasses: -1,
+        hyprRounding: -1,
+        hyprShadow: -1,
+        hyprDirectScanout: -1,
         popupsSolidWithWindows: false,
         barSolidWithWindows: true,
         barSolidOnlySingle: true,
@@ -88,6 +101,7 @@ Singleton {
         screenCorners: false,
         gpuMonitor: true,
         fpsCounter: false,
+        systemFontMenu: true,
         kittyFastfetch: false,
         fastfetchLogo1: "",
         fastfetchLogo2: "",
@@ -122,7 +136,6 @@ Singleton {
 
             property int radius: root.defaults.radius
             property int barHeight: root.defaults.barHeight
-            property int barDockedExtra: root.defaults.barDockedExtra
             property int barDockedHeight: root.defaults.barDockedHeight
             property int barDockDuration: root.defaults.barDockDuration
             property bool smoothText: root.defaults.smoothText
@@ -160,9 +173,23 @@ Singleton {
             property int glassOpacity: root.defaults.glassOpacity
             property bool appGlass: root.defaults.appGlass
             property int appOpacity: root.defaults.appOpacity
-            property int kittyOpacity: root.defaults.kittyOpacity
+            // Settings > Apps > Opacity (-1 = "All apps" / App glass, see qs-glass-apply and services/Hypr.qml)
+            property int appOpacityKitty: root.defaults.appOpacityKitty
+            property int appOpacityTidal: root.defaults.appOpacityTidal
+            property int appOpacityNautilus: root.defaults.appOpacityNautilus
+            property int appOpacityDialogs: root.defaults.appOpacityDialogs
+            property int appOpacityVesktop: root.defaults.appOpacityVesktop
+            property int appOpacityFirefox: root.defaults.appOpacityFirefox
+            property int appGlassNautilus: root.defaults.appGlassNautilus
+            property int appGlassDialogs: root.defaults.appGlassDialogs
+            property int appGlassVesktop: root.defaults.appGlassVesktop
+            property int appGlassFirefox: root.defaults.appGlassFirefox
+            // Settings > Hyprland: applied at runtime on top of hyprland.lua (services/Hypr.qml), -1 = hyprland.lua
             property int hyprBlurSize: root.defaults.hyprBlurSize
             property int hyprBlurPasses: root.defaults.hyprBlurPasses
+            property int hyprRounding: root.defaults.hyprRounding
+            property int hyprShadow: root.defaults.hyprShadow
+            property int hyprDirectScanout: root.defaults.hyprDirectScanout
             property bool popupsSolidWithWindows: root.defaults.popupsSolidWithWindows
             property bool barSolidWithWindows: root.defaults.barSolidWithWindows
             property bool barSolidOnlySingle: root.defaults.barSolidOnlySingle
@@ -186,9 +213,9 @@ Singleton {
             property bool wallColors: root.defaults.wallColors
             property string wallColorStyle: root.defaults.wallColorStyle
             property bool wallColorsDynamic: root.defaults.wallColorsDynamic
-            // Settings > Bar > "Dynamic Hyprland integration": hyprland.lua reads the value when it loads (see the top of that file)
+            // Settings > Hyprland > "Dynamic Hyprland integration": hyprland.lua reads the value when loading (see the very top there)
             property bool hyprDynamic: root.defaults.hyprDynamic
-            // Renderer (Settings > Behavior): "vulkan" or "opengl", applies from the next start (render-env.sh)
+            // Renderer (Settings > Quickshell > Performance): "vulkan" or "opengl", applies from the next start (render-env.sh)
             property string renderBackend: root.defaults.renderBackend
             property bool dnd: root.defaults.dnd
             property int notifTimeout: root.defaults.notifTimeout
@@ -197,9 +224,11 @@ Singleton {
             property bool screenCorners: root.defaults.screenCorners
             property bool gpuMonitor: root.defaults.gpuMonitor
             property bool fpsCounter: root.defaults.fpsCounter
-            // Settings > Commands > "Fastfetch in kitty": ~/.local/bin/kitty-shell/zsh reads the value for every new kitty
+            // Settings > System > Font. qs-font-revert sets it to false (menu hidden)
+            property bool systemFontMenu: root.defaults.systemFontMenu
+            // Settings > Apps > kitty > "Fastfetch in kitty": ~/.local/bin/kitty-shell/zsh reads the value for every new kitty
             property bool kittyFastfetch: root.defaults.kittyFastfetch
-            // Settings > Commands > "Fastfetch images": up to 4 images, one per new kitty in turn (~/.local/bin/fastfetch-logo).
+            // Settings > Apps > kitty > "Fastfetch images": up to 4 images, one per new kitty in turn (~/.local/bin/fastfetch-logo).
             // All empty = every image in ~/.config/fastfetch/logos.
             property string fastfetchLogo1: root.defaults.fastfetchLogo1
             property string fastfetchLogo2: root.defaults.fastfetchLogo2

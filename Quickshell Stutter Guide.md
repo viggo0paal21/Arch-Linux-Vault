@@ -25,7 +25,7 @@ Measure first, then fix. Without measuring I spent hours looking in the wrong pl
 
 | Tool | What it shows |
 |---|---|
-| **FPS counter** (Settings > Behavior > FPS counter, `FpsOverlay.qml`) | fps and the **longest frame** per second. 170 Hz = ~6 ms. Normal when idle: max 7–23 ms. Anything from ~50 ms up is a visible freeze |
+| **FPS counter** (Settings > Quickshell > Performance > FPS counter, `FpsOverlay.qml`) | fps and the **longest frame** per second. 170 Hz = ~6 ms. Normal when idle: max 7–23 ms. Anything from ~50 ms up is a visible freeze |
 | **Screen recording, frame by frame** | For motion problems: record a video, split it with `ffmpeg -i clip.mp4 f%04d.png` and measure the position of an icon in every frame. Shows right away whether the bar moves evenly, stops or jumps |
 | `qs log` | Quickshell log. `qs log --rules "category*=true"` also shows the **debug messages** that are hidden otherwise (e.g. `quickshell.desktopentry`) |
 | `strace -tt -T -p PID -o /tmp/qs.trace` | Every system call of the main thread with its duration. Shows whether Quickshell is **waiting** for something (long calls) or **busy** (very many short calls) |

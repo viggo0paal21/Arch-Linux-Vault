@@ -32,7 +32,10 @@ Item {
         return Math.max(n, root.activeId);
     }
 
-    implicitWidth: row.implicitWidth + 16
+    // Width from the target widths (1 active pill 26, the others 10), not from the animated ones: so the group
+    // (and its box with "Group boxes") keeps its width while switching workspaces instead of jittering by 1 px.
+    readonly property int pillSpacing: 6
+    implicitWidth: root.count * 10 + (root.activeId >= 1 ? 16 : 0) + (root.count - 1) * root.pillSpacing + 16
     implicitHeight: 28
 
     MouseArea {
@@ -50,8 +53,10 @@ Item {
     Row {
         id: row
 
-        anchors.centerIn: parent
-        spacing: 6
+        // Ganze Pixel: links 8 px Rand, senkrecht mittig
+        x: 8
+        y: Math.round((root.height - row.height) / 2)
+        spacing: root.pillSpacing
 
         Repeater {
             model: root.count
@@ -67,7 +72,8 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 property real w: isActive ? 26 : 10
 
-                width: Math.round(w)
+                // Round the growing (active) pill up and the shrinking one down: together the width stays the same
+                width: isActive ? Math.ceil(w) : Math.floor(w)
                 height: 10
                 radius: 5
                 color: isActive ? Theme.accentLive : (pillArea.containsMouse ? Theme.fgDim : (isOccupied ? Theme.fgMuted : Theme.layer3))

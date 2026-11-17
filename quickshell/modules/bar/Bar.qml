@@ -64,7 +64,9 @@ PanelWindow {
         const ws = bar.hyprMonitor ? bar.hyprMonitor.activeWorkspace : null;
         return ws ? ws.toplevels.values.length : 0;
     }
-    readonly property bool solid: !Config.opts.barAutoTransparent || bar.windowCount > 0
+    // "Transparent when empty", always on with Group boxes (otherwise black boxes sit on a black bar)
+    readonly property bool autoTransparent: Config.opts.barAutoTransparent || Config.opts.barBoxes
+    readonly property bool solid: !bar.autoTransparent || bar.windowCount > 0
     // Windows without floating ones, for "Solid bar with windows"
     readonly property int tiledCount: Hypr.tiledCount(bar.hyprMonitor)
     // Same for the bar color, optionally without kitty (Exclude kitty terminal)

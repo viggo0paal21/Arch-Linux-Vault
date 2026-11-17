@@ -104,4 +104,13 @@ Singleton {
     readonly property string printer: String.fromCodePoint(0xF042A) // md-printer
     readonly property string trash: String.fromCodePoint(0xF0A7A) // md-trash_can_outline
     readonly property string openExternal: String.fromCodePoint(0xF03CC) // md-open_in_new
+    // Settings: top tabs and pages
+    readonly property string qsShell: String.fromCodePoint(0xF0A1D) // md-view_dashboard_outline
+    readonly property string hyprland: String.fromCodePoint(0xF359) // linux-hyprland
+    readonly property string desktopTower: String.fromCodePoint(0xF0AAB) // md-desktop_tower_monitor
+    readonly property string speedometer: String.fromCodePoint(0xF04C5) // md-speedometer
+    readonly property string roundedCorner: String.fromCodePoint(0xF0607) // md-rounded_corner
+    readonly property string viewQuilt: String.fromCodePoint(0xF148E) // md-view_quilt_outline
+    readonly property string opacityDrop: String.fromCodePoint(0xF05CC) // md-opacity
+    readonly property string formatFont: String.fromCodePoint(0xF06D6) // md-format_font
 }
