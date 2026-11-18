@@ -25,7 +25,7 @@ smooth animations at the full **170 Hz** on an NVIDIA card. It replaces Waybar, 
 | [`home/.local/bin/qs-glass-apply`](home/.local/bin/qs-glass-apply) | `~/.local/bin/` | Applies **Settings → Apps → Opacity** to kitty, Nautilus, GTK3 dialogs, Vesktop and Firefox (called by the settings, see below) |
 | [`home/.local/bin/qs-dock`](home/.local/bin/qs-dock) | `~/.local/bin/` | Starts nwg-dock-hyprland to match the bar |
 | [`home/.local/share/dbus-1/services/org.freedesktop.Notifications.service`](home/.local/share/dbus-1/services/org.freedesktop.Notifications.service) | `~/.local/share/dbus-1/services/` | Stops swaync / dunst / mako from being auto-started by D-Bus and taking the notification server away from Quickshell (see section 7) |
-| [`home/.local/state/quickshell/by-shell/oled-bw/settings.json`](home/.local/state/quickshell/by-shell/oled-bw/settings.json) | `~/.local/state/quickshell/by-shell/oled-bw/` | My saved shell settings (radius, bar, font, animation speed, transparency, FPS counter, ...) |
+| [`home/.local/state/quickshell/by-shell/oled-bw/settings.json`](home/.local/state/quickshell/by-shell/oled-bw/settings.json) | `~/.local/state/quickshell/by-shell/oled-bw/` | My saved shell settings (corner radius, bar, font, animation speed, transparency, FPS counter, ...). The defaults in `quickshell/config/Config.qml` are exactly these values |
 | [`hypr/hyprland.lua`](hypr/hyprland.lua) | `~/.config/hypr/` | Autostart runs `qs-start` (Waybar and swaync are commented out), `Super + R` opens the Quickshell launcher, blur for the Quickshell layers |
 | [`quickshell/hyprland-quickshell.lua`](quickshell/hyprland-quickshell.lua) | (template) | Keybind and layer-rule snippets for `hyprland.lua` |
 
@@ -149,6 +149,10 @@ contents move in whole pixels (sharp text), rounded toward the target so the las
 part of the motion. The bottom edge is one continuous curve (position + docked extra) rounded down, so once a window
 reaches the bar no gap can reopen. Set `border_size = 0` for a single window in only one rule; two rules setting it
 made the windows jitter when the smart gaps switched.
+
+**Corner radius** (Settings → Appearance) sets the corners of panels, cards and the floating bar in real pixels, the
+same unit as `rounding` in `hyprland.lua` (10 = exactly like the windows). Buttons and selection boxes inside get a bit
+less (radius / 1.4, small parts × 0.6). Before, the slider set the middle value, so 7 looked like Hyprland's 10.
 
 **Subpixel glide** (Settings → Bar and Settings → Animations, same switch): the bar's dock animation moves between
 pixels like Hyprland windows, and in the menus expanding lists (per-app volume, Wi-Fi password field), the control

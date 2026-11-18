@@ -7,13 +7,17 @@ import Quickshell.Io
 // Persistent settings. Stored in
 // ~/.local/state/quickshell/by-shell/oled-bw/settings.json
 // Changes in the settings panel are written immediately.
+// The defaults (also used by "Reset to defaults" and the reset buttons) are exactly my own
+// settings (as of Nov 18).
 Singleton {
     id: root
 
     property alias opts: adapter
 
     readonly property var defaults: ({
-        radius: 7,
+        // Corners of the large surfaces (panels, cards, floating bar) in real pixels, like rounding in
+        // hyprland.lua. Replaces the old "radius" (where 7 meant 10 px on the panels, see config/Theme.qml).
+        cornerRadius: 10,
         barHeight: 35,
         barDockedHeight: 37,
         barDockDuration: 300,
@@ -22,7 +26,7 @@ Singleton {
         barFloatSide: 10,
         barGlide: true,
         barShellGlass: false,
-        glassBlurSize: 8,
+        glassBlurSize: 1,
         glassBlurPasses: 2,
         glassBlurContrast: 0.8916,
         glassBlurBrightness: 1.0,
@@ -33,24 +37,24 @@ Singleton {
         barFloatingDynamic: true,
         barBorder: false,
         launcherIcon: "arch",
-        launcherIconSize: 20,
+        launcherIconSize: 22,
         barBoxes: false,
         barBoxColor: "#000000",
-        barShowTitle: false,
+        barShowTitle: true,
         barAutoTransparent: false,
         barShowSysmon: true,
         barShowDate: true,
-        clockSeconds: false,
+        clockSeconds: true,
         clock24h: true,
         workspaceCount: 1,
         uiFont: "Inter",
         uiIconFont: "JetBrainsMono Nerd Font Propo",
         uiFontSize: 15,
-        uiFontWeight: 700,
+        uiFontWeight: 600,
         animations: true,
         transparency: "everywhere",
-        glassOpacity: 55,
-        appGlass: true,
+        glassOpacity: 65,
+        appGlass: false,
         appOpacity: 65,
         // Settings > Apps > Opacity: -1 = like "All apps" (appOpacity) or App glass (appGlass)
         appOpacityKitty: -1,
@@ -60,12 +64,12 @@ Singleton {
         appOpacityVesktop: -1,
         appOpacityFirefox: -1,
         appGlassNautilus: -1,
-        appGlassDialogs: -1,
+        appGlassDialogs: 1,
         appGlassVesktop: -1,
         appGlassFirefox: -1,
         // Settings > Hyprland: -1 = value from hyprland.lua
-        hyprBlurSize: -1,
-        hyprBlurPasses: -1,
+        hyprBlurSize: 1,
+        hyprBlurPasses: 2,
         hyprRounding: -1,
         hyprShadow: -1,
         hyprDirectScanout: -1,
@@ -75,7 +79,7 @@ Singleton {
         barExcludeKitty: true,
         animScale: 1,
         animBarCurve: "smoothOut",
-        animPanelSpeed: 0.75,
+        animPanelSpeed: 0.85,
         animPanelOpen: "smoothOut",
         animPanelClose: "smoothOut",
         animOverlaySpeed: 2,
@@ -90,7 +94,7 @@ Singleton {
         animCtlCurve: "standard",
         monochromeIcons: false,
         wallColors: true,
-        wallColorStyle: "exact",
+        wallColorStyle: "vibrant",
         wallColorsDynamic: true,
         renderBackend: "opengl",
         hyprDynamic: true,
@@ -98,15 +102,15 @@ Singleton {
         notifTimeout: 5,
         osdEnabled: true,
         volumeStep: 5,
-        screenCorners: false,
+        screenCorners: true,
         gpuMonitor: true,
         fpsCounter: false,
         systemFontMenu: true,
         kittyFastfetch: false,
-        fastfetchLogo1: "",
-        fastfetchLogo2: "",
-        fastfetchLogo3: "",
-        fastfetchLogo4: "",
+        fastfetchLogo1: "/home/viggo/.config/fastfetch/logos/1573730073Tux_Mono_wite.png",
+        fastfetchLogo2: "/home/viggo/.config/fastfetch/logos/1573730073Tux_Mono_wite.png",
+        fastfetchLogo3: "/home/viggo/.config/fastfetch/logos/1573730073Tux_Mono_wite.png",
+        fastfetchLogo4: "/home/viggo/.config/fastfetch/logos/1573730073Tux_Mono_wite.png",
         terminal: "kitty",
         lockCommand: "hyprlock || loginctl lock-session"
     })
@@ -134,7 +138,7 @@ Singleton {
         JsonAdapter {
             id: adapter
 
-            property int radius: root.defaults.radius
+            property int cornerRadius: root.defaults.cornerRadius
             property int barHeight: root.defaults.barHeight
             property int barDockedHeight: root.defaults.barDockedHeight
             property int barDockDuration: root.defaults.barDockDuration

@@ -44,9 +44,12 @@ Singleton {
     readonly property color accentFgLive: WallColors.accentFg
 
     // Rounding: subtle, everything scales with one value
-    readonly property int radius: Config.opts.radius
+    // Settings > Appearance > Corner radius = corners of the large surfaces (panels, cards, floating bar) in real
+    // pixels, the same unit as rounding in hyprland.lua (10 = exactly like the windows). Smaller surfaces inside
+    // (buttons, selection boxes) are a bit less round. The slider used to set the middle value (7 = panels 10 px).
+    readonly property int radiusLg: Config.opts.cornerRadius
+    readonly property int radius: Math.round(radiusLg / 1.4)
     readonly property int radiusSm: Math.round(radius * 0.6)
-    readonly property int radiusLg: Math.round(radius * 1.4)
 
     // Font (like the Waybar: Inter 15px bold, icons from JetBrainsMono Nerd Font Propo;
     // Qt gets missing glyphs automatically via fontconfig, e.g. from Symbols Nerd Font)

@@ -1029,14 +1029,14 @@ OverlayPanel {
                         SettingRow {
                             width: parent.width
                             label: "Corner radius"
-                            description: "0 = square, 8 = slightly rounded (default)"
+                            description: "Corners of panels, cards and the floating bar in real pixels, same as rounding in hyprland.lua (10 = exactly like the windows). Buttons and boxes inside are a bit less round. 0 = square"
 
                             RangeControl {
                                 from: 0
-                                to: 20
-                                value: Config.opts.radius
+                                to: 28
+                                value: Config.opts.cornerRadius
                                 suffix: " px"
-                                onEdited: v => Config.opts.radius = v
+                                onEdited: v => Config.opts.cornerRadius = v
                             }
                         }
 
