@@ -55,6 +55,15 @@ Singleton {
         root.panel = "";
     }
 
+    // Open the settings directly on a page (e.g. "profile" from the profile picture in the control center). The settings
+    // jump there and reset the request to "".
+    property string settingsPage: ""
+
+    function openSettings(page, screen) {
+        root.settingsPage = page;
+        root.open("settings", screen);
+    }
+
     function toggle(name, screen) {
         if (root.panel === name)
             root.close();

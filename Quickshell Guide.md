@@ -27,6 +27,8 @@ smooth animations at the full **170 Hz** on an NVIDIA card. It replaces Waybar, 
 | [`home/.local/share/dbus-1/services/org.freedesktop.Notifications.service`](home/.local/share/dbus-1/services/org.freedesktop.Notifications.service) | `~/.local/share/dbus-1/services/` | Stops swaync / dunst / mako from being auto-started by D-Bus and taking the notification server away from Quickshell (see section 7) |
 | [`home/.local/state/quickshell/by-shell/oled-bw/settings.json`](home/.local/state/quickshell/by-shell/oled-bw/settings.json) | `~/.local/state/quickshell/by-shell/oled-bw/` | My saved shell settings (corner radius, bar, font, animation speed, transparency, FPS counter, ...). The defaults in `quickshell/config/Config.qml` are exactly these values |
 | [`hypr/hyprland.lua`](hypr/hyprland.lua) | `~/.config/hypr/` | Autostart runs `qs-start` (Waybar and swaync are commented out), `Super + R` opens the Quickshell launcher, blur for the Quickshell layers |
+| [`hypr/hyprlock.conf`](hypr/hyprlock.conf) | `~/.config/hypr/` | Lock screen in the style of the shell (see "Lock screen" below) |
+| [`MangoHud/`](MangoHud) | `~/.config/MangoHud/` | Global MangoHud config plus per-game configs, editable in Settings → System → Gaming |
 | [`quickshell/hyprland-quickshell.lua`](quickshell/hyprland-quickshell.lua) | (template) | Keybind and layer-rule snippets for `hyprland.lua` |
 
 Changes made for smooth 170 Hz (all inside `quickshell/`):
@@ -34,7 +36,7 @@ Changes made for smooth 170 Hz (all inside `quickshell/`):
 | File | Change |
 |---|---|
 | `components/OverlayPanel.qml` | Closed panels stay mapped but invisible and click-through, so opening one no longer creates a new window (that caused a ~90 ms hitch). When a fullscreen window is active they are unmapped, so direct scanout and tearing in games keep working. |
-| `components/DropdownSlot.qml` | Dashboard and control center slide down from under the bar |
+| `components/DropdownSlot.qml` | Dashboard, control center and (optionally) the launcher slide down from under the bar |
 | `modules/dashboard/Dashboard.qml` | The dashboard clock only ticks while the dashboard is open |
 | `FpsOverlay.qml`, `config/Config.qml`, `modules/settings/SettingsPanel.qml` | FPS counter, switchable in Settings → Quickshell → Performance → **FPS counter** |
 | `services/Glass.qml`, `components/Segmented.qml`, `config/Theme.qml`, `services/Hypr.qml` | Transparency with blur, see below |
@@ -50,7 +52,7 @@ The settings window has four top tabs, each with its pages on the left:
 | **Quickshell** | Appearance, Bar (size & position, background, content), Notifications & OSD, Animations, Performance (renderer, FPS counter, GPU monitor, smooth text), Commands (terminal, lock screen) |
 | **Hyprland** | Windows (rounding, shadows, blur), Layout & rendering (Dynamic Hyprland integration, direct scanout) |
 | **Apps** | Opacity (per app), kitty (fastfetch in kitty, fastfetch images) |
-| **System** | Wallpaper, Font (system font for every app) |
+| **System** | Profile (picture and display name), Wallpaper, Gaming (variable refresh rate, MangoHud), Font (system font for every app) |
 
 Every top tab remembers its last page. The selection box (top tabs, page list, segmented buttons) glides to the
 new item like the launcher selection, and a slightly dimmer hover box follows the mouse the same way. Rows that
@@ -150,13 +152,45 @@ part of the motion. The bottom edge is one continuous curve (position + docked e
 reaches the bar no gap can reopen. Set `border_size = 0` for a single window in only one rule; two rules setting it
 made the windows jitter when the smart gaps switched.
 
+**Launcher position** (Settings → Bar → Content): **Center** (default) opens the launcher exactly in the middle of the
+screen, fading in with a short glide; **From the logo** slides it out from under the bar below the launcher logo, with
+the same animation, speed and curves as the dashboard and control center.
+
+**Profile** (Settings → System → Profile): the profile picture is the account picture that KDE Plasma and SDDM share
+(AccountsService, `/var/lib/AccountsService/icons/<user>`, otherwise `~/.face.icon` / `~/.face`), shown as a rounded
+square in the control center header, in the bottom left corner of the settings and on the lock screen. Clicking it
+opens the profile page. The page has a picture picker right in the settings (Pictures / Downloads / Wallpapers / Home,
+subfolders, the newest 120 images, square thumbnails from the wallpaper cache). Clicking an image opens a classic crop
+dialog: square crop area, darkened outside, drag to move, scroll / slider / − + to zoom (up to 5×). "Use picture" saves
+exactly the visible area as a 256 × 256 PNG and sets it system-wide through AccountsService (`busctl … SetIconFile`, no
+password for your own account), so KDE, SDDM and hyprlock show it too. The previous picture is backed up once
+(`face-original` in the shell's state folder, "Restore original"). **Display name**: your own name for the shell and the
+lock screen (empty = the full account name from GECOS, otherwise the login name). See `services/User.qml`,
+`components/Avatar.qml`, `modules/settings/CropDialog.qml`.
+
+**Gaming** (Settings → System → Gaming):
+- **Variable refresh rate**: Off / Always / Fullscreen / Games (`misc:vrr` 0–3), applied live with `hyprctl eval` like the
+  other Hyprland values; hyprland.lua stays unchanged, Reset goes back to its value.
+- **MangoHud**: pick the global `MangoHud.conf` or a game config (`<exe>.conf`, Proton: `wine-<exe>`) from a dropdown,
+  "+ Game" creates a new one as a copy of the global config (a game config replaces the global one completely, MangoHud
+  doesn't merge them). Settings: show the HUD at game start, position, what it shows (FPS, frame time, CPU, GPU,
+  temperatures, RAM, VRAM, ...), FPS limit and limit method, vsync for Vulkan and OpenGL. Only the affected line is
+  written, unknown lines and comments stay. Note: `MANGOHUD_CONFIG=…,no_display` in `/etc/environment` hides the HUD at
+  start regardless of the file. See `services/MangoHud.qml`.
+
+**Lock screen** ([`hypr/hyprlock.conf`](hypr/hyprlock.conf)): glass like the panels (the screen blurred with 65 % black on
+top), big thin clock and the date like the dashboard, the account picture as a rounded square, the display name from the
+shell (`~/.local/state/quickshell/by-shell/oled-bw/user-name`), a dark password field with round dots, smooth fades.
+For plain black, comment out `path = screenshot`.
+
 **Corner radius** (Settings → Appearance) sets the corners of panels, cards and the floating bar in real pixels, the
 same unit as `rounding` in `hyprland.lua` (10 = exactly like the windows). Buttons and selection boxes inside get a bit
 less (radius / 1.4, small parts × 0.6). Before, the slider set the middle value, so 7 looked like Hyprland's 10.
 
 **Subpixel glide** (Settings → Bar and Settings → Animations, same switch): the bar's dock animation moves between
-pixels like Hyprland windows, and in the menus expanding lists (per-app volume, Wi-Fi password field), the control
-center height on a page change and rows sliding into place glide too. Anything with text that moves is drawn as an image
+pixels like Hyprland windows, panels sliding out from under the bar (dashboard, control center, launcher) glide between
+pixels, and in the menus expanding lists (per-app volume, Wi-Fi password field), the control center height on a page
+change and rows sliding into place glide too. Anything with text that moves is drawn as an image
 only while moving (Qt always snaps native text to whole pixels), so it is a touch softer in motion and crisp at rest.
 Off = those move in whole pixels. Panels, selection and hover boxes, sliders and switches always glide smoothly.
 

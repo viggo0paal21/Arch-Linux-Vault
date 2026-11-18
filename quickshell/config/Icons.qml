@@ -65,6 +65,7 @@ Singleton {
     readonly property string moon: String.fromCodePoint(0xF0F65)
     readonly property string sun: String.fromCodePoint(0xF0599)
     readonly property string account: String.fromCodePoint(0xF0004)
+    readonly property string folder: String.fromCodePoint(0xF024B)
     readonly property string timer: String.fromCodePoint(0xF051B)
     readonly property string screenshot: String.fromCodePoint(0xF0E51)
     readonly property string battery: String.fromCodePoint(0xF0079)

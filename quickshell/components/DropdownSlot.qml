@@ -11,6 +11,8 @@ Item {
     property real progress: 0
     property real contentHeight: 0
     default property alias content: inner.data
+    // The sliding inner part (for content that moves in with "parent:", e.g. the launcher)
+    readonly property alias contentItem: inner
 
     readonly property real fullHeight: root.contentHeight + Theme.gap + 2
 
@@ -23,13 +25,16 @@ Item {
     Item {
         id: inner
 
+        readonly property real exactY: Theme.gap - root.fullHeight * (1 - root.progress)
+
         // closed: fully above (behind the bar), open: just below the bar.
-        // Glides between pixels like the bar: while moving, the content is drawn once
-        // sharply into a texture and that is moved smoothly. At rest it sits on whole pixels without a texture.
-        y: Theme.gap - root.fullHeight * (1 - root.progress)
+        // With "Subpixel glide" it glides between pixels like the bar: while moving, the content is drawn
+        // sharply into a texture once and that is moved smoothly. Without: whole pixels, no texture.
+        // At rest it always sits on whole pixels without a texture.
+        y: Config.opts.barGlide ? inner.exactY : Math.round(inner.exactY)
         width: parent.width
         height: root.contentHeight
-        layer.enabled: root.progress > 0 && root.progress < 1
+        layer.enabled: Config.opts.barGlide && root.progress > 0 && root.progress < 1
         layer.smooth: true
     }
 }

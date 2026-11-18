@@ -49,7 +49,7 @@ OverlayPanel {
         {
             name: "System",
             icon: Icons.desktopTower,
-            pages: Config.opts.systemFontMenu ? ["wallpaper", "systemFont"] : ["wallpaper"]
+            pages: Config.opts.systemFontMenu ? ["profile", "wallpaper", "gaming", "systemFont"] : ["profile", "wallpaper", "gaming"]
         }
     ]
     readonly property var pageInfo: ({
@@ -63,7 +63,9 @@ OverlayPanel {
             hyprLayout: { name: "Layout & rendering", icon: Icons.viewQuilt },
             appsOpacity: { name: "Opacity", icon: Icons.opacityDrop },
             appsKitty: { name: "kitty", icon: Icons.terminal },
+            profile: { name: "Profile", icon: Icons.account },
             wallpaper: { name: "Wallpaper", icon: Icons.image },
+            gaming: { name: "Gaming", icon: Icons.gamepad },
             systemFont: { name: "Font", icon: Icons.formatFont }
         })
     readonly property var tabs: panel.sections[panel.section].pages
@@ -125,7 +127,7 @@ OverlayPanel {
     Process {
         id: hyprLiveReader
 
-        command: ["sh", "-c", "for o in decoration:rounding decoration:shadow:enabled decoration:blur:size decoration:blur:passes render:direct_scanout; do printf '%s ' \"$o\"; hyprctl -j getoption \"$o\" | tr -d '\\n'; echo; done"]
+        command: ["sh", "-c", "for o in decoration:rounding decoration:shadow:enabled decoration:blur:size decoration:blur:passes render:direct_scanout misc:vrr; do printf '%s ' \"$o\"; hyprctl -j getoption \"$o\" | tr -d '\\n'; echo; done"]
         stdout: SplitParser {
             onRead: line => {
                 const i = line.indexOf(" ");
@@ -202,6 +204,180 @@ OverlayPanel {
             Config.opts[k] = d[k];
     }
 
+    // ---------- System > Gaming ----------
+    // Hyprland's VRR modes (misc:vrr)
+    function vrrText(v) {
+        if (v === 0)
+            return "Off: the screen always runs at its fixed refresh rate";
+        if (v === 1)
+            return "Always: G-Sync / FreeSync everywhere, some screens flicker slightly on grey areas";
+        if (v === 3)
+            return "Games: only fullscreen apps that report themselves as a game or video";
+        return "Fullscreen: only fullscreen apps (games, videos in fullscreen)";
+    }
+    // MangoHud: new game config (row with name field open/closed) and what the HUD can show
+    property bool mhAdding: false
+    property bool mhAddError: false
+    readonly property var mhItems: [
+        { key: "fps", label: "FPS" },
+        { key: "frametime", label: "Frame time" },
+        { key: "frame_timing", label: "Frame time graph" },
+        { key: "show_fps_limit", label: "FPS limit" },
+        { key: "present_mode", label: "Present mode" },
+        { key: "cpu_stats", label: "CPU" },
+        { key: "cpu_temp", label: "CPU temp" },
+        { key: "gpu_stats", label: "GPU" },
+        { key: "gpu_temp", label: "GPU temp" },
+        { key: "ram", label: "RAM" },
+        { key: "vram", label: "VRAM" }
+    ]
+    function createGameConfig(name) {
+        if (MangoHud.addGame(name)) {
+            panel.mhAdding = false;
+            panel.mhAddError = false;
+        } else {
+            panel.mhAddError = true;
+        }
+    }
+
+    // ---------- System > Profile ----------
+    // Picture picker: folders (Pictures, Downloads, Wallpapers, Home), subfolders and pictures in them (the newest picMax).
+    // Square thumbnails through the same cache as the wallpapers (Walls.ensure). The folders are only read and
+    // watched while the page is open (Loader), otherwise nothing.
+    property string picPlace: "pictures"
+    readonly property string picRoot: {
+        if (panel.picPlace === "downloads")
+            return User.downloadsDir;
+        if (panel.picPlace === "wallpapers")
+            return Walls.folder;
+        if (panel.picPlace === "home")
+            return Quickshell.env("HOME");
+        return User.picturesDir;
+    }
+    // Subfolder that was clicked ("" = the top folder itself)
+    property string picSub: ""
+    readonly property string picDir: panel.picSub !== "" ? panel.picSub : panel.picRoot
+    readonly property bool picLive: panel.open && panel.page === "profile"
+    readonly property int picMax: 120
+    readonly property int picThumb: 264
+    // [{ dir, path, name, thumb }], folders first
+    property var picItems: []
+    property int picTotal: 0
+    property bool picReady: false
+    onPicPlaceChanged: panel.picSub = ""
+    // New folder: the grid fades out until the new list is ready
+    onPicDirChanged: panel.picReady = false
+
+    function picUp() {
+        const up = panel.picDir.replace(/\/[^\/]*\/?$/, "");
+        panel.picSub = up.length > panel.picRoot.length ? up : "";
+    }
+
+    property Loader picLoader: Loader {
+        active: panel.picLive && panel.picDir !== ""
+        onActiveChanged: {
+            if (!active)
+                panel.picReady = false;
+        }
+
+        sourceComponent: Component {
+            Item {
+                id: picScan
+
+                function rebuild() {
+                    // Still reading: wait. Folder missing (status Null): empty.
+                    if (dirModel.status === FolderListModel.Loading || fileModel.status === FolderListModel.Loading)
+                        return;
+                    const items = [];
+                    for (let i = 0; i < Math.min(dirModel.count, 60); i++)
+                        items.push({
+                            dir: true,
+                            path: dirModel.get(i, "filePath"),
+                            name: dirModel.get(i, "fileName"),
+                            thumb: ""
+                        });
+                    const missing = [];
+                    const n = Math.min(fileModel.count, panel.picMax);
+                    for (let i = 0; i < n; i++) {
+                        const p = fileModel.get(i, "filePath");
+                        const t = Walls.thumbFor(p, fileModel.get(i, "fileModified"), "sq" + panel.picThumb);
+                        items.push({
+                            dir: false,
+                            path: p,
+                            name: fileModel.get(i, "fileName"),
+                            thumb: t
+                        });
+                        if (!Walls.isReady(t))
+                            missing.push([p, t]);
+                    }
+                    panel.picTotal = fileModel.count;
+                    panel.picItems = items;
+                    panel.picReady = true;
+                    Walls.ensure(missing, panel.picThumb, panel.picThumb);
+                }
+
+                FolderListModel {
+                    id: dirModel
+
+                    folder: "file://" + panel.picDir
+                    showFiles: false
+                    showDirs: true
+                    showDotAndDotDot: false
+                    showHidden: false
+                    sortField: FolderListModel.Name
+                    sortCaseSensitive: false
+                    onStatusChanged: picRebuild.restart()
+                    onCountChanged: picRebuild.restart()
+                }
+
+                FolderListModel {
+                    id: fileModel
+
+                    folder: "file://" + panel.picDir
+                    showDirs: false
+                    showHidden: false
+                    nameFilters: ["*.jpg", "*.jpeg", "*.png", "*.webp", "*.gif", "*.bmp", "*.jxl", "*.avif"]
+                    caseSensitive: false
+                    sortField: FolderListModel.Time
+                    onStatusChanged: picRebuild.restart()
+                    onCountChanged: picRebuild.restart()
+                }
+
+                Timer {
+                    id: picRebuild
+
+                    interval: 60
+                    onTriggered: picScan.rebuild()
+                }
+            }
+        }
+    }
+
+    // Open a page directly (profile picture in the corner, control center)
+    function openPage(name) {
+        for (let s = 0; s < panel.sections.length; s++) {
+            const t = panel.sections[s].pages.indexOf(name);
+            if (t >= 0) {
+                if (s !== panel.section)
+                    panel.rememberTab();
+                panel.section = s;
+                panel.tab = t;
+                return;
+            }
+        }
+    }
+
+    Connections {
+        target: Ui
+
+        function onSettingsPageChanged() {
+            if (Ui.settingsPage === "")
+                return;
+            panel.openPage(Ui.settingsPage);
+            Ui.settingsPage = "";
+        }
+    }
+
     // System font: font for all apps (GTK 3/4, Qt through fontconfig, Firefox, Electron) and the shell.
     // The current value comes from gtk-3.0/settings.ini (so the real system state), read when opening.
     // Applying is done by ~/.local/bin/qs-font-apply (it saves the old state the first time, qs-font-revert restores
@@ -230,10 +406,14 @@ OverlayPanel {
     }
 
     onOpenChanged: {
+        if (!panel.open)
+            cropDialog.open = false;
         if (panel.open) {
             systemFontReader.running = true;
-            if (panel.section === 1)
+            if (panel.section === 1 || panel.page === "gaming")
                 hyprLiveReader.running = true;
+            if (panel.page === "gaming")
+                MangoHud.refresh();
         }
     }
 
@@ -264,7 +444,6 @@ OverlayPanel {
         panel.tab = t;
     }
 
-    // Remember the current top tab's page before leaving it
     // Hover and selection box share one layer that is drawn as a whole with the opacity of the
     // selection box. Inside it the selection box is fully opaque, the hover box proportionally: where both
     // overlap while gliding, the white doesn't add up (otherwise a brighter stripe with a visible edge),
@@ -274,6 +453,7 @@ OverlayPanel {
         return Qt.rgba(c.r, c.g, c.b, Math.min(1, c.a / panel.boxAlpha));
     }
 
+    // Remember the current top tab's page before leaving it
     function rememberTab() {
         const l = panel.lastTabs.slice();
         l[panel.section] = panel.tab;
@@ -287,10 +467,13 @@ OverlayPanel {
     ns: "qs-settings"
     onDismissed: Ui.close()
     onPageChanged: {
+        cropDialog.open = false;
         flick.contentY = 0;
         tabIn.restart();
-        if (panel.section === 1 && panel.open)
+        if ((panel.section === 1 || panel.page === "gaming") && panel.open)
             hyprLiveReader.running = true;
+        if (panel.page === "gaming" && panel.open)
+            MangoHud.refresh();
     }
     // New top tab: the page list on the left fades in again (the highlight jumps along with it)
     onSectionChanged: sideIn.restart()
@@ -440,6 +623,13 @@ OverlayPanel {
         layer.smooth: true
         focus: true
 
+        // Esc first closes the crop dialog, then the settings
+        Keys.onEscapePressed: ev => {
+            if (cropDialog.open)
+                cropDialog.cancel();
+            else
+                ev.accepted = false;
+        }
         Keys.onTabPressed: panel.switchTab(1)
         Keys.onBacktabPressed: panel.switchTab(-1)
         Keys.onDownPressed: panel.switchTab(1)
@@ -794,12 +984,71 @@ OverlayPanel {
                 }
             }
 
-            // Bottom: reset + storage location
+            // Bottom: profile (picture + name, click opens System > Profile), reset
             Column {
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
                 spacing: 12
+
+                Item {
+                    id: sideProfile
+
+                    width: parent.width
+                    height: 56
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: Theme.radius
+                        color: sideProfileArea.pressed ? Theme.pressed : (sideProfileArea.containsMouse ? Theme.hover : Qt.rgba(1, 1, 1, 0))
+
+                        Behavior on color {
+                            CAnim {}
+                        }
+                    }
+
+                    Avatar {
+                        id: sideAvatar
+
+                        x: 8
+                        anchors.verticalCenter: parent.verticalCenter
+                        size: 40
+                        hovered: sideProfileArea.containsMouse
+                    }
+
+                    Column {
+                        anchors.left: sideAvatar.right
+                        anchors.leftMargin: 12
+                        anchors.right: parent.right
+                        anchors.rightMargin: 12
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 1
+
+                        Txt {
+                            width: parent.width
+                            text: User.name
+                            font.weight: Theme.uiWeightStrong
+                            elide: Text.ElideRight
+                        }
+
+                        Txt {
+                            width: parent.width
+                            text: User.login + (User.host !== "" ? "@" + User.host : "")
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fontSm
+                            elide: Text.ElideRight
+                        }
+                    }
+
+                    MouseArea {
+                        id: sideProfileArea
+
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: panel.openPage("profile")
+                    }
+                }
 
                 Txt {
                     x: 14
@@ -886,7 +1135,9 @@ OverlayPanel {
                                 hyprLayout: pageHyprLayout,
                                 appsOpacity: pageAppsOpacity,
                                 appsKitty: pageAppsKitty,
+                                profile: pageProfile,
                                 wallpaper: pageWallpaper,
+                                gaming: pageGaming,
                                 systemFont: pageSystemFont
                             })[panel.page] || pageAppearance).implicitHeight
 
@@ -1407,14 +1658,15 @@ OverlayPanel {
                             }
                         }
 
-                        // On: smooth dock animation (between pixels, like Hyprland windows), plus expanding lists and rows sliding
-                        // into place in the menus. Content is minimally softer while moving.
+                        // On: smooth dock animation (between pixels, like Hyprland windows), plus panels sliding out
+                        // (dashboard, control center, launcher) and in the menus expanding lists and
+                        // rows sliding into place. Content is minimally softer while moving.
                         // Off: whole pixels there, always crisp (previous behavior). Panels, selection boxes, sliders
                         // and switches always glide smoothly anyway.
                         SettingRow {
                             width: parent.width
                             label: "Subpixel glide"
-                            description: "Animations move between pixels like Hyprland windows: the bar's dock animation, and in menus also expanding lists and rows sliding into place. Text and icons are a touch softer only while moving. Off = these move in whole pixels, always crisp"
+                            description: "Animations move between pixels like Hyprland windows: the bar's dock animation, panels sliding in (dashboard, control center, launcher), and in menus expanding lists and rows sliding into place. Text and icons are a touch softer only while moving. Off = these move in whole pixels, always crisp"
 
                             SwitchCtl {
                                 checked: Config.opts.barGlide
@@ -1936,6 +2188,31 @@ OverlayPanel {
                             }
                         }
 
+                        // Where the app launcher opens: exactly in the middle of the screen, or it slides out of the launcher logo
+                        // from under the bar like the dashboard and control center (their speed and curves)
+                        SettingRow {
+                            width: parent.width
+                            label: "Launcher position"
+                            description: Config.opts.launcherPosition === "logo" ? "From the logo: slides down out of the launcher icon like the dashboard and control center, with their animation speed and curves" : "Center (default): opens exactly in the middle of the screen and fades in. From the logo slides it down out of the launcher icon like the dashboards"
+                            controlWidth: 360
+
+                            Segmented {
+                                width: parent.width
+                                options: [
+                                    {
+                                        value: "center",
+                                        label: "Center"
+                                    },
+                                    {
+                                        value: "logo",
+                                        label: "From the logo"
+                                    }
+                                ]
+                                value: Config.opts.launcherPosition
+                                onPicked: v => Config.opts.launcherPosition = v
+                            }
+                        }
+
                         SettingRow {
                             width: parent.width
                             label: "Workspaces"
@@ -2154,7 +2431,7 @@ OverlayPanel {
                         SettingRow {
                             width: parent.width
                             label: "Subpixel glide"
-                            description: "Animations move between pixels like Hyprland windows: the bar's dock animation, and in menus also expanding lists and rows sliding into place. Text and icons are a touch softer only while moving. Off = these move in whole pixels, always crisp"
+                            description: "Animations move between pixels like Hyprland windows: the bar's dock animation, panels sliding in (dashboard, control center, launcher), and in menus expanding lists and rows sliding into place. Text and icons are a touch softer only while moving. Off = these move in whole pixels, always crisp"
 
                             SwitchCtl {
                                 checked: Config.opts.barGlide
@@ -3459,6 +3736,512 @@ OverlayPanel {
                         }
                     }
 
+                    // ----- System > Profile -----
+                    // Picture and name big at the top, below them your own display name and the picture picker. The picture is the
+                    // account picture (AccountsService) that KDE Plasma, SDDM, hyprlock and the shell share
+                    // (services/User.qml). The name only applies to the shell and hyprlock.
+                    Column {
+                        id: pageProfile
+
+                        width: parent.width
+                        spacing: 10
+                        visible: panel.page === "profile"
+
+                        // Rows that appear fade in, the ones below glide smoothly after (instant on a page switch,
+                        // the whole page glides then)
+                        add: Transition {
+                            NumberAnimation {
+                                property: "opacity"
+                                from: 0
+                                to: 1
+                                duration: tabIn.running ? 0 : Theme.ctlMed
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.curveSmooth
+                            }
+                        }
+                        // With "Subpixel glide" every row glides between pixels: drawn as an image while moving
+                        // (text sharp), without it again at the target
+                        move: Transition {
+                            SequentialAnimation {
+                                PropertyAction {
+                                    property: "layer.smooth"
+                                    value: true
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: Config.opts.barGlide && !tabIn.running
+                                }
+                                NumberAnimation {
+                                    property: "y"
+                                    duration: tabIn.running ? 0 : Theme.ctlMed
+                                    easing.type: Easing.BezierSpline
+                                    easing.bezierCurve: Theme.curveSmooth
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: false
+                                }
+                            }
+                        }
+
+                        // Big card: picture, name, login@host
+                        Rectangle {
+                            width: parent.width
+                            height: 136
+                            radius: Theme.radiusLg
+                            color: Theme.fill
+
+                            Avatar {
+                                id: heroAvatar
+
+                                x: 20
+                                anchors.verticalCenter: parent.verticalCenter
+                                size: 96
+                                radius: Theme.radiusLg
+                            }
+
+                            Column {
+                                anchors.left: heroAvatar.right
+                                anchors.leftMargin: 22
+                                anchors.right: parent.right
+                                anchors.rightMargin: 20
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: 4
+
+                                Txt {
+                                    width: parent.width
+                                    text: User.name
+                                    font.pixelSize: Theme.fontLg + 7
+                                    font.weight: Theme.uiWeightStrong
+                                    elide: Text.ElideRight
+                                }
+
+                                Txt {
+                                    width: parent.width
+                                    text: User.login + (User.host !== "" ? "@" + User.host : "")
+                                    color: Theme.textDim
+                                    elide: Text.ElideRight
+                                }
+
+                                Txt {
+                                    width: parent.width
+                                    topPadding: 4
+                                    text: "Picture shared with KDE Plasma, SDDM and the lock screen"
+                                    color: Theme.textMuted
+                                    font.pixelSize: Theme.fontSm
+                                    elide: Text.ElideRight
+                                }
+                            }
+                        }
+
+                        // Section title
+                        Txt {
+                            readonly property bool isHeader: true
+
+                            width: parent.width
+                            topPadding: 18
+                            text: "Account"
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fontSm
+                            font.weight: Theme.uiWeightStrong
+                            font.capitalization: Font.AllUppercase
+                            font.letterSpacing: 0.8
+                        }
+
+                        // Own name only for the shell and hyprlock (empty = account name)
+                        SettingRow {
+                            width: parent.width
+                            label: "Display name"
+                            description: "Shown in the control center, in the corner of these settings and on the lock screen. Empty = your account name (" + User.systemName + ")"
+                            controlWidth: 400
+
+                            Row {
+                                anchors.right: parent.right
+                                spacing: 10
+
+                                InputField {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 400 - reset_userName.width - 10
+                                    text: Config.opts.userName
+                                    placeholder: User.systemName
+                                    onCommitted: v => Config.opts.userName = v.trim()
+                                }
+
+                                IconButton {
+                                    id: reset_userName
+
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    size: 30
+                                    icon: String.fromCodePoint(0xF0450)
+                                    iconSize: Theme.fontSm
+                                    label: "Reset"
+                                    idleColor: Theme.fill
+                                    enabled: Config.opts.userName !== ""
+                                    opacity: enabled ? 1 : 0.35
+                                    onClicked: Config.opts.userName = ""
+                                    Behavior on opacity {
+                                        Anim {
+                                            duration: Theme.ctlFast
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Account picture: picker below, here status/errors and getting the previous picture back
+                        SettingRow {
+                            width: parent.width
+                            label: "Profile picture"
+                            description: User.error !== "" ? "Could not set it: " + User.error : (User.busy ? "Setting the picture …" : "Your account picture, also used by KDE Plasma, SDDM and the lock screen. Click a picture below to crop and use it")
+                            controlWidth: 220
+
+                            TextButton {
+                                anchors.right: parent.right
+                                icon: Icons.restart
+                                text: "Restore original"
+                                enabled: User.hasOriginal && Config.opts.userPictureFrom !== "" && !User.busy
+                                onClicked: User.restorePicture()
+                            }
+                        }
+
+                        // Section title
+                        Txt {
+                            readonly property bool isHeader: true
+
+                            width: parent.width
+                            topPadding: 18
+                            text: "Choose a picture"
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fontSm
+                            font.weight: Theme.uiWeightStrong
+                            font.capitalization: Font.AllUppercase
+                            font.letterSpacing: 0.8
+                        }
+
+                        // Folders, current path, one level up
+                        Item {
+                            width: parent.width
+                            height: 34
+
+                            Segmented {
+                                id: picPlaces
+
+                                anchors.left: parent.left
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: 440
+                                options: [
+                                    {
+                                        value: "pictures",
+                                        label: "Pictures"
+                                    },
+                                    {
+                                        value: "downloads",
+                                        label: "Downloads"
+                                    },
+                                    {
+                                        value: "wallpapers",
+                                        label: "Wallpapers"
+                                    },
+                                    {
+                                        value: "home",
+                                        label: "Home"
+                                    }
+                                ]
+                                value: panel.picPlace
+                                onPicked: v => panel.picPlace = v
+                            }
+
+                            IconButton {
+                                id: picUpBtn
+
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                size: 34
+                                icon: Icons.arrowUp
+                                iconSize: Theme.iconSize - 2
+                                idleColor: Theme.fill
+                                enabled: panel.picSub !== ""
+                                opacity: enabled ? 1 : 0.35
+                                onClicked: panel.picUp()
+                                Behavior on opacity {
+                                    Anim {
+                                        duration: Theme.ctlFast
+                                    }
+                                }
+                            }
+
+                            Txt {
+                                anchors.left: picPlaces.right
+                                anchors.leftMargin: 14
+                                anchors.right: picUpBtn.left
+                                anchors.rightMargin: 10
+                                anchors.verticalCenter: parent.verticalCenter
+                                horizontalAlignment: Text.AlignRight
+                                text: panel.picDir.replace(Quickshell.env("HOME"), "~")
+                                color: Theme.textMuted
+                                font.pixelSize: Theme.fontSm
+                                elide: Text.ElideMiddle
+                            }
+                        }
+
+                        // Folders and pictures as tiles. When the folder changes the grid fades out and in again.
+                        Grid {
+                            id: picGrid
+
+                            readonly property real cellW: Math.floor((width - spacing * (columns - 1)) / columns)
+
+                            width: parent.width
+                            columns: Math.max(4, Math.floor((width + spacing) / 150))
+                            spacing: 10
+                            opacity: panel.picReady ? 1 : 0
+
+                            Behavior on opacity {
+                                Anim {
+                                    duration: Theme.ctlMed
+                                }
+                            }
+
+                            Repeater {
+                                model: panel.picLive ? panel.picItems : []
+
+                                delegate: Item {
+                                    id: picTile
+
+                                    required property var modelData
+                                    readonly property bool isDir: picTile.modelData.dir
+                                    readonly property bool current: !picTile.isDir && picTile.modelData.path === Config.opts.userPictureFrom && User.faceStamp === Config.opts.userPictureStamp
+                                    readonly property bool busy: !picTile.isDir && picTile.modelData.path === User.busyPath
+
+                                    function load() {
+                                        picImg.source = "";
+                                        picImg.source = "file://" + picTile.modelData.thumb;
+                                    }
+
+                                    width: picGrid.cellW
+                                    height: picGrid.cellW
+                                    Component.onCompleted: {
+                                        if (!picTile.isDir && Walls.isReady(picTile.modelData.thumb))
+                                            picTile.load();
+                                    }
+
+                                    Connections {
+                                        target: Walls
+                                        enabled: !picTile.isDir
+
+                                        function onThumbReady(t) {
+                                            if (t === picTile.modelData.thumb)
+                                                picTile.load();
+                                        }
+                                    }
+
+                                    ClippingRectangle {
+                                        anchors.fill: parent
+                                        radius: Theme.radius
+                                        color: picTile.isDir ? (picArea.containsMouse ? Theme.fillStrong : Theme.fill) : Theme.fillStrong
+
+                                        Behavior on color {
+                                            CAnim {}
+                                        }
+
+                                        // Folder: icon and name
+                                        Glyph {
+                                            visible: picTile.isDir
+                                            anchors.horizontalCenter: parent.horizontalCenter
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            anchors.verticalCenterOffset: -12
+                                            text: Icons.folder
+                                            color: picArea.containsMouse ? Theme.fg : Theme.textDim
+                                            font.pixelSize: 34
+
+                                            Behavior on color {
+                                                CAnim {}
+                                            }
+                                        }
+
+                                        Txt {
+                                            visible: picTile.isDir
+                                            anchors.left: parent.left
+                                            anchors.leftMargin: 10
+                                            anchors.right: parent.right
+                                            anchors.rightMargin: 10
+                                            anchors.bottom: parent.bottom
+                                            anchors.bottomMargin: 16
+                                            horizontalAlignment: Text.AlignHCenter
+                                            text: picTile.modelData.name
+                                            color: Theme.textDim
+                                            font.pixelSize: Theme.fontSm
+                                            elide: Text.ElideMiddle
+                                        }
+
+                                        Image {
+                                            id: picImg
+
+                                            visible: !picTile.isDir
+                                            width: parent.width
+                                            height: parent.height
+                                            fillMode: Image.PreserveAspectCrop
+                                            asynchronous: true
+                                            cache: false
+                                            scale: picArea.containsMouse ? 1.06 : 1
+                                            opacity: status === Image.Ready ? 1 : 0
+
+                                            Behavior on opacity {
+                                                Anim {
+                                                    duration: Theme.durMed
+                                                }
+                                            }
+
+                                            Behavior on scale {
+                                                Anim {
+                                                    duration: Theme.durMed
+                                                    easing.bezierCurve: Theme.curveSmooth
+                                                }
+                                            }
+                                        }
+
+                                        // Name on hover
+                                        Rectangle {
+                                            visible: !picTile.isDir
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.bottom: parent.bottom
+                                            height: 46
+                                            opacity: picArea.containsMouse ? 1 : 0
+                                            gradient: Gradient {
+                                                GradientStop {
+                                                    position: 0
+                                                    color: "transparent"
+                                                }
+                                                GradientStop {
+                                                    position: 1
+                                                    color: Qt.rgba(0, 0, 0, 0.8)
+                                                }
+                                            }
+
+                                            Behavior on opacity {
+                                                Anim {
+                                                    duration: Theme.ctlFast
+                                                }
+                                            }
+
+                                            Txt {
+                                                anchors.left: parent.left
+                                                anchors.leftMargin: 10
+                                                anchors.right: parent.right
+                                                anchors.rightMargin: 10
+                                                anchors.bottom: parent.bottom
+                                                anchors.bottomMargin: 7
+                                                text: picTile.modelData.name.replace(/\.[^.]+$/, "")
+                                                font.pixelSize: Theme.fontSm
+                                                elide: Text.ElideRight
+                                            }
+                                        }
+
+                                        // Being set right now
+                                        Rectangle {
+                                            anchors.fill: parent
+                                            color: Qt.rgba(0, 0, 0, 0.45)
+                                            opacity: picTile.busy ? 1 : 0
+
+                                            Behavior on opacity {
+                                                Anim {
+                                                    duration: Theme.ctlFast
+                                                }
+                                            }
+
+                                            Glyph {
+                                                anchors.centerIn: parent
+                                                text: Icons.refresh
+                                                color: Theme.fg
+
+                                                RotationAnimation on rotation {
+                                                    running: picTile.busy
+                                                    loops: Animation.Infinite
+                                                    from: 0
+                                                    to: 360
+                                                    duration: 900
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    // Border: current image in the accent color, brighter on hover
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        radius: Theme.radius
+                                        color: "transparent"
+                                        border.width: picTile.current ? 2 : 1
+                                        border.color: picTile.current ? Theme.accent : (picArea.containsMouse ? Theme.textMuted : Theme.hairline)
+
+                                        Behavior on border.color {
+                                            CAnim {}
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        anchors.top: parent.top
+                                        anchors.right: parent.right
+                                        anchors.margins: 8
+                                        width: 22
+                                        height: 22
+                                        radius: 11
+                                        color: Theme.accent
+                                        scale: picTile.current ? 1 : 0.5
+                                        opacity: picTile.current ? 1 : 0
+
+                                        Behavior on opacity {
+                                            Anim {
+                                                duration: Theme.ctlFast
+                                            }
+                                        }
+
+                                        Behavior on scale {
+                                            Anim {
+                                                duration: Theme.ctlMed
+                                                easing.bezierCurve: Theme.curveSmooth
+                                            }
+                                        }
+
+                                        Glyph {
+                                            anchors.centerIn: parent
+                                            text: Icons.check
+                                            color: Theme.accentFg
+                                            font.pixelSize: 14
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        id: picArea
+
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            if (picTile.isDir)
+                                                panel.picSub = picTile.modelData.path;
+                                            else if (!User.busy) {
+                                                cropDialog.file = picTile.modelData.path;
+                                                cropDialog.open = true;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Txt {
+                            readonly property string where: panel.picDir.replace(Quickshell.env("HOME"), "~")
+
+                            width: parent.width
+                            text: !panel.picReady ? "Reading " + where + " …" : (panel.picTotal === 0 ? "No images in " + where : (panel.picTotal > panel.picMax ? "The " + panel.picMax + " newest of " + panel.picTotal + " images in " + where : panel.picTotal + (panel.picTotal === 1 ? " image" : " images") + " in " + where))
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fontSm
+                            horizontalAlignment: Text.AlignHCenter
+                            topPadding: 4
+                            bottomPadding: 8
+                        }
+                    }
+
                     // ----- System > Wallpaper -----
                     // The current image large at the top, below it search, sorting, random and all images from the
                     // waypaper folder as tiles. A click sets the image (waypaper/awww, see services/Walls.qml).
@@ -3942,6 +4725,489 @@ OverlayPanel {
                         }
                     }
 
+                    // ----- System > Gaming -----
+                    Column {
+                        id: pageGaming
+
+                        width: parent.width
+                        spacing: 10
+                        visible: panel.page === "gaming"
+
+                        // Rows that appear fade in, the ones below glide smoothly after (instant on a page switch,
+                        // the whole page glides then)
+                        add: Transition {
+                            NumberAnimation {
+                                property: "opacity"
+                                from: 0
+                                to: 1
+                                duration: tabIn.running ? 0 : Theme.ctlMed
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Theme.curveSmooth
+                            }
+                        }
+                        // With "Subpixel glide" every row glides between pixels: drawn as an image while moving
+                        // (text sharp), without it again at the target
+                        move: Transition {
+                            SequentialAnimation {
+                                PropertyAction {
+                                    property: "layer.smooth"
+                                    value: true
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: Config.opts.barGlide && !tabIn.running
+                                }
+                                NumberAnimation {
+                                    property: "y"
+                                    duration: tabIn.running ? 0 : Theme.ctlMed
+                                    easing.type: Easing.BezierSpline
+                                    easing.bezierCurve: Theme.curveSmooth
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: false
+                                }
+                            }
+                        }
+
+                        // Section title
+                        Txt {
+                            readonly property bool isHeader: true
+
+                            width: parent.width
+                            topPadding: 0
+                            text: "Display"
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fontSm
+                            font.weight: Theme.uiWeightStrong
+                            font.capitalization: Font.AllUppercase
+                            font.letterSpacing: 0.8
+                        }
+
+                        // Variable refresh rate (G-Sync / FreeSync): misc:vrr, laid over hyprland.lua at runtime with hyprctl eval
+                        // (services/Hypr.qml), hyprland.lua stays unchanged. Reset = the value from hyprland.lua
+                        // again (Hyprland reloads for that). Window rules with no_vrr still apply.
+                        SettingRow {
+                            width: parent.width
+                            label: "Variable refresh rate"
+                            description: panel.vrrText(panel.hyprVal("hyprVrr", "misc:vrr", 2)) + (Config.opts.hyprVrr >= 0 ? " · set here" : " · from hyprland.lua")
+                            controlWidth: 440
+
+                            Row {
+                                anchors.right: parent.right
+                                spacing: 10
+
+                                Segmented {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 440 - reset_hyprVrr.width - 10
+                                    options: [
+                                        {
+                                            value: "0",
+                                            label: "Off"
+                                        },
+                                        {
+                                            value: "1",
+                                            label: "Always"
+                                        },
+                                        {
+                                            value: "2",
+                                            label: "Fullscreen"
+                                        },
+                                        {
+                                            value: "3",
+                                            label: "Games"
+                                        }
+                                    ]
+                                    value: String(panel.hyprVal("hyprVrr", "misc:vrr", 2))
+                                    onPicked: v => Config.opts.hyprVrr = Number(v)
+                                }
+
+                                IconButton {
+                                    id: reset_hyprVrr
+
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    size: 30
+                                    icon: String.fromCodePoint(0xF0450)
+                                    iconSize: Theme.fontSm
+                                    label: "Reset"
+                                    idleColor: Theme.fill
+                                    enabled: Config.opts.hyprVrr >= 0
+                                    opacity: enabled ? 1 : 0.35
+                                    onClicked: panel.hyprReset("hyprVrr")
+                                    Behavior on opacity {
+                                        Anim {
+                                            duration: Theme.ctlFast
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Section title
+                        Txt {
+                            readonly property bool isHeader: true
+
+                            width: parent.width
+                            topPadding: 18
+                            text: "MangoHud"
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fontSm
+                            font.weight: Theme.uiWeightStrong
+                            font.capitalization: Font.AllUppercase
+                            font.letterSpacing: 0.8
+                        }
+
+                        // Which file: global (MangoHud.conf) or a game config (services/MangoHud.qml).
+                        // "+" expands the row for a new game config below.
+                        SettingRow {
+                            width: parent.width
+                            label: "Config"
+                            description: MangoHud.isGlobal ? "MangoHud.conf, used by every game without its own config. Changes apply right away, running games reload it" : MangoHud.current + ".conf, replaces the global config completely for this game"
+                            controlWidth: 400
+
+                            Row {
+                                anchors.right: parent.right
+                                spacing: 10
+
+                                Choice {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 400 - mhAddBtn.width - 10
+                                    options: MangoHud.configs.map(n => ({
+                                                value: n,
+                                                label: n === "MangoHud" ? "Global" : n
+                                            }))
+                                    value: MangoHud.current
+                                    menuParent: card
+                                    scrollArea: flick
+                                    active: panel.open && panel.page === "gaming"
+                                    onPicked: v => MangoHud.select(v)
+                                }
+
+                                IconButton {
+                                    id: mhAddBtn
+
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    size: 30
+                                    icon: Icons.plus
+                                    iconSize: Theme.fontSm
+                                    label: "Game"
+                                    idleColor: Theme.fill
+                                    active: panel.mhAdding
+                                    onClicked: {
+                                        panel.mhAddError = false;
+                                        panel.mhAdding = !panel.mhAdding;
+                                        if (panel.mhAdding)
+                                            mhNewName.input.forceActiveFocus();
+                                    }
+                                }
+                            }
+                        }
+
+                        // New game config: the row fades in, the rows below glide down
+                        SettingRow {
+                            width: parent.width
+                            visible: panel.mhAdding
+                            label: "New game config"
+                            description: panel.mhAddError ? "Only letters, digits and . _ + - (without .conf)" : "The game's executable name, e.g. cs2. Proton games: wine-<exe name without .exe>. Starts as a copy of the global config"
+                            controlWidth: 400
+
+                            Row {
+                                anchors.right: parent.right
+                                spacing: 10
+
+                                InputField {
+                                    id: mhNewName
+
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 400 - mhCreateBtn.width - 10
+                                    placeholder: "Executable name"
+                                    // Only Enter creates it (not just leaving the field)
+                                    onCommitted: v => {
+                                        if (mhNewName.input.activeFocus)
+                                            panel.createGameConfig(v);
+                                    }
+                                }
+
+                                TextButton {
+                                    id: mhCreateBtn
+
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    icon: Icons.plus
+                                    text: "Create"
+                                    onClicked: panel.createGameConfig(mhNewName.input.text)
+                                }
+                            }
+                        }
+
+                        // Show the HUD at game start (no_display). Right Shift + F12 toggles it in game.
+                        SettingRow {
+                            width: parent.width
+                            label: "Show HUD at game start"
+                            description: MangoHud.envNoDisplay ? "Right Shift + F12 shows or hides it in game. MANGOHUD_CONFIG in /etc/environment also sets no_display, so it starts hidden anyway" : "Off = hidden until you press Right Shift + F12 in game"
+
+                            SwitchCtl {
+                                checked: !MangoHud.has("no_display")
+                                onToggled: MangoHud.set("no_display", MangoHud.has("no_display") ? null : "")
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Position"
+                            controlWidth: 440
+
+                            Segmented {
+                                width: parent.width
+                                options: [
+                                    {
+                                        value: "top-left",
+                                        label: "Top left"
+                                    },
+                                    {
+                                        value: "top-right",
+                                        label: "Top right"
+                                    },
+                                    {
+                                        value: "bottom-left",
+                                        label: "Bottom left"
+                                    },
+                                    {
+                                        value: "bottom-right",
+                                        label: "Bottom right"
+                                    }
+                                ]
+                                value: MangoHud.value("position", "top-left")
+                                onPicked: v => MangoHud.set("position", v)
+                            }
+                        }
+
+                        // What the HUD shows: one field per element, bright = on. Without its own entry MangoHud's default applies.
+                        SettingRow {
+                            width: parent.width
+                            implicitHeight: Math.max(60, Math.max(textsHeight, mhChips.height) + 26)
+                            label: "Shows"
+                            description: "Click an item to switch it on or off"
+                            controlWidth: 440
+
+                            Flow {
+                                id: mhChips
+
+                                width: parent.width
+                                spacing: 6
+
+                                Repeater {
+                                    model: panel.mhItems
+
+                                    delegate: Rectangle {
+                                        id: chip
+
+                                        required property var modelData
+                                        readonly property bool on: MangoHud.isOn(chip.modelData.key)
+
+                                        width: chipRow.implicitWidth + 20
+                                        height: 30
+                                        radius: Theme.radiusSm
+                                        color: chip.on ? (chipArea.pressed ? Theme.pressed : Theme.fillStrong) : (chipArea.pressed ? Theme.fill : "transparent")
+                                        border.width: 1
+                                        border.color: chip.on ? "transparent" : (chipArea.containsMouse ? Theme.textMuted : Theme.hairlineStrong)
+
+                                        Behavior on color {
+                                            CAnim {}
+                                        }
+                                        Behavior on border.color {
+                                            CAnim {}
+                                        }
+
+                                        Row {
+                                            id: chipRow
+
+                                            anchors.centerIn: parent
+                                            spacing: 6
+
+                                            // Off: plus, on: checkmark. Both lie on top of each other and crossfade
+                                            // (the field keeps its width, the others don't shift)
+                                            Item {
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                width: Math.max(chipCheck.implicitWidth, chipPlus.implicitWidth)
+                                                height: chipCheck.implicitHeight
+
+                                                Glyph {
+                                                    id: chipCheck
+
+                                                    anchors.centerIn: parent
+                                                    text: Icons.check
+                                                    color: Theme.fg
+                                                    font.pixelSize: Theme.fontSm
+                                                    opacity: chip.on ? 1 : 0
+
+                                                    Behavior on opacity {
+                                                        Anim {
+                                                            duration: Theme.ctlFast
+                                                        }
+                                                    }
+                                                }
+
+                                                Glyph {
+                                                    id: chipPlus
+
+                                                    anchors.centerIn: parent
+                                                    text: Icons.plus
+                                                    color: chipArea.containsMouse ? Theme.textDim : Theme.textMuted
+                                                    font.pixelSize: Theme.fontSm
+                                                    opacity: chip.on ? 0 : 1
+
+                                                    Behavior on opacity {
+                                                        Anim {
+                                                            duration: Theme.ctlFast
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            Txt {
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                text: chip.modelData.label
+                                                color: chip.on ? Theme.fg : (chipArea.containsMouse ? Theme.textDim : Theme.textMuted)
+                                                font.pixelSize: Theme.fontSm
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            id: chipArea
+
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: MangoHud.setOn(chip.modelData.key, !chip.on)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Section title
+                        Txt {
+                            readonly property bool isHeader: true
+
+                            width: parent.width
+                            topPadding: 18
+                            text: "Frame rate"
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fontSm
+                            font.weight: Theme.uiWeightStrong
+                            font.capitalization: Font.AllUppercase
+                            font.letterSpacing: 0.8
+                        }
+
+                        // fps_limit (with several values "162,60" the first one counts)
+                        SettingRow {
+                            width: parent.width
+                            label: "FPS limit"
+                            description: "0 = no limit. A few below the refresh rate (e.g. 162 at 170 Hz) keeps G-Sync / VRR active. Scroll on the slider for single steps"
+                            controlWidth: 400
+
+                            RangeControl {
+                                width: parent.width
+                                from: 0
+                                to: 360
+                                value: parseInt(String(MangoHud.value("fps_limit", "0")).split(",")[0]) || 0
+                                suffix: " fps"
+                                onEdited: v => MangoHud.set("fps_limit", String(Math.round(v)))
+                            }
+                        }
+
+                        SettingRow {
+                            width: parent.width
+                            label: "Limit method"
+                            description: "Late: lowest input latency. Early: smoothest frame times"
+                            controlWidth: 300
+
+                            Segmented {
+                                width: parent.width
+                                options: [
+                                    {
+                                        value: "early",
+                                        label: "Early"
+                                    },
+                                    {
+                                        value: "late",
+                                        label: "Late"
+                                    }
+                                ]
+                                value: MangoHud.value("fps_limit_method", "late")
+                                onPicked: v => MangoHud.set("fps_limit_method", v)
+                            }
+                        }
+
+                        // vsync (Vulkan): 0 adaptive, 1 off, 2 mailbox, 3 on (FIFO). Without an entry the game decides.
+                        SettingRow {
+                            width: parent.width
+                            label: "Vsync (Vulkan)"
+                            description: "App = the game decides. On = FIFO: with G-Sync and the limit below the refresh rate no tearing and low latency"
+                            controlWidth: 440
+
+                            Segmented {
+                                width: parent.width
+                                options: [
+                                    {
+                                        value: "app",
+                                        label: "App"
+                                    },
+                                    {
+                                        value: "1",
+                                        label: "Off"
+                                    },
+                                    {
+                                        value: "2",
+                                        label: "Mailbox"
+                                    },
+                                    {
+                                        value: "0",
+                                        label: "Adaptive"
+                                    },
+                                    {
+                                        value: "3",
+                                        label: "On"
+                                    }
+                                ]
+                                value: MangoHud.has("vsync") ? MangoHud.value("vsync", "") : "app"
+                                onPicked: v => MangoHud.set("vsync", v === "app" ? null : v)
+                            }
+                        }
+
+                        // gl_vsync (OpenGL): -1 adaptive, 0 off, 1 on. Without an entry the game decides.
+                        SettingRow {
+                            width: parent.width
+                            label: "Vsync (OpenGL)"
+                            description: "OpenGL games. App = the game decides"
+                            controlWidth: 440
+
+                            Segmented {
+                                width: parent.width
+                                options: [
+                                    {
+                                        value: "app",
+                                        label: "App"
+                                    },
+                                    {
+                                        value: "0",
+                                        label: "Off"
+                                    },
+                                    {
+                                        value: "-1",
+                                        label: "Adaptive"
+                                    },
+                                    {
+                                        value: "1",
+                                        label: "On"
+                                    }
+                                ]
+                                value: MangoHud.has("gl_vsync") ? MangoHud.value("gl_vsync", "") : "app"
+                                onPicked: v => MangoHud.set("gl_vsync", v === "app" ? null : v)
+                            }
+                        }
+                    }
+
                     // ----- System > Font -----
                     Column {
                         id: pageSystemFont
@@ -4051,6 +5317,16 @@ OverlayPanel {
                 easing.type: Easing.BezierSpline
                 easing.bezierCurve: Theme.curveSmooth
             }
+        }
+
+        // System > Profile: crop a picture (drag, zoom), then set it as the account picture. Covers the whole card.
+        CropDialog {
+            id: cropDialog
+
+            anchors.fill: parent
+            z: 200
+            outPath: Quickshell.statePath("face-crop.png")
+            onApplied: path => User.setPicture(path, cropDialog.file)
         }
 
         // New top tab: the page list on the left briefly glides in from below (like a new page)

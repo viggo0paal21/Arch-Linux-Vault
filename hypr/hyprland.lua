@@ -163,6 +163,7 @@ hl.config({
         -- Shadows off for a flat, minimal look
         shadow = {
             enabled = false,
+       
         },
 
         blur = {
@@ -273,6 +274,8 @@ hl.window_rule({
 -- Ref https://wiki.hypr.land/Configuring/Basics/Workspace-Rules/
 -- "Smart gaps" / "No gaps when only"
 
+
+
 -- Only with "Dynamic Hyprland integration" (see the top of this file)
 if QS_DYNAMIC then
     hl.workspace_rule({ workspace = "w[tv1]", gaps_out = 0, gaps_in = 0 })
@@ -329,7 +332,7 @@ hl.config({
         direct_scanout = true, -- enable direct scanout here
     },
     misc = {
-        force_default_wallpaper = -1,    -- Set to 0 or 1 to disable the anime mascot wallpapers
+        force_default_wallpaper = 0,    -- Set to 0 or 1 to disable the anime mascot wallpapers
         disable_hyprland_logo   = false, -- If true disables the random hyprland logo / anime girl background. :(
         vrr                     = 2,     -- G-Sync/VRR only for fullscreen apps (1 = always on)
     },

@@ -9,13 +9,15 @@ Font like the Waybar: Inter 15px bold, icons from JetBrainsMono Nerd Font Propo.
 | Part | What it does |
 |---|---|
 | Bar | Arch button (launcher), workspaces as pills, window title, tray with its own B/W menu, CPU/RAM/temp + clock, network/Bluetooth/volume/bell, power. Optional floating bar that docks with a single window (with an optional subpixel glide), optional shell glass (looks like kitty's glass: either the bar blurs the wallpaper itself, or Hyprland blurs the background behind it), Arch or Tux launcher icon with adjustable size, optional group boxes with a color picker |
-| Launcher | Fuzzy app search, frequently used apps first, `=` calculator, `>` run a command |
-| Control center | Wi-Fi and Bluetooth (each with its own page that slides in: nearby networks with password entry, paired and nearby devices with battery), do not disturb, night light, mic, volume/mic sliders with per-app volume (expander below the volume slider, only apps that play audio), media player, notification history. Shows "No internet" only when the shell's own check fails too (NetworkManager's check often fails behind a VPN like NordVPN) |
+| Launcher | Fuzzy app search, frequently used apps first, `=` calculator, `>` run a command. Opens in the middle of the screen or slides out of the launcher logo (Settings → Bar → Launcher position) |
+| Control center | Profile picture and name in the header (click = profile settings), Wi-Fi and Bluetooth (each with its own page that slides in: nearby networks with password entry, paired and nearby devices with battery), do not disturb, night light, mic, volume/mic sliders with per-app volume (expander below the volume slider, only apps that play audio), media player, notification history. Shows "No internet" only when the shell's own check fails too (NetworkManager's check often fails behind a VPN like NordVPN) |
 | Dashboard | Big clock, calendar, system monitor (CPU, NVIDIA GPU, RAM, drives, network with history graphs) |
 | Notifications | Own daemon (replaces dunst/swaync), popups slide in from the right, timeout bar, actions |
 | OSD | Volume indicator bottom center |
 | Power menu | Lock, suspend, log out, reboot, shut down (dangerous ones need a confirmation) |
-| Settings | Everything changeable live and saved. Four top tabs: **Quickshell** (appearance, bar, notifications & OSD, animations, performance, commands), **Hyprland** (rounding, shadows, blur, direct scanout, Dynamic Hyprland integration, applied live on top of hyprland.lua), **Apps** (per-app opacity with black & white app icons, fastfetch in kitty), **System** (wallpaper, system font for every app; `qs-font-revert` undoes only that) |
+| Settings | Everything changeable live and saved. Four top tabs: **Quickshell** (appearance, bar, notifications & OSD, animations, performance, commands), **Hyprland** (rounding, shadows, blur, direct scanout, Dynamic Hyprland integration, applied live on top of hyprland.lua), **Apps** (per-app opacity with black & white app icons, fastfetch in kitty), **System** (profile, wallpaper, gaming, system font for every app; `qs-font-revert` undoes only that) |
+| Profile (Settings → System) | The account picture shared with KDE Plasma, SDDM and hyprlock (AccountsService), with a picker and a crop dialog (drag, zoom); setting it changes it system-wide, "Restore original" brings the old one back. Optional own display name for the shell and the lock screen |
+| Gaming (Settings → System) | Variable refresh rate (Hyprland `misc:vrr`, live) and MangoHud: global or per-game config from a dropdown, HUD at start, position, shown values, FPS limit, vsync |
 | Wallpaper (Settings → System) | Pick the wallpaper from previews: the current one large on top, all images of the waypaper folder as tiles (newest first or by name, search, random). A click sets it via `waypaper --wallpaper` (its awww backend, fill mode and transition). Thumbnails are made once with `vipsthumbnail` (ImageMagick as fallback) into `~/.cache/quickshell/wallthumbs` |
 | Wallpaper colors | Optional (Settings → Quickshell → Appearance): everything that is highlighted in white (buttons, switches, sliders, active workspace, graphs, selection) takes the color of the wallpaper, like Caelestia. Styles Tonal / Vibrant / Exact. Detected automatically on every wallpaper change (awww cache file, `awww query`, waypaper). Black-and-white wallpapers stay black and white, text and surfaces always stay black and white |
 | Background | Optional rounded screen corners (the wallpaper itself comes from waypaper / awww) |
@@ -29,7 +31,7 @@ Every monitor gets its own bar.
 
 ```bash
 sudo pacman -S --needed quickshell inter-font ttf-jetbrains-mono-nerd ttf-nerd-fonts-symbols
-# optional: hyprlock hyprsunset networkmanager bluez bluez-utils nvidia-utils
+# optional: hyprlock hyprsunset networkmanager bluez bluez-utils nvidia-utils mangohud accountsservice
 cp -r quickshell ~/.config/quickshell
 ```
 
@@ -85,7 +87,7 @@ fps       toggle
 ```
 shell.qml              Entry point
 config/                Config (saved settings), Theme (colors/sizes), Icons
-services/              Audio, network, Bluetooth, system monitor, notifications, media, apps
+services/              Audio, network, Bluetooth, system monitor, notifications, media, apps, profile, MangoHud
 components/            Building blocks (buttons, sliders, switches, cards, panel base, color picker)
 modules/               Bar, launcher, control center, dashboard, popups, OSD, power, settings
 shaders/               Hyprland's blur shaders for the shell glass (.frag source + compiled .frag.qsb)

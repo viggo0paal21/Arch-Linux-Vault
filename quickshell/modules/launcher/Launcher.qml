@@ -6,8 +6,13 @@ import qs.services
 
 // App launcher. Type = search, arrows/Tab = select, Enter = launch.
 // "=" calculates (result goes to the clipboard), ">" runs a command.
+// Settings > Bar > Launcher position: "center" = exactly in the middle of the screen (fades in and glides a little),
+// "logo" = slides out from under the bar at the launcher logo, just like the dashboard and control center
+// (same animation, speed and curves as those two).
 OverlayPanel {
     id: panel
+
+    readonly property bool fromLogo: Config.opts.launcherPosition === "logo"
 
     readonly property string query: search.text
     readonly property string mode: query.startsWith("=") ? "calc" : (query.startsWith(">") ? "cmd" : "apps")
@@ -72,9 +77,11 @@ OverlayPanel {
 
     open: Ui.panel === "launcher"
     screen: Ui.panelScreen
-    dim: true
+    dim: !panel.fromLogo
     dimOpacity: 0.4
     ns: "qs-launcher"
+    animDuration: panel.fromLogo ? Theme.durSlow : Theme.durMed
+    animGroup: panel.fromLogo ? "panel" : "overlay"
     onDismissed: Ui.close()
     onResultsChanged: panel.current = 0
     onOpenChanged: {
@@ -85,22 +92,47 @@ OverlayPanel {
         }
     }
 
+    // Center: area covering the whole screen, the card sits centered in it
+    Item {
+        id: centerHost
+
+        anchors.fill: parent
+    }
+
+    // From the logo: slides out from under the bar, left-aligned below the logo (like the control center on the right)
+    DropdownSlot {
+        id: slot
+
+        anchors.left: parent.left
+        anchors.leftMargin: Theme.gap
+        width: card.width
+        visible: panel.fromLogo
+        contentHeight: card.height
+        progress: panel.fromLogo ? panel.progress : 0
+    }
+
     Card {
         id: card
 
         readonly property int rowHeight: 52
         readonly property int visibleRows: Math.min(8, Math.max(1, panel.results.length))
+        // Height with a full list: the centering is based on it. Fewer results -> the card gets shorter at the bottom,
+        // the search field stays in place.
+        readonly property real fullH: header.height + 8 * card.rowHeight + 25
+        readonly property real centerY: Math.round((centerHost.height - card.fullH) / 2) - 14 * (1 - panel.progress)
 
-        // Fade in + short glide, subpixel like the bar: drawn as a texture while moving (text stays sharp),
-        // at rest on whole pixels without a texture
-        x: Math.round((parent.width - width) / 2)
-        y: Math.round(parent.height * 0.16) - 14 * (1 - panel.progress)
-        width: Math.min(620, parent.width - 40)
+        parent: panel.fromLogo ? slot.contentItem : centerHost
+        // Center: fade in + short glide. With "Subpixel glide" between pixels like the bar (drawn as a texture while
+        // moving, text stays sharp), otherwise whole pixels. At rest always on whole pixels without a texture.
+        // From the logo: movement, texture and clipping at the bar are done by the DropdownSlot.
+        x: panel.fromLogo ? 0 : Math.round((centerHost.width - width) / 2)
+        y: panel.fromLogo ? 0 : (Config.opts.barGlide ? card.centerY : Math.round(card.centerY))
+        width: Math.min(620, centerHost.width - 40)
         property real h: header.height + list.height + 25
 
         height: h
-        opacity: panel.progress
-        layer.enabled: panel.progress > 0 && panel.progress < 1
+        opacity: panel.fromLogo ? 1 : panel.progress
+        layer.enabled: !panel.fromLogo && Config.opts.barGlide && panel.progress > 0 && panel.progress < 1
         layer.smooth: true
 
         Behavior on h {

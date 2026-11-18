@@ -43,7 +43,7 @@ Singleton {
     }
 
     // Settings > Hyprland: values Quickshell applies at runtime on top of hyprland.lua (blur, rounding, shadows,
-    // direct scanout). Set with "hyprctl eval" for the Lua config, hyprland.lua stays unchanged. -1 = not
+    // direct scanout, plus VRR from Settings > System > Gaming). Set with "hyprctl eval" for the Lua config, hyprland.lua stays unchanged. -1 = not
     // set, then hyprland.lua applies. Runtime values are lost on "hyprctl reload" -> set them again at start and after every
     // reload. If a value is reset (set -> -1), Hyprland reloads: then the value from hyprland.lua applies again,
     // and after the reload the remaining own values are applied on top again.
@@ -52,7 +52,8 @@ Singleton {
     readonly property int rounding: Config.opts.hyprRounding
     readonly property int shadow: Config.opts.hyprShadow
     readonly property int scanout: Config.opts.hyprDirectScanout
-    readonly property string overrideKey: [root.blurSize, root.blurPasses, root.rounding, root.shadow, root.scanout].join(",")
+    readonly property int vrr: Config.opts.hyprVrr
+    readonly property string overrideKey: [root.blurSize, root.blurPasses, root.rounding, root.shadow, root.scanout, root.vrr].join(",")
     property string appliedKey: ""
     onOverrideKeyChanged: overrideApply.restart()
 
@@ -109,6 +110,11 @@ Singleton {
             const d = Math.min(2, Math.round(root.scanout));
             parts.push("render = { direct_scanout = " + d + " }");
             kw.push("keyword render:direct_scanout " + d);
+        }
+        if (root.vrr >= 0) {
+            const v = Math.min(3, Math.round(root.vrr));
+            parts.push("misc = { vrr = " + v + " }");
+            kw.push("keyword misc:vrr " + v);
         }
         if (parts.length === 0)
             return;

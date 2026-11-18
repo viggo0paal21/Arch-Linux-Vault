@@ -38,6 +38,8 @@ Singleton {
         barBorder: false,
         launcherIcon: "arch",
         launcherIconSize: 22,
+        // Where the app launcher opens: "center" (middle of the screen) or "logo" (slides out of the launcher logo)
+        launcherPosition: "center",
         barBoxes: false,
         barBoxColor: "#000000",
         barShowTitle: true,
@@ -73,6 +75,8 @@ Singleton {
         hyprRounding: -1,
         hyprShadow: -1,
         hyprDirectScanout: -1,
+        // Settings > System > Gaming: misc:vrr (0 off, 1 always, 2 fullscreen, 3 fullscreen games/videos), -1 = hyprland.lua
+        hyprVrr: -1,
         popupsSolidWithWindows: false,
         barSolidWithWindows: true,
         barSolidOnlySingle: true,
@@ -112,7 +116,12 @@ Singleton {
         fastfetchLogo3: "/home/viggo/.config/fastfetch/logos/1573730073Tux_Mono_wite.png",
         fastfetchLogo4: "/home/viggo/.config/fastfetch/logos/1573730073Tux_Mono_wite.png",
         terminal: "kitty",
-        lockCommand: "hyprlock || loginctl lock-session"
+        lockCommand: "hyprlock || loginctl lock-session",
+        // Settings > System > Profile: own display name ("" = account name)
+        userName: "",
+        // Profile picture last set here (source file + change time of the account picture afterwards), only for the marker
+        userPictureFrom: "",
+        userPictureStamp: 0
     })
 
     function reset() {
@@ -159,6 +168,7 @@ Singleton {
             property bool barBorder: root.defaults.barBorder
             property string launcherIcon: root.defaults.launcherIcon
             property int launcherIconSize: root.defaults.launcherIconSize
+            property string launcherPosition: root.defaults.launcherPosition
             property bool barBoxes: root.defaults.barBoxes
             property string barBoxColor: root.defaults.barBoxColor
             property bool barShowTitle: root.defaults.barShowTitle
@@ -194,6 +204,7 @@ Singleton {
             property int hyprRounding: root.defaults.hyprRounding
             property int hyprShadow: root.defaults.hyprShadow
             property int hyprDirectScanout: root.defaults.hyprDirectScanout
+            property int hyprVrr: root.defaults.hyprVrr
             property bool popupsSolidWithWindows: root.defaults.popupsSolidWithWindows
             property bool barSolidWithWindows: root.defaults.barSolidWithWindows
             property bool barSolidOnlySingle: root.defaults.barSolidOnlySingle
@@ -240,6 +251,10 @@ Singleton {
             property string fastfetchLogo4: root.defaults.fastfetchLogo4
             property string terminal: root.defaults.terminal
             property string lockCommand: root.defaults.lockCommand
+            // Settings > System > Profile (services/User.qml)
+            property string userName: root.defaults.userName
+            property string userPictureFrom: root.defaults.userPictureFrom
+            property real userPictureStamp: root.defaults.userPictureStamp
         }
     }
 }

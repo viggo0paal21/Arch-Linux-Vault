@@ -103,7 +103,8 @@ OverlayPanel {
                         width: flick.width
                         spacing: 18
 
-                        // Header: name and uptime, four plain buttons without background on the right
+                        // Header: profile picture, name and uptime, four plain buttons without background on the right.
+                        // Clicking the picture or the name opens Settings > System > Profile.
                         Item {
                             width: col.width
                             height: 38
@@ -116,14 +117,25 @@ OverlayPanel {
                                 radius: Theme.radiusSm
                             }
 
-                            Column {
+                            Avatar {
+                                id: headAvatar
+
                                 anchors.left: parent.left
-                                anchors.leftMargin: 2
+                                anchors.verticalCenter: parent.verticalCenter
+                                size: 38
+                                hovered: profileArea.containsMouse
+                            }
+
+                            Column {
+                                id: headName
+
+                                anchors.left: headAvatar.right
+                                anchors.leftMargin: 12
                                 anchors.verticalCenter: parent.verticalCenter
                                 spacing: 1
 
                                 Txt {
-                                    text: Quickshell.env("USER") || "User"
+                                    text: User.name
                                     font.pixelSize: Theme.fontSize + 1
                                     font.weight: Theme.uiWeightStrong
                                 }
@@ -133,6 +145,18 @@ OverlayPanel {
                                     color: Theme.textMuted
                                     font.pixelSize: Theme.fontSm
                                 }
+                            }
+
+                            MouseArea {
+                                id: profileArea
+
+                                anchors.left: parent.left
+                                anchors.top: parent.top
+                                anchors.bottom: parent.bottom
+                                width: headName.x + headName.width
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: Ui.openSettings("profile", Ui.panelScreen)
                             }
 
                             Row {
