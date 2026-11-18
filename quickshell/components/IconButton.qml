@@ -14,6 +14,9 @@ Item {
     property color idleColor: "transparent"
     property color fg: active ? Theme.accentFg : Theme.fg
     readonly property bool hovered: area.containsMouse
+    // Shared gliding hover box of the group (HoverGlide). Without it: own background as before.
+    property Item glide: null
+    readonly property bool glideDown: area.pressed
 
     signal clicked
     signal rightClicked
@@ -26,7 +29,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: root.radius
-        color: root.active ? Theme.accent : (area.pressed ? Theme.pressed : (area.containsMouse ? Theme.hover : root.idleColor))
+        color: root.active ? Theme.accent : (root.glide ? root.idleColor : (area.pressed ? Theme.pressed : (area.containsMouse ? Theme.hover : root.idleColor)))
 
         Behavior on color {
             CAnim {}
@@ -62,6 +65,10 @@ Item {
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+        onContainsMouseChanged: {
+            if (root.glide)
+                containsMouse ? root.glide.enter(root) : root.glide.leave(root);
+        }
         onClicked: ev => {
             if (ev.button === Qt.RightButton)
                 root.rightClicked();

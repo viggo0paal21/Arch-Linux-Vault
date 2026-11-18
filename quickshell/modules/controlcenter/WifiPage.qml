@@ -64,194 +64,210 @@ Column {
         trailing: Icons.check
     }
 
-    Column {
+    Item {
         width: page.width
-        spacing: 2
+        height: netCol.height
         visible: Net.wifiEnabled
 
-        Item {
-            width: parent.width
-            height: 24
-
-            Txt {
-                anchors.left: parent.left
-                anchors.leftMargin: 2
-                anchors.verticalCenter: parent.verticalCenter
-                text: "Networks"
-                color: Theme.textMuted
-                font.pixelSize: Theme.fontSm
-                font.weight: Theme.uiWeightStrong
-            }
+        // Hover box glides from network to network
+        HoverGlide {
+            id: netGlide
         }
 
-        Repeater {
-            model: ScriptModel {
-                values: Net.networks
+        Column {
+            id: netCol
+
+            width: page.width
+            spacing: 2
+
+            Item {
+                width: parent.width
+                height: 24
+
+                Txt {
+                    anchors.left: parent.left
+                    anchors.leftMargin: 2
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "Networks"
+                    color: Theme.textMuted
+                    font.pixelSize: Theme.fontSm
+                    font.weight: Theme.uiWeightStrong
+                }
             }
 
-            delegate: ListRow {
-                id: row
-
-                required property var modelData
-                readonly property var net: modelData
-                readonly property bool open: Net.isOpen(row.net)
-                readonly property bool enterprise: Net.isEnterprise(row.net)
-
-                width: page.width
-                icon: Net.networkIcon(row.net)
-                title: row.net.name
-                active: row.net.connected
-                trailing: row.net.connected ? Icons.check : ""
-                expanded: page.expanded === row.net.name
-                subtitle: {
-                    const n = row.net;
-                    if (n.stateChanging)
-                        return n.state === ConnectionState.Disconnecting ? "Disconnecting…" : "Connecting…";
-                    if (n.connected)
-                        return Net.limited ? "Connected · No internet" : "Connected";
-                    if (page.failed === n.name)
-                        return row.open ? "Couldn't connect" : "Couldn't connect · check the password";
-                    if (n.known)
-                        return "Saved";
-                    if (row.enterprise)
-                        return "Enterprise · opens network settings";
-                    return row.open ? "Open" : "";
+            Repeater {
+                model: ScriptModel {
+                    values: Net.networks
                 }
 
-                onClicked: {
-                    const n = row.net;
-                    if (n.connected || n.stateChanging)
-                        return;
-                    if (row.enterprise && !n.known) {
-                        Ui.close();
-                        Net.openSettings();
-                        return;
+                delegate: ListRow {
+                    id: row
+
+                    required property var modelData
+                    readonly property var net: modelData
+                    readonly property bool open: Net.isOpen(row.net)
+                    readonly property bool enterprise: Net.isEnterprise(row.net)
+
+                    width: page.width
+                    glide: netGlide
+                    icon: Net.networkIcon(row.net)
+                    title: row.net.name
+                    active: row.net.connected
+                    trailing: row.net.connected ? Icons.check : ""
+                    expanded: page.expanded === row.net.name
+                    subtitle: {
+                        const n = row.net;
+                        if (n.stateChanging)
+                            return n.state === ConnectionState.Disconnecting ? "Disconnecting…" : "Connecting…";
+                        if (n.connected)
+                            return Net.limited ? "Connected · No internet" : "Connected";
+                        if (page.failed === n.name)
+                            return row.open ? "Couldn't connect" : "Couldn't connect · check the password";
+                        if (n.known)
+                            return "Saved";
+                        if (row.enterprise)
+                            return "Enterprise · opens network settings";
+                        return row.open ? "Open" : "";
                     }
-                    if (n.known || row.open) {
-                        page.failed = "";
-                        page.expanded = "";
-                        n.connect();
-                        return;
-                    }
-                    page.expanded = page.expanded === n.name ? "" : n.name;
-                }
 
-                onExpandedChanged: {
-                    if (row.expanded)
-                        Qt.callLater(() => pw.forceActiveFocus());
-                    else
-                        pw.text = "";
-                }
-
-                function connectWithPassword() {
-                    if (pw.text === "")
-                        return;
-                    page.failed = "";
-                    row.net.connectWithPsk(pw.text);
-                    page.expanded = "";
-                }
-
-                actions: [
-                    TextButton {
-                        visible: row.net.connected
-                        text: "Disconnect"
-                        onClicked: row.net.disconnect()
-                    },
-                    IconButton {
-                        visible: row.net.known
-                        size: 28
-                        iconSize: Theme.iconSize - 2
-                        fg: Theme.textMuted
-                        icon: Icons.trash
-                        onClicked: {
-                            if (page.failed === row.net.name)
-                                page.failed = "";
-                            row.net.forget();
+                    onClicked: {
+                        const n = row.net;
+                        if (n.connected || n.stateChanging)
+                            return;
+                        if (row.enterprise && !n.known) {
+                            Ui.close();
+                            Net.openSettings();
+                            return;
                         }
-                    }
-                ]
-
-                Connections {
-                    target: row.net
-
-                    function onConnectionFailed(reason) {
-                        page.failed = row.net.name;
-                        // Wrong or missing password: expand the field (again)
-                        if (!row.open && !row.enterprise)
-                            page.expanded = row.net.name;
-                    }
-                    function onConnectedChanged() {
-                        if (row.net.connected && page.failed === row.net.name)
+                        if (n.known || row.open) {
                             page.failed = "";
+                            page.expanded = "";
+                            n.connect();
+                            return;
+                        }
+                        page.expanded = page.expanded === n.name ? "" : n.name;
                     }
-                }
 
-                // Password field (expanded)
-                Row {
-                    width: parent.width
-                    spacing: 8
+                    onExpandedChanged: {
+                        if (row.expanded)
+                            Qt.callLater(() => pw.forceActiveFocus());
+                        else
+                            pw.text = "";
+                    }
 
-                    Rectangle {
-                        width: parent.width - connectBtn.width - 8
-                        height: 32
-                        radius: Theme.radiusSm
-                        color: pw.activeFocus ? Theme.fillStrong : Theme.fill
-                        border.width: 1
-                        border.color: pw.activeFocus ? Theme.hairline : "transparent"
+                    function connectWithPassword() {
+                        if (pw.text === "")
+                            return;
+                        page.failed = "";
+                        row.net.connectWithPsk(pw.text);
+                        page.expanded = "";
+                    }
 
-                        TextInput {
-                            id: pw
-
-                            anchors.fill: parent
-                            anchors.leftMargin: 10
-                            anchors.rightMargin: 10
-                            verticalAlignment: TextInput.AlignVCenter
-                            clip: true
-                            echoMode: TextInput.Password
-                            passwordCharacter: "•"
-                            color: Theme.fg
-                            selectionColor: Theme.accent
-                            selectedTextColor: Theme.accentFg
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSm + 1
-                            font.weight: Theme.uiWeight
-                            renderType: Theme.smooth ? Text.QtRendering : Text.NativeRendering
-                            selectByMouse: true
-                            onAccepted: row.connectWithPassword()
-                            Keys.onEscapePressed: page.expanded = ""
-
-                            Txt {
-                                anchors.fill: parent
-                                visible: pw.text === ""
-                                text: "Password"
-                                color: Theme.textMuted
-                                font.pixelSize: Theme.fontSm + 1
+                    actions: [
+                        TextButton {
+                            visible: row.net.connected
+                            text: "Disconnect"
+                            onClicked: row.net.disconnect()
+                        },
+                        IconButton {
+                            visible: row.net.known
+                            size: 28
+                            iconSize: Theme.iconSize - 2
+                            fg: Theme.textMuted
+                            icon: Icons.trash
+                            onClicked: {
+                                if (page.failed === row.net.name)
+                                    page.failed = "";
+                                row.net.forget();
                             }
                         }
+                    ]
+
+                    Connections {
+                        target: row.net
+
+                        function onConnectionFailed(reason) {
+                            page.failed = row.net.name;
+                            // Wrong or missing password: expand the field (again)
+                            if (!row.open && !row.enterprise)
+                                page.expanded = row.net.name;
+                        }
+                        function onConnectedChanged() {
+                            if (row.net.connected && page.failed === row.net.name)
+                                page.failed = "";
+                        }
                     }
 
-                    TextButton {
-                        id: connectBtn
+                    // Password field (expanded)
+                    Row {
+                        width: parent.width
+                        spacing: 8
 
-                        anchors.verticalCenter: parent.verticalCenter
-                        height: 32
-                        text: "Connect"
-                        fg: Theme.fg
-                        enabled: pw.text !== ""
-                        onClicked: row.connectWithPassword()
+                        Rectangle {
+                            width: parent.width - connectBtn.width - 8
+                            height: 32
+                            radius: Theme.radiusSm
+                            color: pw.activeFocus ? Theme.fillStrong : Theme.fill
+                            border.width: 1
+                            border.color: pw.activeFocus ? Theme.hairline : "transparent"
+
+                            TextInput {
+                                id: pw
+
+                                anchors.fill: parent
+                                anchors.leftMargin: 10
+                                anchors.rightMargin: 10
+                                verticalAlignment: TextInput.AlignVCenter
+                                clip: true
+                                echoMode: TextInput.Password
+                                passwordCharacter: "•"
+                                color: Theme.fg
+                                selectionColor: Theme.accent
+                                selectedTextColor: Theme.accentFg
+                                font.family: Theme.font
+                                font.pixelSize: Theme.fontSm + 1
+                                font.weight: Theme.uiWeight
+                                renderType: Theme.smooth ? Text.QtRendering : Text.NativeRendering
+                                selectByMouse: true
+                                onAccepted: row.connectWithPassword()
+                                Keys.onEscapePressed: page.expanded = ""
+
+                                Txt {
+                                    anchors.fill: parent
+                                    visible: pw.text === ""
+                                    text: "Password"
+                                    color: Theme.textMuted
+                                    font.pixelSize: Theme.fontSm + 1
+                                }
+                            }
+                        }
+
+                        TextButton {
+                            id: connectBtn
+
+                            anchors.verticalCenter: parent.verticalCenter
+                            height: 32
+                            text: "Connect"
+                            fg: Theme.fg
+                            enabled: pw.text !== ""
+                            onClicked: row.connectWithPassword()
+                        }
                     }
                 }
             }
-        }
 
-        Txt {
-            x: 2
-            width: parent.width - 4
-            height: 32
-            visible: Net.networks.length === 0
-            text: "Searching for networks…"
-            color: Theme.textMuted
-            font.pixelSize: Theme.fontSm + 1
+            Txt {
+                x: 2
+                width: parent.width - 4
+                height: 32
+                visible: Net.networks.length === 0
+                // Slide along smoothly with "Subpixel glide" (see ListRow)
+                layer.enabled: Config.opts.barGlide && y !== Math.round(y)
+                layer.smooth: true
+                text: "Searching for networks…"
+                color: Theme.textMuted
+                font.pixelSize: Theme.fontSm + 1
+            }
         }
     }
 
@@ -259,6 +275,9 @@ Column {
         x: 2
         width: page.width - 4
         visible: Net.nm && Net.wifiDevice !== null && !Net.wifiEnabled
+        // Slide along smoothly with "Subpixel glide" (see ListRow)
+        layer.enabled: Config.opts.barGlide && y !== Math.round(y)
+        layer.smooth: true
         text: Net.wifiBlocked ? "Wi-Fi is blocked (airplane mode or hardware switch)." : "Wi-Fi is off."
         color: Theme.textMuted
         font.pixelSize: Theme.fontSm + 1
@@ -267,6 +286,9 @@ Column {
 
     TextButton {
         x: -6
+        // Slide along smoothly with "Subpixel glide" (see ListRow)
+        layer.enabled: Config.opts.barGlide && y !== Math.round(y)
+        layer.smooth: true
         icon: Icons.openExternal
         text: "Network settings"
         onClicked: {

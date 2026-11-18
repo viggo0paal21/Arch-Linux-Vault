@@ -112,6 +112,14 @@ Rectangle {
                 }
             }
 
+            // Hover box glides between previous, play and next
+            HoverGlide {
+                id: mediaGlide
+
+                color: Theme.hover
+                radius: Theme.radiusSm
+            }
+
             Row {
                 id: controls
 
@@ -121,6 +129,7 @@ Rectangle {
 
                 IconButton {
                     anchors.verticalCenter: parent.verticalCenter
+                    glide: mediaGlide
                     size: 30
                     fg: Theme.textDim
                     icon: Icons.prev
@@ -134,6 +143,7 @@ Rectangle {
                 // Play/pause: just the icon, bigger and white (no circle)
                 IconButton {
                     anchors.verticalCenter: parent.verticalCenter
+                    glide: mediaGlide
                     size: 36
                     iconSize: Theme.iconSize + 6
                     icon: root.player && root.player.isPlaying ? Icons.pause : Icons.play
@@ -145,6 +155,7 @@ Rectangle {
 
                 IconButton {
                     anchors.verticalCenter: parent.verticalCenter
+                    glide: mediaGlide
                     size: 30
                     fg: Theme.textDim
                     icon: Icons.next

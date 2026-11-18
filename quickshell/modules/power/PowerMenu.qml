@@ -146,6 +146,10 @@ OverlayPanel {
                             text: tile.modelData.icon
                             color: tile.isArmed ? Theme.accent : (tile.selected ? Theme.fg : Qt.rgba(1, 1, 1, 0.38))
                             font.pixelSize: 40
+
+                            Behavior on color {
+                                CAnim {}
+                            }
                         }
                     }
 
@@ -156,6 +160,10 @@ OverlayPanel {
                         text: tile.isArmed ? "Confirm" : tile.modelData.label
                         color: tile.selected ? Theme.fg : Qt.rgba(1, 1, 1, 0.38)
                         font.pixelSize: Theme.fontSm + 1
+
+                        Behavior on color {
+                            CAnim {}
+                        }
                     }
 
                     MouseArea {
@@ -180,6 +188,12 @@ OverlayPanel {
             color: Theme.textMuted
             font.pixelSize: Theme.fontSm
             opacity: panel.armed >= 0 ? 1 : 0
+
+            Behavior on opacity {
+                Anim {
+                    duration: Theme.ctlFast
+                }
+            }
         }
     }
 }

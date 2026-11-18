@@ -261,6 +261,10 @@ OverlayPanel {
                         width: parent.width
                         text: row.modelData.title
                         color: row.index === panel.current ? Theme.fg : Theme.textDim
+
+                        Behavior on color {
+                            CAnim {}
+                        }
                     }
 
                     Txt {

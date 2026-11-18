@@ -70,6 +70,14 @@ Item {
             }
         }
 
+        // Hover box glides between the two arrows
+        HoverGlide {
+            id: navGlide
+
+            color: Theme.hover
+            radius: Theme.radiusSm
+        }
+
         Row {
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
@@ -78,6 +86,7 @@ Item {
             IconButton {
                 size: 28
                 fg: Theme.textDim
+                glide: navGlide
                 icon: Icons.left
                 onClicked: root.shift(-1)
             }
@@ -85,6 +94,7 @@ Item {
             IconButton {
                 size: 28
                 fg: Theme.textDim
+                glide: navGlide
                 icon: Icons.right
                 onClicked: root.shift(1)
             }

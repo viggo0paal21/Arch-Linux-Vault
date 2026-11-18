@@ -55,6 +55,18 @@ The settings window has four top tabs, each with its pages on the left:
 Every top tab remembers its last page. The selection box (top tabs, page list, segmented buttons) glides to the
 new item like the launcher selection, and a slightly dimmer hover box follows the mouse the same way. Rows that
 appear (for example when a switch reveals extra options) fade in while the rows below glide down instead of snapping.
+Hover and selection box share one layer drawn with the selection's opacity, so where they overlap while gliding the
+brighter one wins instead of the white adding up to a brighter stripe with a visible edge.
+
+The same gliding hover box is used in every menu (`components/HoverGlide.qml`, one box per group of buttons, tiles or
+list rows): control center header buttons, quick setting tiles, media buttons, Wi-Fi / Bluetooth lists, per-app volume,
+calendar arrows and the tray menu. The box appears right under the mouse, then glides from item to item.
+
+**Per-app volume** (control center, small "Apps" expander below the volume slider): one row per app that currently
+plays audio, like the Windows volume mixer (app icon = mute, name above the slider, value on the right). Only playback
+streams of real apps are shown (`media.class` "Stream/Output/Audio"); background services, effect chains, short system
+sounds and recording streams (cava, screen recorders) are left out, and several streams of one app (Firefox tabs) are
+one row. See `services/Audio.qml`.
 
 ### Transparency (Settings → Quickshell → Appearance → Transparency)
 
@@ -138,7 +150,13 @@ part of the motion. The bottom edge is one continuous curve (position + docked e
 reaches the bar no gap can reopen. Set `border_size = 0` for a single window in only one rule; two rules setting it
 made the windows jitter when the smart gaps switched.
 
-**Animations tab** (Settings → Animations): on/off, global duration, bar docking (ms + curve), and for dashboard /
+**Subpixel glide** (Settings → Bar and Settings → Animations, same switch): the bar's dock animation moves between
+pixels like Hyprland windows, and in the menus expanding lists (per-app volume, Wi-Fi password field), the control
+center height on a page change and rows sliding into place glide too. Anything with text that moves is drawn as an image
+only while moving (Qt always snaps native text to whole pixels), so it is a touch softer in motion and crisp at rest.
+Off = those move in whole pixels. Panels, selection and hover boxes, sliders and switches always glide smoothly.
+
+**Animations tab** (Settings → Animations): on/off, subpixel glide, global duration, bar docking (ms + curve), and for dashboard /
 control center, launcher / settings / power menu, notifications, workspaces, OSD and buttons a duration factor plus
 curves (click the right / left half of a curve button for the next / previous curve). **Reset all animations** goes
 back to the defaults. The windows in Hyprland keep their own curve from `hyprland.lua`.

@@ -69,6 +69,14 @@ PopupWindow {
         implicitHeight: col.implicitHeight + 12
         radius: Theme.radius
 
+        // Hover box glides from entry to entry (like the selection in the launcher)
+        HoverGlide {
+            id: menuGlide
+
+            color: Theme.hover
+            radius: Theme.radiusSm
+        }
+
         Column {
             id: col
 
@@ -78,11 +86,13 @@ PopupWindow {
 
             // Back out of a submenu
             Rectangle {
+                id: backRow
+
                 width: col.width
                 height: 30
                 visible: root.stack.length > 1
                 radius: Theme.radiusSm
-                color: backArea.containsMouse ? Theme.hover : "transparent"
+                color: "transparent"
 
                 Row {
                     anchors.left: parent.left
@@ -110,6 +120,7 @@ PopupWindow {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
+                    onContainsMouseChanged: containsMouse ? menuGlide.enter(backRow) : menuGlide.leave(backRow)
                     onClicked: root.stack = root.stack.slice(0, root.stack.length - 1)
                 }
             }
@@ -134,17 +145,6 @@ PopupWindow {
                         height: 1
                         visible: entry.sep
                         color: Theme.hairline
-                    }
-
-                    Rectangle {
-                        anchors.fill: parent
-                        visible: !entry.sep
-                        radius: Theme.radiusSm
-                        color: entryArea.containsMouse && entry.modelData.enabled ? Theme.hover : "transparent"
-
-                        Behavior on color {
-                            CAnim {}
-                        }
                     }
 
                     Row {
@@ -197,6 +197,7 @@ PopupWindow {
                         enabled: !entry.sep && entry.modelData.enabled
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
+                        onContainsMouseChanged: containsMouse ? menuGlide.enter(entry) : menuGlide.leave(entry)
                         onClicked: {
                             if (entry.modelData.hasChildren) {
                                 root.stack = root.stack.concat([entry.modelData]);

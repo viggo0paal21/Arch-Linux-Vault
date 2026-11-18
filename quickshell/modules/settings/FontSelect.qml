@@ -296,6 +296,41 @@ Item {
             keyNavigationEnabled: false
             interactive: true
 
+            // Highlight of the row under the mouse / arrow keys: glides like the selection in the launcher. Lives in the
+            // list's content (so it scrolls along), behind the rows (they have z = 1).
+            Rectangle {
+                id: selBox
+
+                property bool down: false
+
+                parent: list.contentItem
+                x: 0
+                y: Math.max(0, root.sel) * 34
+                z: 0
+                width: list.width
+                height: 34
+                radius: Theme.radiusSm
+                color: selBox.down ? Theme.pressed : Theme.fill
+                opacity: root.sel >= 0 && root.sel < list.count ? 1 : 0
+
+                Behavior on y {
+                    enabled: selBox.opacity > 0.01
+
+                    SmoothedAnimation {
+                        velocity: 400
+                        duration: Theme.ctlFast
+                    }
+                }
+                Behavior on opacity {
+                    Anim {
+                        duration: Theme.ctlFast
+                    }
+                }
+                Behavior on color {
+                    CAnim {}
+                }
+            }
+
             delegate: Rectangle {
                 id: item
 
@@ -306,11 +341,7 @@ Item {
                 width: list.width
                 height: 34
                 radius: Theme.radiusSm
-                color: itemArea.pressed ? Theme.pressed : (item.index === root.sel ? Theme.fill : "transparent")
-
-                Behavior on color {
-                    CAnim {}
-                }
+                color: "transparent"
 
                 Txt {
                     x: 10
@@ -319,6 +350,10 @@ Item {
                     text: item.modelData
                     color: item.isValue || item.index === root.sel ? Theme.fg : Theme.textDim
                     font.pixelSize: Theme.fontSm + 1
+
+                    Behavior on color {
+                        CAnim {}
+                    }
                 }
 
                 Glyph {
@@ -337,6 +372,7 @@ Item {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
+                    onPressedChanged: selBox.down = pressed
                     onEntered: {
                         root.sel = item.index;
                         root.hoverFamily = item.modelData;

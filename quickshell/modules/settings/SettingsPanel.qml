@@ -265,6 +265,15 @@ OverlayPanel {
     }
 
     // Remember the current top tab's page before leaving it
+    // Hover and selection box share one layer that is drawn as a whole with the opacity of the
+    // selection box. Inside it the selection box is fully opaque, the hover box proportionally: where both
+    // overlap while gliding, the white doesn't add up (otherwise a brighter stripe with a visible edge),
+    // the brighter one simply wins. Without glass (opaque colors) boxAlpha is 1 and everything is as before.
+    readonly property real boxAlpha: Theme.fillStrong.a
+    function boxColor(c) {
+        return Qt.rgba(c.r, c.g, c.b, Math.min(1, c.a / panel.boxAlpha));
+    }
+
     function rememberTab() {
         const l = panel.lastTabs.slice();
         l[panel.section] = panel.tab;
@@ -303,6 +312,10 @@ OverlayPanel {
         height: 30
         radius: Theme.radiusSm
         color: cpArea.pressed ? Theme.pressed : (cpArea.containsMouse ? Theme.fillStrong : Theme.fill)
+
+        Behavior on color {
+            CAnim {}
+        }
 
         Glyph {
             anchors.left: parent.left
@@ -449,71 +462,78 @@ OverlayPanel {
                 font.weight: Theme.uiWeightStrong
             }
 
-            // Hover: slightly dimmer box that glides under the mouse from top tab to top tab (like in the launcher).
-            // Appears right under the mouse (fades in), only glides along after that.
-            Rectangle {
-                id: secHover
+            // Hover and selection box as one layer (see boxAlpha): no brighter stripe where they overlap
+            Item {
+                anchors.fill: parent
+                opacity: panel.boxAlpha
+                layer.enabled: panel.boxAlpha < 1
 
-                property int idx: 0
-                readonly property Item it: secRepeater.count > idx ? secRepeater.itemAt(idx) : null
+                // Hover: slightly dimmer box that glides under the mouse from top tab to top tab (like in the launcher).
+                // Appears right under the mouse (fades in), only glides along after that.
+                Rectangle {
+                    id: secHover
 
-                x: sectionRow.x + (it ? it.x : 0)
-                y: sectionRow.y
-                width: it ? it.width : 0
-                height: card.tabHeight
-                radius: Theme.radius
-                color: secHoverArea.pressed ? Theme.pressed : Theme.hover
-                opacity: secHoverArea.containsMouse ? 1 : 0
+                    property int idx: 0
+                    readonly property Item it: secRepeater.count > idx ? secRepeater.itemAt(idx) : null
 
-                Behavior on x {
-                    enabled: secHover.opacity > 0.01
+                    x: sectionRow.x + (it ? it.x : 0)
+                    y: sectionRow.y
+                    width: it ? it.width : 0
+                    height: card.tabHeight
+                    radius: Theme.radius
+                    color: panel.boxColor(secHoverArea.pressed ? Theme.pressed : Theme.hover)
+                    opacity: secHoverArea.containsMouse ? 1 : 0
 
-                    SmoothedAnimation {
-                        velocity: 400
-                        duration: Theme.ctlFast
+                    Behavior on x {
+                        enabled: secHover.opacity > 0.01
+
+                        SmoothedAnimation {
+                            velocity: 400
+                            duration: Theme.ctlFast
+                        }
+                    }
+                    Behavior on width {
+                        enabled: secHover.opacity > 0.01
+
+                        SmoothedAnimation {
+                            velocity: 400
+                            duration: Theme.ctlFast
+                        }
+                    }
+                    Behavior on opacity {
+                        Anim {
+                            duration: Theme.ctlFast
+                        }
+                    }
+                    Behavior on color {
+                        CAnim {}
                     }
                 }
-                Behavior on width {
-                    enabled: secHover.opacity > 0.01
 
-                    SmoothedAnimation {
-                        velocity: 400
-                        duration: Theme.ctlFast
+                // Bright highlight of the current top tab: glides like the selection in the launcher
+                Rectangle {
+                    id: secHighlight
+
+                    readonly property Item cur: secRepeater.count > panel.section ? secRepeater.itemAt(panel.section) : null
+
+                    x: sectionRow.x + (cur ? cur.x : 0)
+                    y: sectionRow.y
+                    width: cur ? cur.width : 0
+                    height: card.tabHeight
+                    radius: Theme.radius
+                    color: panel.boxColor(Theme.fillStrong)
+
+                    Behavior on x {
+                        SmoothedAnimation {
+                            velocity: 400
+                            duration: Theme.ctlFast
+                        }
                     }
-                }
-                Behavior on opacity {
-                    Anim {
-                        duration: Theme.ctlFast
-                    }
-                }
-                Behavior on color {
-                    CAnim {}
-                }
-            }
-
-            // Bright highlight of the current top tab: glides like the selection in the launcher
-            Rectangle {
-                id: secHighlight
-
-                readonly property Item cur: secRepeater.count > panel.section ? secRepeater.itemAt(panel.section) : null
-
-                x: sectionRow.x + (cur ? cur.x : 0)
-                y: sectionRow.y
-                width: cur ? cur.width : 0
-                height: card.tabHeight
-                radius: Theme.radius
-                color: Theme.fillStrong
-
-                Behavior on x {
-                    SmoothedAnimation {
-                        velocity: 400
-                        duration: Theme.ctlFast
-                    }
-                }
-                Behavior on width {
-                    SmoothedAnimation {
-                        velocity: 400
-                        duration: Theme.ctlFast
+                    Behavior on width {
+                        SmoothedAnimation {
+                            velocity: 400
+                            duration: Theme.ctlFast
+                        }
                     }
                 }
             }
@@ -642,53 +662,61 @@ OverlayPanel {
                     y: tabList.shift
                 }
 
-                // Hover: slightly dimmer box that glides under the mouse from page to page (like in the launcher).
-                // Appears right under the mouse (fades in), only glides along after that.
-                Rectangle {
-                    id: tabHover
-
-                    property int idx: 0
-
+                // Hover and selection box as one layer (see boxAlpha): no brighter stripe where they overlap
+                Item {
                     width: parent.width
-                    height: card.tabHeight
-                    y: Math.max(0, Math.min(tabHover.idx, panel.tabs.length - 1)) * (card.tabHeight + tabCol.spacing)
-                    radius: Theme.radius
-                    color: tabHoverArea.pressed ? Theme.pressed : Theme.hover
-                    opacity: tabHoverArea.containsMouse ? 1 : 0
+                    height: parent.height
+                    opacity: panel.boxAlpha
+                    layer.enabled: panel.boxAlpha < 1
 
-                    Behavior on y {
-                        enabled: tabHover.opacity > 0.01
+                    // Hover: slightly dimmer box that glides under the mouse from page to page (like in the launcher).
+                    // Appears right under the mouse (fades in), only glides along after that.
+                    Rectangle {
+                        id: tabHover
 
-                        SmoothedAnimation {
-                            velocity: 400
-                            duration: Theme.ctlFast
+                        property int idx: 0
+
+                        width: parent.width
+                        height: card.tabHeight
+                        y: Math.max(0, Math.min(tabHover.idx, panel.tabs.length - 1)) * (card.tabHeight + tabCol.spacing)
+                        radius: Theme.radius
+                        color: panel.boxColor(tabHoverArea.pressed ? Theme.pressed : Theme.hover)
+                        opacity: tabHoverArea.containsMouse ? 1 : 0
+
+                        Behavior on y {
+                            enabled: tabHover.opacity > 0.01
+
+                            SmoothedAnimation {
+                                velocity: 400
+                                duration: Theme.ctlFast
+                            }
+                        }
+                        Behavior on opacity {
+                            Anim {
+                                duration: Theme.ctlFast
+                            }
+                        }
+                        Behavior on color {
+                            CAnim {}
                         }
                     }
-                    Behavior on opacity {
-                        Anim {
-                            duration: Theme.ctlFast
-                        }
-                    }
-                    Behavior on color {
-                        CAnim {}
-                    }
-                }
 
-                // Bright highlight of the current page: glides like the selection in the launcher. When the
-                // top tab changes it jumps (the whole list fades in again then).
-                Rectangle {
-                    width: parent.width
-                    height: card.tabHeight
-                    y: Math.max(0, Math.min(panel.tab, panel.tabs.length - 1)) * (card.tabHeight + tabCol.spacing)
-                    radius: Theme.radius
-                    color: Theme.fillStrong
+                    // Bright highlight of the current page: glides like the selection in the launcher. When the
+                    // top tab changes it jumps (the whole list fades in again then).
+                    Rectangle {
+                        width: parent.width
+                        height: card.tabHeight
+                        y: Math.max(0, Math.min(panel.tab, panel.tabs.length - 1)) * (card.tabHeight + tabCol.spacing)
+                        radius: Theme.radius
+                        color: panel.boxColor(Theme.fillStrong)
 
-                    Behavior on y {
-                        enabled: !sideIn.running
+                        Behavior on y {
+                            enabled: !sideIn.running
 
-                        SmoothedAnimation {
-                            velocity: 400
-                            duration: Theme.ctlFast
+                            SmoothedAnimation {
+                                velocity: 400
+                                duration: Theme.ctlFast
+                            }
                         }
                     }
                 }
@@ -890,12 +918,28 @@ OverlayPanel {
                                 easing.bezierCurve: Theme.curveSmooth
                             }
                         }
+                        // With "Subpixel glide" every row glides between pixels: drawn as an image while moving
+                        // (text sharp), without it again at the target
                         move: Transition {
-                            NumberAnimation {
-                                property: "y"
-                                duration: tabIn.running ? 0 : Theme.ctlMed
-                                easing.type: Easing.BezierSpline
-                                easing.bezierCurve: Theme.curveSmooth
+                            SequentialAnimation {
+                                PropertyAction {
+                                    property: "layer.smooth"
+                                    value: true
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: Config.opts.barGlide && !tabIn.running
+                                }
+                                NumberAnimation {
+                                    property: "y"
+                                    duration: tabIn.running ? 0 : Theme.ctlMed
+                                    easing.type: Easing.BezierSpline
+                                    easing.bezierCurve: Theme.curveSmooth
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: false
+                                }
                             }
                         }
 
@@ -1210,12 +1254,28 @@ OverlayPanel {
                                 easing.bezierCurve: Theme.curveSmooth
                             }
                         }
+                        // With "Subpixel glide" every row glides between pixels: drawn as an image while moving
+                        // (text sharp), without it again at the target
                         move: Transition {
-                            NumberAnimation {
-                                property: "y"
-                                duration: tabIn.running ? 0 : Theme.ctlMed
-                                easing.type: Easing.BezierSpline
-                                easing.bezierCurve: Theme.curveSmooth
+                            SequentialAnimation {
+                                PropertyAction {
+                                    property: "layer.smooth"
+                                    value: true
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: Config.opts.barGlide && !tabIn.running
+                                }
+                                NumberAnimation {
+                                    property: "y"
+                                    duration: tabIn.running ? 0 : Theme.ctlMed
+                                    easing.type: Easing.BezierSpline
+                                    easing.bezierCurve: Theme.curveSmooth
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: false
+                                }
                             }
                         }
 
@@ -1347,13 +1407,14 @@ OverlayPanel {
                             }
                         }
 
-                        // On: stepless dock animation (between pixels, like Hyprland windows), content a touch softer
-                        // while moving. Off: whole pixels, always crisp (previous behavior).
+                        // On: smooth dock animation (between pixels, like Hyprland windows), plus expanding lists and rows sliding
+                        // into place in the menus. Content is minimally softer while moving.
+                        // Off: whole pixels there, always crisp (previous behavior). Panels, selection boxes, sliders
+                        // and switches always glide smoothly anyway.
                         SettingRow {
                             width: parent.width
-                            visible: Config.opts.barFloating
                             label: "Subpixel glide"
-                            description: "Smoother dock animation that moves between pixels like Hyprland windows. Icons are a touch softer only while moving. Off = whole pixels, always crisp"
+                            description: "Animations move between pixels like Hyprland windows: the bar's dock animation, and in menus also expanding lists and rows sliding into place. Text and icons are a touch softer only while moving. Off = these move in whole pixels, always crisp"
 
                             SwitchCtl {
                                 checked: Config.opts.barGlide
@@ -1552,6 +1613,10 @@ OverlayPanel {
                                         color: Config.opts.barBoxColor
                                         border.width: 1
                                         border.color: boxColorArea.containsMouse || boxColorBlock.open ? Theme.textDim : Theme.hairlineStrong
+
+                                        Behavior on border.color {
+                                            CAnim {}
+                                        }
 
                                         Txt {
                                             anchors.centerIn: parent
@@ -1956,12 +2021,28 @@ OverlayPanel {
                                 easing.bezierCurve: Theme.curveSmooth
                             }
                         }
+                        // With "Subpixel glide" every row glides between pixels: drawn as an image while moving
+                        // (text sharp), without it again at the target
                         move: Transition {
-                            NumberAnimation {
-                                property: "y"
-                                duration: tabIn.running ? 0 : Theme.ctlMed
-                                easing.type: Easing.BezierSpline
-                                easing.bezierCurve: Theme.curveSmooth
+                            SequentialAnimation {
+                                PropertyAction {
+                                    property: "layer.smooth"
+                                    value: true
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: Config.opts.barGlide && !tabIn.running
+                                }
+                                NumberAnimation {
+                                    property: "y"
+                                    duration: tabIn.running ? 0 : Theme.ctlMed
+                                    easing.type: Easing.BezierSpline
+                                    easing.bezierCurve: Theme.curveSmooth
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: false
+                                }
                             }
                         }
 
@@ -2034,12 +2115,28 @@ OverlayPanel {
                                 easing.bezierCurve: Theme.curveSmooth
                             }
                         }
+                        // With "Subpixel glide" every row glides between pixels: drawn as an image while moving
+                        // (text sharp), without it again at the target
                         move: Transition {
-                            NumberAnimation {
-                                property: "y"
-                                duration: tabIn.running ? 0 : Theme.ctlMed
-                                easing.type: Easing.BezierSpline
-                                easing.bezierCurve: Theme.curveSmooth
+                            SequentialAnimation {
+                                PropertyAction {
+                                    property: "layer.smooth"
+                                    value: true
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: Config.opts.barGlide && !tabIn.running
+                                }
+                                NumberAnimation {
+                                    property: "y"
+                                    duration: tabIn.running ? 0 : Theme.ctlMed
+                                    easing.type: Easing.BezierSpline
+                                    easing.bezierCurve: Theme.curveSmooth
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: false
+                                }
                             }
                         }
 
@@ -2050,6 +2147,18 @@ OverlayPanel {
                             SwitchCtl {
                                 checked: Config.opts.animations
                                 onToggled: Config.opts.animations = !Config.opts.animations
+                            }
+                        }
+
+                        // Same switch as under Bar (both change barGlide)
+                        SettingRow {
+                            width: parent.width
+                            label: "Subpixel glide"
+                            description: "Animations move between pixels like Hyprland windows: the bar's dock animation, and in menus also expanding lists and rows sliding into place. Text and icons are a touch softer only while moving. Off = these move in whole pixels, always crisp"
+
+                            SwitchCtl {
+                                checked: Config.opts.barGlide
+                                onToggled: Config.opts.barGlide = !Config.opts.barGlide
                             }
                         }
 
@@ -2205,12 +2314,28 @@ OverlayPanel {
                                 easing.bezierCurve: Theme.curveSmooth
                             }
                         }
+                        // With "Subpixel glide" every row glides between pixels: drawn as an image while moving
+                        // (text sharp), without it again at the target
                         move: Transition {
-                            NumberAnimation {
-                                property: "y"
-                                duration: tabIn.running ? 0 : Theme.ctlMed
-                                easing.type: Easing.BezierSpline
-                                easing.bezierCurve: Theme.curveSmooth
+                            SequentialAnimation {
+                                PropertyAction {
+                                    property: "layer.smooth"
+                                    value: true
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: Config.opts.barGlide && !tabIn.running
+                                }
+                                NumberAnimation {
+                                    property: "y"
+                                    duration: tabIn.running ? 0 : Theme.ctlMed
+                                    easing.type: Easing.BezierSpline
+                                    easing.bezierCurve: Theme.curveSmooth
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: false
+                                }
                             }
                         }
 
@@ -2301,12 +2426,28 @@ OverlayPanel {
                                 easing.bezierCurve: Theme.curveSmooth
                             }
                         }
+                        // With "Subpixel glide" every row glides between pixels: drawn as an image while moving
+                        // (text sharp), without it again at the target
                         move: Transition {
-                            NumberAnimation {
-                                property: "y"
-                                duration: tabIn.running ? 0 : Theme.ctlMed
-                                easing.type: Easing.BezierSpline
-                                easing.bezierCurve: Theme.curveSmooth
+                            SequentialAnimation {
+                                PropertyAction {
+                                    property: "layer.smooth"
+                                    value: true
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: Config.opts.barGlide && !tabIn.running
+                                }
+                                NumberAnimation {
+                                    property: "y"
+                                    duration: tabIn.running ? 0 : Theme.ctlMed
+                                    easing.type: Easing.BezierSpline
+                                    easing.bezierCurve: Theme.curveSmooth
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: false
+                                }
                             }
                         }
 
@@ -2357,12 +2498,28 @@ OverlayPanel {
                                 easing.bezierCurve: Theme.curveSmooth
                             }
                         }
+                        // With "Subpixel glide" every row glides between pixels: drawn as an image while moving
+                        // (text sharp), without it again at the target
                         move: Transition {
-                            NumberAnimation {
-                                property: "y"
-                                duration: tabIn.running ? 0 : Theme.ctlMed
-                                easing.type: Easing.BezierSpline
-                                easing.bezierCurve: Theme.curveSmooth
+                            SequentialAnimation {
+                                PropertyAction {
+                                    property: "layer.smooth"
+                                    value: true
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: Config.opts.barGlide && !tabIn.running
+                                }
+                                NumberAnimation {
+                                    property: "y"
+                                    duration: tabIn.running ? 0 : Theme.ctlMed
+                                    easing.type: Easing.BezierSpline
+                                    easing.bezierCurve: Theme.curveSmooth
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: false
+                                }
                             }
                         }
 
@@ -2562,12 +2719,28 @@ OverlayPanel {
                                 easing.bezierCurve: Theme.curveSmooth
                             }
                         }
+                        // With "Subpixel glide" every row glides between pixels: drawn as an image while moving
+                        // (text sharp), without it again at the target
                         move: Transition {
-                            NumberAnimation {
-                                property: "y"
-                                duration: tabIn.running ? 0 : Theme.ctlMed
-                                easing.type: Easing.BezierSpline
-                                easing.bezierCurve: Theme.curveSmooth
+                            SequentialAnimation {
+                                PropertyAction {
+                                    property: "layer.smooth"
+                                    value: true
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: Config.opts.barGlide && !tabIn.running
+                                }
+                                NumberAnimation {
+                                    property: "y"
+                                    duration: tabIn.running ? 0 : Theme.ctlMed
+                                    easing.type: Easing.BezierSpline
+                                    easing.bezierCurve: Theme.curveSmooth
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: false
+                                }
                             }
                         }
 
@@ -2664,12 +2837,28 @@ OverlayPanel {
                                 easing.bezierCurve: Theme.curveSmooth
                             }
                         }
+                        // With "Subpixel glide" every row glides between pixels: drawn as an image while moving
+                        // (text sharp), without it again at the target
                         move: Transition {
-                            NumberAnimation {
-                                property: "y"
-                                duration: tabIn.running ? 0 : Theme.ctlMed
-                                easing.type: Easing.BezierSpline
-                                easing.bezierCurve: Theme.curveSmooth
+                            SequentialAnimation {
+                                PropertyAction {
+                                    property: "layer.smooth"
+                                    value: true
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: Config.opts.barGlide && !tabIn.running
+                                }
+                                NumberAnimation {
+                                    property: "y"
+                                    duration: tabIn.running ? 0 : Theme.ctlMed
+                                    easing.type: Easing.BezierSpline
+                                    easing.bezierCurve: Theme.curveSmooth
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: false
+                                }
                             }
                         }
 
@@ -2956,12 +3145,28 @@ OverlayPanel {
                                 easing.bezierCurve: Theme.curveSmooth
                             }
                         }
+                        // With "Subpixel glide" every row glides between pixels: drawn as an image while moving
+                        // (text sharp), without it again at the target
                         move: Transition {
-                            NumberAnimation {
-                                property: "y"
-                                duration: tabIn.running ? 0 : Theme.ctlMed
-                                easing.type: Easing.BezierSpline
-                                easing.bezierCurve: Theme.curveSmooth
+                            SequentialAnimation {
+                                PropertyAction {
+                                    property: "layer.smooth"
+                                    value: true
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: Config.opts.barGlide && !tabIn.running
+                                }
+                                NumberAnimation {
+                                    property: "y"
+                                    duration: tabIn.running ? 0 : Theme.ctlMed
+                                    easing.type: Easing.BezierSpline
+                                    easing.bezierCurve: Theme.curveSmooth
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: false
+                                }
                             }
                         }
 
@@ -3220,6 +3425,10 @@ OverlayPanel {
                                                     color: "transparent"
                                                     border.width: ffChoice.chosen ? 2 : 1
                                                     border.color: ffChoice.chosen ? Theme.accent : (ffChoiceArea.containsMouse ? Theme.textMuted : Theme.hairline)
+
+                                                    Behavior on border.color {
+                                                        CAnim {}
+                                                    }
                                                 }
 
                                                 MouseArea {
@@ -3275,12 +3484,28 @@ OverlayPanel {
                                 easing.bezierCurve: Theme.curveSmooth
                             }
                         }
+                        // With "Subpixel glide" every row glides between pixels: drawn as an image while moving
+                        // (text sharp), without it again at the target
                         move: Transition {
-                            NumberAnimation {
-                                property: "y"
-                                duration: tabIn.running ? 0 : Theme.ctlMed
-                                easing.type: Easing.BezierSpline
-                                easing.bezierCurve: Theme.curveSmooth
+                            SequentialAnimation {
+                                PropertyAction {
+                                    property: "layer.smooth"
+                                    value: true
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: Config.opts.barGlide && !tabIn.running
+                                }
+                                NumberAnimation {
+                                    property: "y"
+                                    duration: tabIn.running ? 0 : Theme.ctlMed
+                                    easing.type: Easing.BezierSpline
+                                    easing.bezierCurve: Theme.curveSmooth
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: false
+                                }
                             }
                         }
 
@@ -3737,12 +3962,28 @@ OverlayPanel {
                                 easing.bezierCurve: Theme.curveSmooth
                             }
                         }
+                        // With "Subpixel glide" every row glides between pixels: drawn as an image while moving
+                        // (text sharp), without it again at the target
                         move: Transition {
-                            NumberAnimation {
-                                property: "y"
-                                duration: tabIn.running ? 0 : Theme.ctlMed
-                                easing.type: Easing.BezierSpline
-                                easing.bezierCurve: Theme.curveSmooth
+                            SequentialAnimation {
+                                PropertyAction {
+                                    property: "layer.smooth"
+                                    value: true
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: Config.opts.barGlide && !tabIn.running
+                                }
+                                NumberAnimation {
+                                    property: "y"
+                                    duration: tabIn.running ? 0 : Theme.ctlMed
+                                    easing.type: Easing.BezierSpline
+                                    easing.bezierCurve: Theme.curveSmooth
+                                }
+                                PropertyAction {
+                                    property: "layer.enabled"
+                                    value: false
+                                }
                             }
                         }
 

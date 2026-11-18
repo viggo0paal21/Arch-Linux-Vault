@@ -17,6 +17,17 @@ OverlayPanel {
     // 0 = main page, 1 = sub page. While sliding, both pages are drawn as a texture (sharp text),
     // at rest without a texture on whole pixels, like when the panel opens.
     property real pageT: panel.page !== "" ? 1 : 0
+    // Per-app volume expanded (stays that way until collapsed again)
+    property bool mixerOpen: false
+    // "Subpixel glide" (Settings > Bar or Animations): heights grow smoothly instead of in whole pixels. What slides
+    // down because of that is drawn as an image while moving (text sharp) and shifted smoothly, like the bar.
+    readonly property bool glide: Config.opts.barGlide
+    readonly property bool mixerGliding: panel.glide && mixer.openT > 0 && mixer.openT < 1
+
+    // Whole pixels without "Subpixel glide", exact otherwise
+    function glidePx(v) {
+        return panel.glide ? v : Math.round(v);
+    }
 
     Behavior on pageT {
         enabled: panel.open
@@ -62,8 +73,8 @@ OverlayPanel {
             readonly property real subH: Math.min(pageLoader.height + 2 * Theme.padLg, card.maxH)
 
             width: parent.width
-            // The height follows the page change, always on whole pixels
-            height: Math.round(card.mainH + (card.subH - card.mainH) * panel.pageT)
+            // The height follows the page change, on whole pixels (smoothly with Subpixel glide)
+            height: panel.glidePx(card.mainH + (card.subH - card.mainH) * panel.pageT)
             clip: true
 
             Item {
@@ -97,6 +108,14 @@ OverlayPanel {
                             width: col.width
                             height: 38
 
+                            // Hover box glides from button to button
+                            HoverGlide {
+                                id: headGlide
+
+                                color: Theme.hover
+                                radius: Theme.radiusSm
+                            }
+
                             Column {
                                 anchors.left: parent.left
                                 anchors.leftMargin: 2
@@ -125,6 +144,7 @@ OverlayPanel {
                                     size: 34
                                     iconSize: Theme.iconSize - 1
                                     fg: Theme.textDim
+                                    glide: headGlide
                                     icon: Icons.reload
                                     onClicked: Quickshell.reload(false)
                                 }
@@ -133,6 +153,7 @@ OverlayPanel {
                                     size: 34
                                     iconSize: Theme.iconSize - 1
                                     fg: Theme.textDim
+                                    glide: headGlide
                                     icon: Icons.cog
                                     onClicked: Ui.open("settings", Ui.panelScreen)
                                 }
@@ -141,6 +162,7 @@ OverlayPanel {
                                     size: 34
                                     iconSize: Theme.iconSize - 1
                                     fg: Theme.textDim
+                                    glide: headGlide
                                     icon: Icons.lock
                                     onClicked: {
                                         Ui.close();
@@ -152,6 +174,7 @@ OverlayPanel {
                                     size: 34
                                     iconSize: Theme.iconSize - 1
                                     fg: Theme.textDim
+                                    glide: headGlide
                                     icon: Icons.power
                                     onClicked: Ui.open("power", Ui.panelScreen)
                                 }
@@ -159,61 +182,81 @@ OverlayPanel {
                         }
 
                         // Quick settings
-                        Grid {
+                        Item {
                             width: col.width
-                            columns: 2
-                            columnSpacing: 8
-                            rowSpacing: 8
+                            height: tileGrid.height
 
-                            // Click: own sub page, right click: on/off
-                            Tile {
-                                width: (col.width - 8) / 2
-                                icon: Net.icon()
-                                title: Net.connected ? (Net.wifi ? "Wi-Fi" : "Ethernet") : "Wi-Fi"
-                                subtitle: Net.connected ? (Net.limited ? "No internet" : Net.name) : (Net.nm && !Net.wifiEnabled ? "Off" : "Disconnected")
-                                active: Net.connected
-                                chevron: true
-                                onClicked: panel.page = "wifi"
-                                onRightClicked: Net.setWifiEnabled(!Net.wifiEnabled)
+                            // Hover box glides from tile to tile (like the selection in the launcher)
+                            HoverGlide {
+                                id: tileGlide
+
+                                color: Theme.fill
+                                radius: Theme.radius
                             }
 
-                            Tile {
-                                width: (col.width - 8) / 2
-                                icon: Bt.enabled ? Icons.bluetooth : Icons.bluetoothOff
-                                title: "Bluetooth"
-                                subtitle: !Bt.available ? "No adapter" : (!Bt.enabled ? "Off" : (Bt.connected.length > 0 ? Bt.connected[0].name : "On"))
-                                active: Bt.enabled
-                                chevron: true
-                                onClicked: panel.page = "bluetooth"
-                                onRightClicked: Bt.toggle()
-                            }
+                            Grid {
+                                id: tileGrid
 
-                            Tile {
-                                width: (col.width - 8) / 2
-                                icon: Notifs.dnd ? Icons.bellOff : Icons.bell
-                                title: "Do not disturb"
-                                subtitle: Notifs.dnd ? "On" : "Off"
-                                active: Notifs.dnd
-                                onClicked: Notifs.toggleDnd()
-                            }
+                                width: col.width
+                                columns: 2
+                                columnSpacing: 8
+                                rowSpacing: 8
 
-                            Tile {
-                                width: (col.width - 8) / 2
-                                icon: Icons.moon
-                                title: "Night light"
-                                subtitle: !NightLight.installed ? "hyprsunset missing" : (NightLight.active ? NightLight.temperature + " K" : "Off")
-                                active: NightLight.active
-                                opacity: NightLight.installed ? 1 : 0.5
-                                onClicked: NightLight.toggle()
-                            }
+                                // Click: own sub page, right click: on/off
+                                Tile {
+                                    width: (col.width - 8) / 2
+                                    glide: tileGlide
+                                    icon: Net.icon()
+                                    title: Net.connected ? (Net.wifi ? "Wi-Fi" : "Ethernet") : "Wi-Fi"
+                                    subtitle: Net.connected ? (Net.limited ? "No internet" : Net.name) : (Net.nm && !Net.wifiEnabled ? "Off" : "Disconnected")
+                                    active: Net.connected
+                                    chevron: true
+                                    onClicked: panel.page = "wifi"
+                                    onRightClicked: Net.setWifiEnabled(!Net.wifiEnabled)
+                                }
 
-                            Tile {
-                                width: (col.width - 8) / 2
-                                icon: Audio.micMuted ? Icons.micOff : Icons.mic
-                                title: "Microphone"
-                                subtitle: !Audio.hasSource ? "No device" : (Audio.micMuted ? "Muted" : Math.round(Audio.micVolume * 100) + "%")
-                                active: Audio.hasSource && !Audio.micMuted
-                                onClicked: Audio.toggleMicMute()
+                                Tile {
+                                    width: (col.width - 8) / 2
+                                    glide: tileGlide
+                                    icon: Bt.enabled ? Icons.bluetooth : Icons.bluetoothOff
+                                    title: "Bluetooth"
+                                    subtitle: !Bt.available ? "No adapter" : (!Bt.enabled ? "Off" : (Bt.connected.length > 0 ? Bt.connected[0].name : "On"))
+                                    active: Bt.enabled
+                                    chevron: true
+                                    onClicked: panel.page = "bluetooth"
+                                    onRightClicked: Bt.toggle()
+                                }
+
+                                Tile {
+                                    width: (col.width - 8) / 2
+                                    glide: tileGlide
+                                    icon: Notifs.dnd ? Icons.bellOff : Icons.bell
+                                    title: "Do not disturb"
+                                    subtitle: Notifs.dnd ? "On" : "Off"
+                                    active: Notifs.dnd
+                                    onClicked: Notifs.toggleDnd()
+                                }
+
+                                Tile {
+                                    width: (col.width - 8) / 2
+                                    glide: tileGlide
+                                    icon: Icons.moon
+                                    title: "Night light"
+                                    subtitle: !NightLight.installed ? "hyprsunset missing" : (NightLight.active ? NightLight.temperature + " K" : "Off")
+                                    active: NightLight.active
+                                    opacity: NightLight.installed ? 1 : 0.5
+                                    onClicked: NightLight.toggle()
+                                }
+
+                                Tile {
+                                    width: (col.width - 8) / 2
+                                    glide: tileGlide
+                                    icon: Audio.micMuted ? Icons.micOff : Icons.mic
+                                    title: "Microphone"
+                                    subtitle: !Audio.hasSource ? "No device" : (Audio.micMuted ? "Muted" : Math.round(Audio.micVolume * 100) + "%")
+                                    active: Audio.hasSource && !Audio.micMuted
+                                    onClicked: Audio.toggleMicMute()
+                                }
                             }
                         }
 
@@ -280,10 +323,188 @@ OverlayPanel {
                                 }
                             }
 
+                            // Per-app volume: small expander below the volume slider (like the volume mixer on
+                            // Windows). Only apps that currently have an audio stream open (see Audio.apps). The height
+                            // grows in whole pixels (smoothly with Subpixel glide), the rows fade in.
+                            Item {
+                                id: mixer
+
+                                property real openT: panel.mixerOpen ? 1 : 0
+
+                                width: audioCol.width
+                                height: mixerHead.height + panel.glidePx((mixerCol.implicitHeight + 6) * mixer.openT)
+                                clip: mixer.openT > 0 && mixer.openT < 1
+
+                                Behavior on openT {
+                                    Anim {
+                                        duration: Theme.ctlMed
+                                        easing.bezierCurve: Theme.curveSmooth
+                                    }
+                                }
+
+                                // Header: "Apps", count, arrow. Text aligned with the start of the sliders.
+                                Rectangle {
+                                    id: mixerHead
+
+                                    x: 32
+                                    width: mixerHeadRow.implicitWidth + 16
+                                    height: 24
+                                    radius: Theme.radiusSm
+                                    color: mixerHeadArea.pressed ? Theme.fillStrong : (mixerHeadArea.containsMouse ? Theme.fill : "transparent")
+
+                                    Behavior on color {
+                                        CAnim {}
+                                    }
+
+                                    Row {
+                                        id: mixerHeadRow
+
+                                        x: 8
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        spacing: 6
+
+                                        Txt {
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            text: "Apps"
+                                            color: mixerHeadArea.containsMouse ? Theme.fg : Theme.textMuted
+                                            font.pixelSize: Theme.fontSm
+                                        }
+
+                                        FixedText {
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            visible: Audio.apps.length > 0
+                                            text: Audio.apps.length
+                                            color: Theme.textMuted
+                                            font.pixelSize: Theme.fontSm
+                                        }
+
+                                        Glyph {
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            text: Icons.down
+                                            rotation: 180 * mixer.openT
+                                            color: mixerHeadArea.containsMouse ? Theme.fg : Theme.textMuted
+                                            font.pixelSize: Theme.fontSm + 2
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        id: mixerHeadArea
+
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: panel.mixerOpen = !panel.mixerOpen
+                                    }
+                                }
+
+                                // Hover box glides between the app icons
+                                HoverGlide {
+                                    id: mixerGlide
+
+                                    color: Theme.hover
+                                    radius: Theme.radiusSm
+                                }
+
+                                Column {
+                                    id: mixerCol
+
+                                    y: mixerHead.height + 6
+                                    width: parent.width
+                                    spacing: 6
+                                    visible: mixer.openT > 0
+                                    opacity: mixer.openT
+
+                                    // One row like the volume above: app icon (click = mute), name above the
+                                    // slider, value on the right
+                                    Repeater {
+                                        model: ScriptModel {
+                                            values: Audio.appKeys
+                                        }
+
+                                        delegate: Row {
+                                            id: appRow
+
+                                            required property var modelData
+                                            readonly property var app: Audio.app(appRow.modelData)
+                                            readonly property var node: appRow.app && appRow.app.nodes.length > 0 ? appRow.app.nodes[0] : null
+                                            readonly property bool appMuted: !!(appRow.node && appRow.node.audio && appRow.node.audio.muted)
+                                            readonly property real appVolume: appRow.node && appRow.node.audio ? appRow.node.audio.volume : 0
+
+                                            width: audioCol.width
+                                            spacing: 8
+
+                                            IconButton {
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                size: 32
+                                                glide: mixerGlide
+                                                onClicked: Audio.toggleAppMute(appRow.modelData)
+
+                                                AppIcon {
+                                                    anchors.centerIn: parent
+                                                    width: 20
+                                                    height: 20
+                                                    icon: appRow.app ? appRow.app.icon : ""
+                                                    fallback: appRow.app ? appRow.app.name : "?"
+                                                    monochrome: true
+                                                    opacity: appRow.appMuted ? 0.35 : 0.9
+
+                                                    Behavior on opacity {
+                                                        Anim {
+                                                            duration: Theme.ctlFast
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            Column {
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                width: audioCol.width - 32 - 44 - 16
+                                                spacing: 0
+
+                                                Txt {
+                                                    width: parent.width
+                                                    text: appRow.app ? appRow.app.name : ""
+                                                    color: appRow.appMuted ? Theme.textMuted : Theme.textDim
+                                                    font.pixelSize: Theme.fontXs
+                                                }
+
+                                                SliderBar {
+                                                    width: parent.width
+                                                    value: appRow.appMuted ? 0 : appRow.appVolume
+                                                    onMoved: v => Audio.setAppVolume(appRow.modelData, v)
+                                                }
+                                            }
+
+                                            FixedText {
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                width: 44
+                                                horizontalAlignment: Text.AlignRight
+                                                text: Math.round(appRow.appVolume * 100) + "%"
+                                                color: appRow.appMuted ? Theme.textMuted : Theme.textDim
+                                                font.pixelSize: Theme.fontSm + 1
+                                            }
+                                        }
+                                    }
+
+                                    Txt {
+                                        x: 40
+                                        width: parent.width - 40
+                                        height: 24
+                                        visible: Audio.apps.length === 0
+                                        verticalAlignment: Text.AlignVCenter
+                                        text: "No apps playing audio"
+                                        color: Theme.textMuted
+                                        font.pixelSize: Theme.fontSm
+                                    }
+                                }
+                            }
+
                             Row {
                                 width: audioCol.width
                                 spacing: 8
                                 visible: Audio.hasSource
+                                layer.enabled: panel.mixerGliding
+                                layer.smooth: true
 
                                 IconButton {
                                     anchors.verticalCenter: parent.verticalCenter
@@ -314,12 +535,16 @@ OverlayPanel {
                         MediaCard {
                             width: col.width
                             visible: Media.player !== null
+                            layer.enabled: panel.mixerGliding
+                            layer.smooth: true
                         }
 
                         // Notifications
                         Column {
                             width: col.width
                             spacing: 10
+                            layer.enabled: panel.mixerGliding
+                            layer.smooth: true
 
                             Item {
                                 width: col.width

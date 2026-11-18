@@ -21,6 +21,13 @@ Item {
         }
         return -1;
     }
+    // Hover and selection box share one layer that is drawn as a whole with the opacity of the selection box
+    // (inside it the selection is fully opaque, the hover box proportionally): where both overlap while gliding,
+    // the white doesn't add up, the brighter one simply wins. Without glass boxAlpha is 1.
+    readonly property real boxAlpha: Theme.fillStrong.a
+    function boxColor(c) {
+        return Qt.rgba(c.r, c.g, c.b, Math.min(1, c.a / root.boxAlpha));
+    }
     readonly property int segWidth: Math.floor((root.width - 6 - root.spacing * (root.options.length - 1)) / Math.max(1, root.options.length))
 
     implicitWidth: row.implicitWidth + 6
@@ -32,54 +39,61 @@ Item {
         color: Theme.fill
     }
 
-    // Hover: appears right under the mouse (fades in), then glides from option to option
-    Rectangle {
-        id: hoverBox
+    // Hover and selection box as one layer (see boxAlpha): no brighter stripe where they overlap
+    Item {
+        anchors.fill: parent
+        opacity: root.boxAlpha
+        layer.enabled: root.boxAlpha < 1
 
-        property int idx: 0
+        // Hover: appears right under the mouse (fades in), then glides from option to option
+        Rectangle {
+            id: hoverBox
 
-        x: 3 + hoverBox.idx * (root.segWidth + root.spacing)
-        y: 3
-        width: root.segWidth
-        height: root.height - 6
-        radius: Theme.radiusSm
-        color: Theme.fill
-        opacity: area.containsMouse ? 1 : 0
+            property int idx: 0
 
-        Behavior on x {
-            enabled: hoverBox.opacity > 0.01
+            x: 3 + hoverBox.idx * (root.segWidth + root.spacing)
+            y: 3
+            width: root.segWidth
+            height: root.height - 6
+            radius: Theme.radiusSm
+            color: root.boxColor(Theme.fill)
+            opacity: area.containsMouse ? 1 : 0
 
-            SmoothedAnimation {
-                velocity: 400
-                duration: Theme.ctlFast
+            Behavior on x {
+                enabled: hoverBox.opacity > 0.01
+
+                SmoothedAnimation {
+                    velocity: 400
+                    duration: Theme.ctlFast
+                }
+            }
+            Behavior on opacity {
+                Anim {
+                    duration: Theme.ctlFast
+                }
             }
         }
-        Behavior on opacity {
-            Anim {
-                duration: Theme.ctlFast
-            }
-        }
-    }
 
-    // Bright highlight of the active option
-    Rectangle {
-        x: 3 + Math.max(0, root.activeIndex) * (root.segWidth + root.spacing)
-        y: 3
-        width: root.segWidth
-        height: root.height - 6
-        radius: Theme.radiusSm
-        color: Theme.fillStrong
-        opacity: root.activeIndex >= 0 ? 1 : 0
+        // Bright highlight of the active option
+        Rectangle {
+            x: 3 + Math.max(0, root.activeIndex) * (root.segWidth + root.spacing)
+            y: 3
+            width: root.segWidth
+            height: root.height - 6
+            radius: Theme.radiusSm
+            color: root.boxColor(Theme.fillStrong)
+            opacity: root.activeIndex >= 0 ? 1 : 0
 
-        Behavior on x {
-            SmoothedAnimation {
-                velocity: 400
-                duration: Theme.ctlFast
+            Behavior on x {
+                SmoothedAnimation {
+                    velocity: 400
+                    duration: Theme.ctlFast
+                }
             }
-        }
-        Behavior on opacity {
-            Anim {
-                duration: Theme.ctlFast
+            Behavior on opacity {
+                Anim {
+                    duration: Theme.ctlFast
+                }
             }
         }
     }

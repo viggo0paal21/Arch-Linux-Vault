@@ -34,121 +34,146 @@ Column {
     }
 
     // Paired devices
-    Column {
+    Item {
         width: page.width
-        spacing: 2
+        height: pairedCol.height
         visible: Bt.enabled && Bt.paired.length > 0
 
-        Item {
-            width: parent.width
-            height: 24
-
-            Txt {
-                anchors.left: parent.left
-                anchors.leftMargin: 2
-                anchors.verticalCenter: parent.verticalCenter
-                text: "My devices"
-                color: Theme.textMuted
-                font.pixelSize: Theme.fontSm
-                font.weight: Theme.uiWeightStrong
-            }
+        // Hover box glides from device to device
+        HoverGlide {
+            id: pairedGlide
         }
 
-        Repeater {
-            model: ScriptModel {
-                values: Bt.paired
+        Column {
+            id: pairedCol
+
+            width: page.width
+            spacing: 2
+
+            Item {
+                width: parent.width
+                height: 24
+
+                Txt {
+                    anchors.left: parent.left
+                    anchors.leftMargin: 2
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "My devices"
+                    color: Theme.textMuted
+                    font.pixelSize: Theme.fontSm
+                    font.weight: Theme.uiWeightStrong
+                }
             }
 
-            delegate: ListRow {
-                id: row
+            Repeater {
+                model: ScriptModel {
+                    values: Bt.paired
+                }
 
-                required property var modelData
-                readonly property var dev: modelData
+                delegate: ListRow {
+                    id: row
 
-                width: page.width
-                icon: Bt.deviceIcon(row.dev)
-                title: row.dev.name
-                subtitle: Bt.status(row.dev)
-                active: row.dev.connected
-                trailing: row.dev.connected ? Icons.check : ""
-                onClicked: Bt.activate(row.dev)
+                    required property var modelData
+                    readonly property var dev: modelData
 
-                actions: [
-                    TextButton {
-                        visible: row.dev.connected
-                        text: "Disconnect"
-                        onClicked: row.dev.disconnect()
-                    },
-                    IconButton {
-                        size: 28
-                        iconSize: Theme.iconSize - 2
-                        fg: Theme.textMuted
-                        icon: Icons.trash
-                        onClicked: row.dev.forget()
-                    }
-                ]
+                    width: page.width
+                    glide: pairedGlide
+                    icon: Bt.deviceIcon(row.dev)
+                    title: row.dev.name
+                    subtitle: Bt.status(row.dev)
+                    active: row.dev.connected
+                    trailing: row.dev.connected ? Icons.check : ""
+                    onClicked: Bt.activate(row.dev)
+
+                    actions: [
+                        TextButton {
+                            visible: row.dev.connected
+                            text: "Disconnect"
+                            onClicked: row.dev.disconnect()
+                        },
+                        IconButton {
+                            size: 28
+                            iconSize: Theme.iconSize - 2
+                            fg: Theme.textMuted
+                            icon: Icons.trash
+                            onClicked: row.dev.forget()
+                        }
+                    ]
+                }
             }
         }
     }
 
     // New devices nearby
-    Column {
+    Item {
         width: page.width
-        spacing: 2
+        height: nearbyCol.height
         visible: Bt.enabled
 
-        Item {
-            width: parent.width
-            height: 24
-
-            Txt {
-                anchors.left: parent.left
-                anchors.leftMargin: 2
-                anchors.verticalCenter: parent.verticalCenter
-                text: "Other devices"
-                color: Theme.textMuted
-                font.pixelSize: Theme.fontSm
-                font.weight: Theme.uiWeightStrong
-            }
-
-            Txt {
-                anchors.right: parent.right
-                anchors.rightMargin: 2
-                anchors.verticalCenter: parent.verticalCenter
-                visible: Bt.adapter !== null && Bt.adapter.discovering
-                text: "Searching…"
-                color: Theme.textMuted
-                font.pixelSize: Theme.fontSm
-            }
+        HoverGlide {
+            id: nearbyGlide
         }
 
-        Repeater {
-            model: ScriptModel {
-                values: Bt.nearby
+        Column {
+            id: nearbyCol
+
+            width: page.width
+            spacing: 2
+
+            Item {
+                width: parent.width
+                height: 24
+
+                Txt {
+                    anchors.left: parent.left
+                    anchors.leftMargin: 2
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "Other devices"
+                    color: Theme.textMuted
+                    font.pixelSize: Theme.fontSm
+                    font.weight: Theme.uiWeightStrong
+                }
+
+                Txt {
+                    anchors.right: parent.right
+                    anchors.rightMargin: 2
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: Bt.adapter !== null && Bt.adapter.discovering
+                    text: "Searching…"
+                    color: Theme.textMuted
+                    font.pixelSize: Theme.fontSm
+                }
             }
 
-            delegate: ListRow {
-                id: nrow
+            Repeater {
+                model: ScriptModel {
+                    values: Bt.nearby
+                }
 
-                required property var modelData
-                readonly property var dev: modelData
+                delegate: ListRow {
+                    id: nrow
 
-                width: page.width
-                icon: Bt.deviceIcon(nrow.dev)
-                title: nrow.dev.name
-                subtitle: nrow.dev.pairing ? "Pairing…" : (Bt.busy(nrow.dev) ? Bt.status(nrow.dev) : "")
-                onClicked: Bt.activate(nrow.dev)
+                    required property var modelData
+                    readonly property var dev: modelData
+
+                    width: page.width
+                    glide: nearbyGlide
+                    icon: Bt.deviceIcon(nrow.dev)
+                    title: nrow.dev.name
+                    subtitle: nrow.dev.pairing ? "Pairing…" : (Bt.busy(nrow.dev) ? Bt.status(nrow.dev) : "")
+                    onClicked: Bt.activate(nrow.dev)
+                }
             }
-        }
 
-        Txt {
-            x: 2
-            width: parent.width - 4
-            height: 32
-            visible: Bt.nearby.length === 0
-            text: "Put a device into pairing mode to see it here."
-            color: Theme.textMuted
-            font.pixelSize: Theme.fontSm + 1
+            Txt {
+                x: 2
+                width: parent.width - 4
+                height: 32
+                visible: Bt.nearby.length === 0
+                text: "Put a device into pairing mode to see it here."
+                color: Theme.textMuted
+                font.pixelSize: Theme.fontSm + 1
+            }
         }
     }
 

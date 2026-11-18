@@ -138,6 +138,12 @@ Rectangle {
                     icon: Icons.close
                     opacity: hover.hovered ? 1 : 0
                     onClicked: Notifs.dismiss(root.notif)
+
+                    Behavior on opacity {
+                        Anim {
+                            duration: Theme.ctlFast
+                        }
+                    }
                 }
             }
 
@@ -186,6 +192,10 @@ Rectangle {
                         height: 28
                         radius: Theme.radiusSm
                         color: actionArea.pressed || actionArea.containsMouse ? Theme.pressed : Theme.fillStrong
+
+                        Behavior on color {
+                            CAnim {}
+                        }
 
                         Txt {
                             id: actionLabel

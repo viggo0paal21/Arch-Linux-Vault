@@ -11,6 +11,9 @@ Rectangle {
     property string subtitle: ""
     property bool active: false
     property bool chevron: false
+    // Shared gliding hover box of the group (HoverGlide). Without it: own background as before.
+    property Item glide: null
+    readonly property bool glideDown: area.pressed
 
     signal clicked
     signal rightClicked
@@ -19,7 +22,7 @@ Rectangle {
     implicitWidth: 160
     radius: Theme.radius
     // Transparent on the blur like the terminals, a background only on hover
-    color: area.pressed ? Theme.pressed : (area.containsMouse ? Theme.fill : "transparent")
+    color: root.glide ? "transparent" : (area.pressed ? Theme.pressed : (area.containsMouse ? Theme.fill : "transparent"))
 
     Behavior on color {
         CAnim {}
@@ -38,6 +41,10 @@ Rectangle {
             text: root.icon
             color: root.active ? Theme.accent : Qt.rgba(1, 1, 1, 0.38)
             font.pixelSize: Theme.iconSize + 2
+
+            Behavior on color {
+                CAnim {}
+            }
         }
     }
 
@@ -54,6 +61,10 @@ Rectangle {
             text: root.title
             color: root.active ? Theme.fg : Theme.textMuted
             font.pixelSize: Theme.fontSm + 1
+
+            Behavior on color {
+                CAnim {}
+            }
         }
 
         Txt {
@@ -62,6 +73,10 @@ Rectangle {
             text: root.subtitle
             color: root.active ? Theme.textDim : Qt.rgba(1, 1, 1, 0.38)
             font.pixelSize: Theme.fontSm - 1
+
+            Behavior on color {
+                CAnim {}
+            }
         }
     }
 
@@ -73,6 +88,10 @@ Rectangle {
         text: Icons.right
         color: area.containsMouse ? Theme.textDim : Qt.rgba(1, 1, 1, 0.38)
         font.pixelSize: Theme.iconSize - 2
+
+        Behavior on color {
+            CAnim {}
+        }
     }
 
     MouseArea {
@@ -82,6 +101,10 @@ Rectangle {
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         acceptedButtons: Qt.LeftButton | Qt.RightButton
+        onContainsMouseChanged: {
+            if (root.glide)
+                containsMouse ? root.glide.enter(root) : root.glide.leave(root);
+        }
         onClicked: ev => {
             if (ev.button === Qt.RightButton)
                 root.rightClicked();

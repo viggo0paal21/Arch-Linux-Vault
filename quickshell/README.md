@@ -10,7 +10,7 @@ Font like the Waybar: Inter 15px bold, icons from JetBrainsMono Nerd Font Propo.
 |---|---|
 | Bar | Arch button (launcher), workspaces as pills, window title, tray with its own B/W menu, CPU/RAM/temp + clock, network/Bluetooth/volume/bell, power. Optional floating bar that docks with a single window (with an optional subpixel glide), optional shell glass (looks like kitty's glass: either the bar blurs the wallpaper itself, or Hyprland blurs the background behind it), Arch or Tux launcher icon with adjustable size, optional group boxes with a color picker |
 | Launcher | Fuzzy app search, frequently used apps first, `=` calculator, `>` run a command |
-| Control center | Wi-Fi and Bluetooth (each with its own page that slides in: nearby networks with password entry, paired and nearby devices with battery), do not disturb, night light, mic, volume/mic sliders, media player, notification history. Shows "No internet" only when the shell's own check fails too (NetworkManager's check often fails behind a VPN like NordVPN) |
+| Control center | Wi-Fi and Bluetooth (each with its own page that slides in: nearby networks with password entry, paired and nearby devices with battery), do not disturb, night light, mic, volume/mic sliders with per-app volume (expander below the volume slider, only apps that play audio), media player, notification history. Shows "No internet" only when the shell's own check fails too (NetworkManager's check often fails behind a VPN like NordVPN) |
 | Dashboard | Big clock, calendar, system monitor (CPU, NVIDIA GPU, RAM, drives, network with history graphs) |
 | Notifications | Own daemon (replaces dunst/swaync), popups slide in from the right, timeout bar, actions |
 | OSD | Volume indicator bottom center |
