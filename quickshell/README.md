@@ -1,6 +1,6 @@
 # Quickshell OLED – Black/White
 
-> **Status 21.11.2026:** this shell is **no longer in use** (see the main [README](../README.md)). Only `corners/` in this folder is used: the screen corners of my current Waybar rice.
+> **Status 21.11.2026:** this shell is **no longer in use** (see the main [README](../README.md)). Nothing in this folder is used anymore. The screen corners that were in `corners/` are now an optional AI extra in [`experimental/ai-extras/`](../experimental/ai-extras).
 
 Complete Quickshell setup for Hyprland (Lua config, ≥ 0.55) and Quickshell 0.3.x.
 True black (#000000), white text, slightly rounded corners, smooth animations.

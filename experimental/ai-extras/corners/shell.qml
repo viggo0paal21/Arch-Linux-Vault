@@ -17,7 +17,9 @@
 //  The corners sit under the windows (above the wallpaper), so they
 //  never cover an app; they only show behind rounded window corners.
 //
-//  Started by hyprland.lua with:  qs -n -p ~/.config/quickshell/corners
+//  Experimental AI extra (vault: experimental/ai-extras). enable.sh copies it to
+//  ~/.config/quickshell/corners and adds the start to hyprland.lua:
+//      qs -n -p ~/.config/quickshell/corners
 // ==========================================================
 
 import QtQuick

@@ -56,7 +56,6 @@ Options: `./install.sh --yes` (no question at the start), `./install.sh --no-pac
 | Font | Noto Sans everywhere (kitty: its own default), JetBrainsMono Nerd Font for icons | [`fontconfig/`](fontconfig), `settings.ini` in [`gtk-3.0/`](gtk-3.0) and [`gtk-4.0/`](gtk-4.0) |
 | Wallpaper | waypaper + awww | [`waypaper/config.ini`](waypaper/config.ini) |
 | Music visualizer | cava | [`cava/config`](cava/config) |
-| Screen corners (optional) | small Quickshell config, switch `"screen-corners"` in `waybar/config.jsonc` (currently `false`) | [`quickshell/corners/shell.qml`](quickshell/corners/shell.qml) |
 
 ### How the look works
 
@@ -81,9 +80,9 @@ This vault contains **every file of the old vault**:
 - If the file still exists on my PC, the **current version from my PC** is in here (e.g. `hyprland.lua`, `waybar/`, `gtk-3.0/gtk.css`, `kitty.conf`, `rofi/config.rasi`, `fastfetch/config.jsonc`, `qt6ct.conf`, `hyprtoolkit.conf`, swaync, hyprlock, starship).
 - If it doesn't exist on my PC anymore (or can't be read from there), the **old version** from the archived vault is kept (guides, GPU scripts, `quickshell-old-design/`, `etc/`, `home/.zshrc`, the D-Bus override).
 - Scripts in `home/.local/bin/` whose code on my PC is identical but whose comments are still German keep the English version from the old vault.
-- **New files** that I use now: `hypr/performance.lua`, `hypr/system.lua`, `fontconfig/`, `Kvantum/MonoGlass/`, `quickshell/corners/shell.qml`, `qt6ct/colors/simplerice.conf`, `cava/config`.
+- **New files** that I use now: `hypr/performance.lua`, `hypr/system.lua`, `fontconfig/`, `Kvantum/MonoGlass/`, `qt6ct/colors/simplerice.conf`, `cava/config`.
 
-Not in use anymore, but kept: Quickshell shell `quickshell/` (except `corners/`), `quickshell-old-design/`, `oled-bw/`, the zsh setup and the kitty-shell wrapper, `hyprpanel/`, `nwg-dock-hyprland/`, `rofi/monochrome.rasi`, `waybar/scripts/` and the `waybar/transparency*.css` files, `autostart/` (KDE / Cinnamon leftovers), the Quickshell scripts in `home/.local/bin/`.
+Not in use anymore, but kept: Quickshell shell `quickshell/`, `quickshell-old-design/`, `oled-bw/`, the zsh setup and the kitty-shell wrapper, `hyprpanel/`, `nwg-dock-hyprland/`, `rofi/monochrome.rasi`, `waybar/scripts/` and the `waybar/transparency*.css` files, `autostart/` (KDE / Cinnamon leftovers), the Quickshell scripts in `home/.local/bin/`.
 
 ## Contents
 
@@ -110,7 +109,7 @@ Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
 | File | What it is |
 |---|---|
 | [`check-direct-scanout`](home/.local/bin/check-direct-scanout) | **In use.** Notification that shows whether Hyprland's direct scanout is active (`Super + Home`, bind in `hypr/performance.lua`) |
-| [`qs`](home/.local/bin/qs), [`quickshell`](home/.local/bin/quickshell) | **In use** (for the screen corners). Wrappers around `/usr/bin/qs` and `/usr/bin/quickshell`: Vulkan backend, without MangoHud / lsfg-vk / vkBasalt, so it applies to every Quickshell config |
+| [`qs`](home/.local/bin/qs), [`quickshell`](home/.local/bin/quickshell) | *Old, not in use* (the screen corners used them, now in [`experimental/ai-extras/`](experimental/ai-extras)). Wrappers around `/usr/bin/qs` and `/usr/bin/quickshell`: Vulkan backend, without MangoHud / lsfg-vk / vkBasalt, so it applies to every Quickshell config |
 | [`qs-start`](home/.local/bin/qs-start) | *Old shell.* Started Quickshell from the Hyprland autostart: Vulkan backend, without MangoHud / lsfg-vk / vkBasalt. See [Quickshell Guide](Quickshell%20Guide.md#3-why-the-start-script-exists-nvidia) |
 | [`qs-restart`](home/.local/bin/qs-restart) | *Old shell.* Restarts the Quickshell shell |
 | [`qs-dock`](home/.local/bin/qs-dock), [`qs-glass-apply`](home/.local/bin/qs-glass-apply) | *Old shell.* Dock launcher for nwg-dock-hyprland and the helper for Settings > Apps > Opacity (per-app opacity), see the [Quickshell Guide](Quickshell%20Guide.md) |
@@ -147,7 +146,7 @@ Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
 | [`nwg-dock-hyprland/`](nwg-dock-hyprland) | Dock of the old setup, not in use |
 | [`nwg-look/`](nwg-look) | GTK settings tool |
 | [`qt6ct/`](qt6ct) | **In use.** Qt 6 settings: style `kvantum`, Noto Sans; color schemes (`simplerice.conf` was my own palette before Kvantum) |
-| [`quickshell/`](quickshell) | *Old shell, not in use:* bar, launcher, control center, dashboard, notifications, OSD, power menu. See [Quickshell Guide](Quickshell%20Guide.md). **Exception:** [`quickshell/corners/`](quickshell/corners) = the screen corners I use now (started with `qs -n -p ~/.config/quickshell/corners`, see below) |
+| [`quickshell/`](quickshell) | *Old shell, not in use:* bar, launcher, control center, dashboard, notifications, OSD, power menu. See [Quickshell Guide](Quickshell%20Guide.md). The screen corners that were in `quickshell/corners/` are now an optional extra in [`experimental/ai-extras/`](experimental/ai-extras) |
 | [`quickshell-old-design/`](quickshell-old-design) | The same old shell with its **old design** (before the November 2026 redesign), kept as an alternative. Copy it to `~/.config/quickshell` instead of `quickshell/`. The whole repo at that point is also the branch [`quickshell-old-design`](https://github.com/viggo0paal21/-archived-Arch-Linux-Vault/tree/quickshell-old-design) ([zip](https://github.com/viggo0paal21/-archived-Arch-Linux-Vault/archive/refs/heads/quickshell-old-design.zip)) of the old vault |
 | [`rofi/`](rofi) | **In use.** App launcher: `config.rasi` contains everything (settings + theme, `@theme "/dev/null"`). `monochrome.rasi` = theme of the old setup |
 | [`swaync/`](swaync) | **In use.** Notifications: imports the default `/etc/xdg/swaync/style.css` first, then overrides its `:root` variables (85 % black glass, 10 px radius, no shadow) |
@@ -164,11 +163,11 @@ Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
 | [`etc/`](etc) | Files from outside `~/.config` (skipped by the restore loop in [Restore the configs](#restore-the-configs)) |
 | [`home/`](home) | Files that belong directly in `~` (`.zshrc`, `.local/bin` scripts, Quickshell settings in `.local/state`, D-Bus override in `.local/share`). Also skipped by the restore loop |
 | [`oled-bw/`](oled-bw) | Settings of the old Quickshell shell (same file as in `home/.local/state/quickshell/by-shell/oled-bw/`) |
-| [`experimental/`](experimental) | **Not in use, never installed automatically.** AI-made experiments, see [Experimental: Rice Control](#experimental-rice-control) |
+| [`experimental/`](experimental) | **Not in use, never installed automatically.** AI-made experiments, see [Experimental: AI extras](#experimental-ai-extras) |
 
 ## Hyprland: how my config is split
 
-- [`hypr/hyprland.lua`](hypr/hyprland.lua): my own config. Monitor, autostart (Waybar, swaync, awww + waypaper, screen corners, blueman-applet), look (gaps, borders, rounding, light blur, shadows off), floating windows snap to the gaps (`general.snap`), window rule for the Noctis mini player (no border), keybinds, animations (curve "snap"), `Super + V` = float at 5:3 in the center, layer rules (blur for rofi, Waybar and swaync), smart gaps.
+- [`hypr/hyprland.lua`](hypr/hyprland.lua): my own config. Monitor, autostart (Waybar, swaync, awww + waypaper, blueman-applet), look (gaps, borders, rounding, light blur, shadows off), floating windows snap to the gaps (`general.snap`), window rule for the Noctis mini player (no border), keybinds, animations (curve "snap"), `Super + V` = float at 5:3 in the center, layer rules (blur for rofi, Waybar and swaync), smart gaps.
 - [`hypr/system.lua`](hypr/system.lua): background stuff so apps run and look right (cursor size, Qt through qt6ct, GTK dark + portal, hyprpolkitagent, arch-update tray, fixes). `GTK_THEME` must stay off, otherwise `gtk-4.0/gtk.css` is ignored.
 - [`hypr/performance.lua`](hypr/performance.lua): gaming and latency from the old setup (MangoHud env, tearing allowed, direct scanout, VRR fullscreen-only, cursor settings for VRR, flat mouse, rules for videos and DOOM, `Super + Home` = direct scanout check).
 
@@ -176,25 +175,17 @@ Both extra files are loaded at the top of `hyprland.lua` with `require("system")
 
 Keybinds: `Super + Q` kitty, `Super + R` rofi, `Super + E` Nautilus, `Super + C` close, `Super + Shift + C` kill, `Super + S` special workspace, `Super + V` float, `Super + J` toggle split, `Super + M` exit, `Super + Shift + S` screenshot of a region to the clipboard (grim + slurp + wl-copy), `Super + 1…0` workspaces, `Super + Shift + 1…0` move window, `Super + Shift + arrows` move, `Super + Ctrl + left/right` swap, `Super + mouse` drag / resize.
 
-## Screen corners (optional)
+## Experimental: AI extras
 
-Black rounded corners under the bar, so the screen looks rounded like the windows. A small Quickshell config in [`quickshell/corners/shell.qml`](quickshell/corners/shell.qml):
+**Not part of my rice.** AI-made experiments (Claude, 21.11.2026) in [`experimental/ai-extras/`](experimental/ai-extras), turned on and off together. `install.sh` ignores them.
 
-- reads `decoration.rounding` / `rounding_power` live from Hyprland (`hyprctl getoption`), re-reads them on every config reload
-- sits automatically under the space Waybar reserves (layer surface with `exclusiveZone: 0`)
-- is drawn **under** the windows (`aboveWindows: false`), so it never covers an app, and lets every click through
-- on/off: `"screen-corners": true | "top" | false` in `waybar/config.jsonc`, takes effect immediately
+- **Rice Control:** a small GTK 4 app that sets border, colors, rounding, opacity, blur, gaps and fonts for everything at once, with a live preview (left click on the cat in Waybar)
+- **Screen corners:** black rounded corners under the bar (small Quickshell config), they follow Hyprland's rounding
 
-Started by `hyprland.lua` with `qs -n -p ~/.config/quickshell/corners` (`-n` = never twice). `-p` is needed because a `shell.qml` directly in `~/.config/quickshell` (the old shell) makes Quickshell ignore named subfolders.
+- On: `bash experimental/ai-extras/enable.sh`
+- Off: `bash experimental/ai-extras/disable.sh` (everything back byte for byte, no traces)
 
-## Experimental: Rice Control
-
-**Not part of my rice**, an AI-made experiment (Claude, 21.11.2026) in [`experimental/rice-control/`](experimental/rice-control). A small GTK 4 app that sets border, colors, rounding, opacity, blur, gaps and fonts for everything at once, with a live preview. `install.sh` ignores it.
-
-- On: `bash experimental/rice-control/enable.sh` (then a left click on the cat in Waybar opens it)
-- Off: `bash experimental/rice-control/disable.sh` (everything back byte for byte, no traces)
-
-Details in its [README](experimental/rice-control/README.md).
+Details in its [README](experimental/ai-extras/README.md).
 
 ## Shell: zsh (old setup, not in use)
 
@@ -328,7 +319,6 @@ LD_PRELOAD=/usr/$$LIB/mangohud/libMangoHud_opengl.so
 
 This would also load MangoHud into Quickshell (FPS cap + extra vsync in the shell). The start script
 [`qs-start`](home/.local/bin/qs-start) and the `qs` / `quickshell` wrappers keep it out, see the [Quickshell Guide](Quickshell%20Guide.md).
-The screen corners are started with `MANGOHUD=0` for the same reason.
 
 <!-- INSTALL-START -->
 
@@ -353,7 +343,6 @@ _Updated on 21.11.2026: official packages via pacman, everything else via yay (A
 | MangoHud | FPS / performance overlay for games | `mangohud`, `lib32-mangohud` |
 | nautilus | File manager | `nautilus` |
 | waypaper | Wallpaper picker | `waypaper` (AUR), `awww` (successor of swww) |
-| quickshell/corners | Screen corners (optional) | `quickshell` |
 | vibrantLinux | Per-app color saturation | `vibrantlinux` (AUR) |
 | xdg-desktop-portal | Portals (screen sharing, file picker) | `xdg-desktop-portal`, `xdg-desktop-portal-hyprland`, `xdg-desktop-portal-gtk` |
 | nwg-look | GTK settings tool | `nwg-look` |
@@ -367,7 +356,7 @@ _Updated on 21.11.2026: official packages via pacman, everything else via yay (A
 **1. Official packages (pacman):**
 
 ```bash
-sudo pacman -Syu --needed hyprland hyprlock hyprpolkitagent xdg-desktop-portal xdg-desktop-portal-hyprland xdg-desktop-portal-gtk grim slurp wl-clipboard waybar blueman pavucontrol rofi swaync kitty fastfetch cava fontconfig noto-fonts ttf-jetbrains-mono-nerd gtk3 gtk4 kvantum kvantum-qt5 qt6ct qt6-wayland mangohud lib32-mangohud nautilus nwg-look quickshell
+sudo pacman -Syu --needed hyprland hyprlock hyprpolkitagent xdg-desktop-portal xdg-desktop-portal-hyprland xdg-desktop-portal-gtk grim slurp wl-clipboard waybar blueman pavucontrol rofi swaync kitty fastfetch cava fontconfig noto-fonts ttf-jetbrains-mono-nerd gtk3 gtk4 kvantum kvantum-qt5 qt6ct qt6-wayland mangohud lib32-mangohud nautilus nwg-look
 ```
 
 > `lib32-…` packages need the **multilib** repository. If pacman can't find them,
@@ -405,16 +394,16 @@ cd ~/config-backup
 cp -r MangoHud ~/.config/
 
 # or all config folders at once (home/, etc/ and oled-bw/ are not ~/.config folders, quickshell-old-design/ is the
-# alternative to quickshell/, so they are skipped):
-for d in */; do case "$d" in home/|etc/|oled-bw/|quickshell-old-design/) ;; *) cp -r "$d" ~/.config/ ;; esac; done
+# alternative to quickshell/, experimental/ is optional, so they are skipped):
+for d in */; do case "$d" in home/|etc/|oled-bw/|quickshell-old-design/|experimental/) ;; *) cp -r "$d" ~/.config/ ;; esac; done
 
 # starship prompt (default prompt now):
 cp starship.toml ~/.config/
 
-# script for direct scanout check (Super + Home) and the Quickshell wrappers used by the screen corners:
+# script for direct scanout check (Super + Home):
 mkdir -p ~/.local/bin
-cp home/.local/bin/{check-direct-scanout,qs,quickshell} ~/.local/bin/
-chmod +x ~/.local/bin/{check-direct-scanout,qs,quickshell}
+cp home/.local/bin/check-direct-scanout ~/.local/bin/
+chmod +x ~/.local/bin/check-direct-scanout
 
 # Nautilus as default file manager:
 xdg-mime default org.gnome.Nautilus.desktop inode/directory

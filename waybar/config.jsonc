@@ -6,10 +6,6 @@
     "margin-left": 0,
     "margin-right": 0,
 
-    // SCREEN CORNERS (drawn by ~/.config/quickshell/corners)
-    // true = all 4 corners, "top" = only the 2 under the bar, false = off
-    "screen-corners": false,
-
 
     // MODULES
     "modules-left": ["custom/cat", "hyprland/workspaces", "hyprland/window"],

@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# EXPERIMENTAL, AI-made: turns Rice Control on.
-# One app for the look of the whole rice (border, colors, rounding, opacity, blur,
-# gaps, fonts) with a live preview. Opens with a left click on the cat in Waybar.
+# EXPERIMENTAL, AI-made: turns the AI extras on.
+#   Rice Control:   one app for the look of the whole rice (border, colors, rounding,
+#                   opacity, blur, gaps, fonts) with a live preview. Left click on the cat.
+#   screen corners: black rounded corners under the bar (Quickshell), they follow
+#                   Hyprland's rounding. Switch: "screen-corners" in waybar/config.jsonc
 # Turn it off again with disable.sh: everything goes back exactly as it was.
 
 set -euo pipefail
@@ -13,7 +15,7 @@ DATA="$HOME/.config/rice-control"
 NOCTIS="$HOME/.config/Noctis/settings.json"
 
 if [[ -d "$DATA" ]]; then
-    echo "Rice Control ist schon an. Ausschalten: $HERE/disable.sh"
+    echo "Die AI-Extras sind schon an. Ausschalten: $HERE/disable.sh"
     exit 0
 fi
 if ! python3 -c 'import gi; gi.require_version("Gtk", "4.0")' 2>/dev/null; then
@@ -39,11 +41,13 @@ install -d "$APP/rice"
 install -m 644 "$HERE"/rice/*.py "$APP/rice/"
 install -D -m 755 "$HERE/rice-control" "$BIN"
 
-# 4. look files -> import theme files (originals: *.bak-rice-control)
+# 4. look files -> import theme files (originals: *.bak-rice-control), corners switch in
+#    waybar/config.jsonc, the corners themselves
 python3 "$HERE/convert.py" "$HOME" on
+install -D -m 644 "$HERE/corners/shell.qml" "$HOME/.config/quickshell/corners/shell.qml"
 
 # 5. theme files with the default values (= the look you have now), then the
-#    require line in hyprland.lua (only now, theme.lua exists)
+#    AI EXTRAS block in hyprland.lua (only now, theme.lua exists)
 "$BIN" apply --no-reload >/dev/null || true
 python3 "$HERE/convert.py" "$HOME" hypr-on
 
@@ -56,5 +60,11 @@ if pgrep -x waybar >/dev/null; then
 fi
 pgrep -x swaync >/dev/null && swaync-client --reload-css >/dev/null 2>&1
 pgrep -x kitty >/dev/null && pkill -USR1 -x kitty
+if command -v qs >/dev/null; then
+    MANGOHUD=0 setsid -f qs -n -p "$HOME/.config/quickshell/corners" >/dev/null 2>&1
+else
+    echo "Quickshell fehlt, die Screen Corners erscheinen erst nach: sudo pacman -S --needed quickshell"
+fi
 
-echo "Rice Control ist an: Linksklick auf die Katze. Aus: $HERE/disable.sh"
+echo "Die AI-Extras sind an: Rice Control = Linksklick auf die Katze, Screen Corners laufen."
+echo "Aus: $HERE/disable.sh"

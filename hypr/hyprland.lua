@@ -32,11 +32,8 @@ hl.exec_cmd("waybar")
 hl.exec_cmd("swaync")
 hl.exec_cmd("awww-daemon")
 hl.exec_cmd("sleep 1 && waypaper --restore")
-hl.exec_cmd("MANGOHUD=0 qs -n -p ~/.config/quickshell/corners") -- screen corners, see ~/.config/quickshell/corners
 hl.exec_cmd("blueman-applet")
 end)
--- start the screen corners after every config reload too, if they aren't running (-n = never twice)
-hl.on("config.reloaded", function() hl.exec_cmd("sleep 2 && MANGOHUD=0 qs -n -p ~/.config/quickshell/corners") end)
 
 
 

@@ -1,10 +1,11 @@
-"""Switches the config files to Rice Control and back. Used by enable.sh / disable.sh.
+"""Switches the config files to the AI extras (Rice Control + screen corners) and back.
+Used by enable.sh / disable.sh.
 
     python3 convert.py HOME check      only check that every file looks as expected
     python3 convert.py HOME on         rewrite the look files to import theme files
-    python3 convert.py HOME hypr-on    add the LOOK block at the end of hyprland.lua
+    python3 convert.py HOME hypr-on    add the AI EXTRAS block at the end of hyprland.lua
     python3 convert.py HOME hypr-off   remove it again
-    python3 convert.py HOME off        put every original back, delete the theme files
+    python3 convert.py HOME off        put every original back, delete the theme files and corners
 
 "on" knows the exact text of the configs in this vault. If a file looks
 different, nothing at all is changed. Originals: <file>.bak-rice-control
@@ -21,18 +22,25 @@ C = os.path.join(HOME, ".config")
 SUFFIX = ".bak-rice-control"
 
 HYPR = os.path.join(C, "hypr/hyprland.lua")
-HYPR_BLOCK = ("\n\n\n-- ==== LOOK ==== --\n"
-              "-- border, colors, rounding, blur, gaps: set in Rice Control (click the cat in Waybar),\n"
+HYPR_BLOCK = ("\n\n\n-- ==== AI EXTRAS (experimental, vault: experimental/ai-extras) ==== --\n"
+              "-- Rice Control: border, colors, rounding, blur, gaps (click the cat in Waybar),\n"
               "-- saved in theme.lua. Loaded last, so its values win over the ones in SETTINGS above\n"
               "-- (those only count if theme.lua is missing).\n"
               "package.loaded.theme = nil  -- read the newest theme.lua on every reload\n"
-              'require("theme")\n')
+              'require("theme")\n'
+              "-- screen corners: black rounded corners under the bar, drawn by Quickshell\n"
+              '-- (switch: "screen-corners" in waybar/config.jsonc, -n = never twice)\n'
+              'hl.on("hyprland.start", function() hl.exec_cmd("MANGOHUD=0 qs -n -p ~/.config/quickshell/corners") end)\n'
+              'hl.on("config.reloaded", function() hl.exec_cmd("sleep 2 && MANGOHUD=0 qs -n -p ~/.config/quickshell/corners") end)\n')
 
-# files only Rice Control writes; "off" deletes them
+# files only the AI extras write; "off" deletes them
 GENERATED = (
     "hypr/theme.lua", "waybar/theme.css", "gtk-3.0/theme.css", "gtk-4.0/theme.css",
     "swaync/theme.css", "rofi/theme.rasi", "kitty/theme.conf", "fontconfig/conf.d/55-rice-fonts.conf",
+    "quickshell/corners/shell.qml",
 )
+# folders enable.sh may have created; "off" removes them again if they are empty
+CREATED_DIRS = ("quickshell/corners", "quickshell")
 # the old Quickshell font file would fight with Rice Control's: parked while it is on
 QS_FONT = "fontconfig/conf.d/60-qs-system-font.conf"
 
@@ -40,6 +48,11 @@ QS_FONT = "fontconfig/conf.d/60-qs-system-font.conf"
 # "on": (file, exact old text, new text)
 
 EDITS = [
+    ("waybar/config.jsonc", '    "margin-right": 0,\n\n\n    // MODULES',
+     '    "margin-right": 0,\n\n'
+     '    // SCREEN CORNERS (drawn by ~/.config/quickshell/corners, experimental AI extra)\n'
+     '    // true = all 4 corners, "top" = only the 2 under the bar, false = off\n'
+     '    "screen-corners": "top",\n\n\n    // MODULES'),
     ("waybar/config.jsonc",
      '    "custom/cat": {\n    "format": "(=^.^=)",\n    "tooltip-format": "meow"\n     },',
      '    "custom/cat": {\n    "format": "(=^.^=)",\n    "tooltip-format": "meow",\n'
@@ -316,15 +329,18 @@ def plan_on():
             problems.append(f"{rel}: Stelle nicht genau einmal gefunden: {old.strip()[:50]!r}")
         else:
             new[path] = text.replace(old, replacement)
-    if 'require("theme")' in read(HYPR):
-        problems.append('hypr/hyprland.lua: require("theme") steht schon drin')
+    hypr = read(HYPR)
+    if 'require("theme")' in hypr or "quickshell/corners" in hypr:
+        problems.append("hypr/hyprland.lua: die AI-Extras stehen schon (teilweise) drin")
+    if os.path.exists(os.path.join(C, "quickshell/corners")):
+        problems.append("quickshell/corners: den Ordner gibt es schon")
     return problems, new
 
 
 def cmd_check():
     problems, _ = plan_on()
     if problems:
-        print("Rice Control kann deine Configs nicht umstellen, NICHTS geändert:")
+        print("Die AI-Extras können deine Configs nicht umstellen, NICHTS geändert:")
         print("\n".join("  " + p for p in problems))
         return 1
     return 0
@@ -355,8 +371,8 @@ def cmd_hypr(on):
         write(HYPR, (text if text.endswith("\n") else text + "\n") + HYPR_BLOCK)
     else:
         if HYPR_BLOCK not in text:
-            if 'require("theme")' in text:
-                print('hyprland.lua: require("theme") steht drin, aber anders als erwartet. Bitte selbst entfernen.')
+            if 'require("theme")' in text or "quickshell/corners" in text:
+                print("hyprland.lua: der AI-EXTRAS-Block steht drin, aber anders als erwartet. Bitte selbst entfernen.")
                 return 1
             return 0
         write(HYPR, text.replace(HYPR_BLOCK, "", 1))
@@ -379,6 +395,10 @@ def cmd_off():
         path = os.path.join(C, rel)
         if os.path.exists(path):
             os.unlink(path)
+    for rel in CREATED_DIRS:
+        path = os.path.join(C, rel)
+        if os.path.isdir(path) and not os.listdir(path):
+            os.rmdir(path)
     return 0
 
 

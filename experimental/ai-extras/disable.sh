@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# EXPERIMENTAL, AI-made: turns Rice Control off and removes every trace of it.
+# EXPERIMENTAL, AI-made: turns the AI extras (Rice Control + screen corners) off
+# and removes every trace of them.
 # Afterwards your configs are exactly as before enable.sh (byte for byte).
 # Changes you made to the look files while Rice Control was on are lost.
 
@@ -12,14 +13,16 @@ DATA="$HOME/.config/rice-control"
 NOCTIS="$HOME/.config/Noctis/settings.json"
 
 if [[ ! -d "$DATA" ]]; then
-    echo "Rice Control ist nicht an."
+    echo "Die AI-Extras sind nicht an."
     exit 0
 fi
 
-# 1. the require line out of hyprland.lua first, so Hyprland never looks for a missing theme.lua
+# 1. the AI EXTRAS block out of hyprland.lua first, so Hyprland never looks for a
+#    missing theme.lua; then stop the screen corners
 python3 "$HERE/convert.py" "$HOME" hypr-off
+pkill -f "$HOME/.config/quickshell/corners" || true
 
-# 2. every original back, theme files away
+# 2. every original back, theme files and corners away
 python3 "$HERE/convert.py" "$HOME" off
 
 # 3. fonts in gsettings (empty = was never set) and the Noctis opacity as before
@@ -51,4 +54,4 @@ fi
 pgrep -x swaync >/dev/null && swaync-client --reload-css >/dev/null 2>&1
 pgrep -x kitty >/dev/null && pkill -USR1 -x kitty
 
-echo "Rice Control ist aus, alles wie vorher."
+echo "Die AI-Extras sind aus, alles wie vorher."

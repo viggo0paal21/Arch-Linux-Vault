@@ -49,8 +49,6 @@ PACKAGES=(
     vibrantlinux                       # per-app color saturation
     # gaming
     mangohud lib32-mangohud
-    # screen corners (optional, small Quickshell config)
-    quickshell
 )
 
 # Vault folders that are NOT ~/.config folders.
