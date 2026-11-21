@@ -9,6 +9,23 @@ my personal `~/.config` files (Hyprland rice), maintenance and performance guide
 > but **no longer in use**. Everything from it is kept, nothing was deleted, see [What changed](#what-changed-since-the-old-vault).
 > The gaming / latency optimizations from the old setup are **still in use** (now in [`hypr/performance.lua`](hypr/performance.lua)).
 
+## Install everything with one command
+
+```bash
+git clone https://github.com/viggo0paal21/Arch-Linux-Vault.git ~/config-backup
+cd ~/config-backup
+./install.sh
+```
+
+[`install.sh`](install.sh) (run it as your normal user, not with `sudo`, it asks for the password itself):
+
+1. **Programs:** full system upgrade (`pacman -Syu`), then every program the configs need with `pacman -S --needed` (already installed ones are skipped). Anything pacman doesn't know is installed from the AUR with yay; if yay is missing, it installs yay first. `lib32-*` packages need the [multilib] repo, see [Install the programs](#install-the-programs).
+2. **Backup:** every file on the PC that is about to be replaced and differs from the vault is copied to `~/.config-backup-before-install-<date>` first.
+3. **Files:** every config folder → `~/.config/<folder>`, `starship.toml` → `~/.config/`, `home/` → `~` (scripts in `~/.local/bin` get made executable), `etc/sudoers.d/pwfeedback` → `/etc/sudoers.d/` (checked with `visudo` first). Not copied: guides and README, `quickshell-old-design/` (alternative design), `oled-bw/` (duplicate) and the old D-Bus override (it would block swaync).
+4. **Extras:** bluetooth on at boot, Nautilus as default file manager, blueman tray icon off, font cache rebuilt.
+
+Options: `./install.sh --yes` (no question at the start), `./install.sh --no-packages` (only copy the files). Then log out and back in.
+
 > 📖 **[Arch Linux System Maintenance Guide](Arch%20Linux%20System%20Maintenance%20Guide.md)**: safe updates, recovery playbook and all commands.
 
 > ⚡ **[Performance Optimization](Performance%20Optimization.md)**: system tweaks for gaming performance and latency: NTSync, split lock, CPU and GPU max performance (incl. the NVIDIA/AMD scripts), shader cache, gaming scheduler.
@@ -84,6 +101,7 @@ Not in use anymore, but kept: Quickshell shell `quickshell/` (except `corners/`)
 |---|---|
 | [`nvidia-maxperf-setup.sh`](nvidia-maxperf-setup.sh) | Locks an NVIDIA GPU to max clocks (persists across boot and suspend). Edit the clock values for your card first. See [Performance Optimization, section 4](Performance%20Optimization.md#4-gpu-max-performance-clocks). |
 | [`amdgpu-maxperf-setup.sh`](amdgpu-maxperf-setup.sh) | Same for AMD GPUs (sets the performance level to `high`) |
+| [`install.sh`](install.sh) | Installs all programs and puts every file of this vault onto the PC, see [Install everything with one command](#install-everything-with-one-command) |
 
 Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
 
@@ -362,6 +380,8 @@ cd yay-bin && makepkg -si && cd .. && rm -rf yay-bin
 
 ## Restore the configs
 
+> The easiest way is [`install.sh`](#install-everything-with-one-command). This section is the manual way.
+>
 > Warning: existing configs with the same name will be overwritten.
 
 ```bash
