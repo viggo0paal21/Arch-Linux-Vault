@@ -1,0 +1,24 @@
+:root {
+    --window-bg-color: rgba(0, 0, 0, 0.75);  /* Window Background Color */
+    --window-fg-color: #ffffff;  /* Window Foreground Color */
+    --view-bg-color: rgba(0, 0, 0, 0.75);  /* View Background Color */
+    --view-fg-color: #ffffff;  /* View Foreground Color */
+
+    --window-radius: 10px;
+
+    --headerbar-bg-color: transparent;  /* Headerbar Background Color */
+    --headerbar-fg-color: #ffffff;  /* Headerbar Foreground Color */
+    --headerbar-backdrop-color: transparent;  /* Headerbar Backdrop Color */
+
+    --sidebar-bg-color: transparent;  /* Sidebar Background Color */
+    --sidebar-fg-color: #ffffff;  /* Sidebar Foreground Color */
+    --sidebar-backdrop-color: transparent;  /* Sidebar Backdrop Color */
+
+    --card-bg-color: #000000;  /* Card Background Color */
+    --popover-bg-color: #000000;  /* Popover Background Color */
+
+    --accent-bg-color: #ffffff;  /* Accent Background Color */
+    --accent-fg-color: #000000;  /* Accent Foreground Color */
+    --accent-color: #ffffff;  /* Accent Color */
+
+}

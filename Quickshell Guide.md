@@ -1,0 +1,545 @@
+# Quickshell Guide
+
+> **Status 21.11.2026:** this shell is **no longer in use**. Since 19.11.2026 I use a self-built rice with Waybar, rofi and swaync (see the [README](README.md)). The guide is kept unchanged for reference; the NVIDIA/Vulkan wrappers `qs` / `quickshell` are still used for the small screen-corners config in `quickshell/corners/`.
+
+My own Quickshell shell ("oled-bw"): black and white, slightly rounded, Inter 15px bold,
+smooth animations at the full **170 Hz** on an NVIDIA card. It replaces Waybar, swaync and rofi.
+
+- [1. Files in this repo](#1-files-in-this-repo)
+- [2. Install / restore](#2-install--restore)
+- [3. Why the start script exists (NVIDIA)](#3-why-the-start-script-exists-nvidia)
+- [4. Measuring the frame rate](#4-measuring-the-frame-rate)
+- [5. Other Quickshell shells (Caelestia, Noctalia, ...)](#5-other-quickshell-shells-caelestia-noctalia-)
+- [6. AMD / Intel](#6-amd--intel)
+- [7. Troubleshooting and rollback](#7-troubleshooting-and-rollback)
+
+---
+
+## 1. Files in this repo
+
+| File | Goes to | What it is |
+|---|---|---|
+| [`quickshell/`](quickshell) | `~/.config/quickshell/` | The shell itself (bar, launcher, control center, dashboard, notifications, OSD, power menu, settings) |
+| [`quickshell-old-design/`](quickshell-old-design) | `~/.config/quickshell/` (instead of `quickshell/`) | Alternative: the same shell with the old design from before the November 2026 redesign. Not updated anymore |
+| [`home/.local/bin/qs-start`](home/.local/bin/qs-start) | `~/.local/bin/` | Start script used by Hyprland's autostart: Vulkan (or OpenGL, see `quickshell/render-env.sh`), wall-clock animations, without MangoHud / lsfg-vk / vkBasalt |
+| [`home/.local/bin/qs-restart`](home/.local/bin/qs-restart) | `~/.local/bin/` | Restarts the shell cleanly (used by Settings → Quickshell → Performance → Renderer) |
+| [`home/.local/bin/qs`](home/.local/bin/qs), [`quickshell`](home/.local/bin/quickshell) | `~/.local/bin/` | Wrappers: same fix for **every** `qs` / `quickshell` call, any config |
+| [`home/.local/bin/qs-glass-apply`](home/.local/bin/qs-glass-apply) | `~/.local/bin/` | Applies **Settings → Apps → Opacity** to kitty, Nautilus, GTK3 dialogs, Vesktop and Firefox (called by the settings, see below) |
+| [`home/.local/bin/qs-dock`](home/.local/bin/qs-dock) | `~/.local/bin/` | Starts nwg-dock-hyprland to match the bar |
+| [`home/.local/share/dbus-1/services/org.freedesktop.Notifications.service`](home/.local/share/dbus-1/services/org.freedesktop.Notifications.service) | `~/.local/share/dbus-1/services/` | Stops swaync / dunst / mako from being auto-started by D-Bus and taking the notification server away from Quickshell (see section 7) |
+| [`home/.local/state/quickshell/by-shell/oled-bw/settings.json`](home/.local/state/quickshell/by-shell/oled-bw/settings.json) | `~/.local/state/quickshell/by-shell/oled-bw/` | My saved shell settings (corner radius, bar, font, animation speed, transparency, FPS counter, ...). The defaults in `quickshell/config/Config.qml` are exactly these values |
+| [`hypr/hyprland.lua`](hypr/hyprland.lua) | `~/.config/hypr/` | Autostart runs `qs-start` (Waybar and swaync are commented out), `Super + R` opens the Quickshell launcher, blur for the Quickshell layers |
+| [`hypr/hyprlock.conf`](hypr/hyprlock.conf) | `~/.config/hypr/` | Lock screen in the style of the shell (see "Lock screen" below) |
+| [`MangoHud/`](MangoHud) | `~/.config/MangoHud/` | Global MangoHud config plus per-game configs, editable in Settings → System → Gaming |
+| [`quickshell/hyprland-quickshell.lua`](quickshell/hyprland-quickshell.lua) | (template) | Keybind and layer-rule snippets for `hyprland.lua` |
+
+Changes made for smooth 170 Hz (all inside `quickshell/`):
+
+| File | Change |
+|---|---|
+| `components/OverlayPanel.qml` | Closed panels stay mapped but invisible and click-through, so opening one no longer creates a new window (that caused a ~90 ms hitch). When a fullscreen window is active they are unmapped, so direct scanout and tearing in games keep working. |
+| `components/DropdownSlot.qml` | Dashboard, control center and (optionally) the launcher slide down from under the bar |
+| `modules/dashboard/Dashboard.qml` | The dashboard clock only ticks while the dashboard is open |
+| `FpsOverlay.qml`, `config/Config.qml`, `modules/settings/SettingsPanel.qml` | FPS counter, switchable in Settings → Quickshell → Performance → **FPS counter** |
+| `services/Glass.qml`, `components/Segmented.qml`, `config/Theme.qml`, `services/Hypr.qml` | Transparency with blur, see below |
+| `modules/bar/Bar.qml`, `services/Ui.qml`, `modules/bar/TrayMenu.qml` + the panels | Dynamic floating bar, see below |
+| `components/HyprBlur.qml`, `shaders/`, `tools/glasswall/` | Shell glass: Hyprland's blur rebuilt stage by stage, see below |
+
+### Settings layout
+
+The settings window has four top tabs, each with its pages on the left:
+
+| Top tab | Pages |
+|---|---|
+| **Quickshell** | Appearance, Bar (size & position, background, content), Notifications & OSD, Animations, Performance (renderer, FPS counter, GPU monitor, smooth text), Commands (terminal, lock screen) |
+| **Hyprland** | Windows (rounding, shadows, blur), Layout & rendering (Dynamic Hyprland integration, direct scanout) |
+| **Apps** | Opacity (per app), kitty (fastfetch in kitty, fastfetch images) |
+| **System** | Profile (picture and display name), Wallpaper, Gaming (variable refresh rate, MangoHud), Font (system font for every app) |
+
+Every top tab remembers its last page. The selection box (top tabs, page list, segmented buttons) glides to the
+new item like the launcher selection, and a slightly dimmer hover box follows the mouse the same way. Rows that
+appear (for example when a switch reveals extra options) fade in while the rows below glide down instead of snapping.
+Hover and selection box share one layer drawn with the selection's opacity, so where they overlap while gliding the
+brighter one wins instead of the white adding up to a brighter stripe with a visible edge.
+
+The same gliding hover box is used in every menu (`components/HoverGlide.qml`, one box per group of buttons, tiles or
+list rows): control center header buttons, quick setting tiles, media buttons, Wi-Fi / Bluetooth lists, per-app volume,
+calendar arrows and the tray menu. The box appears right under the mouse, then glides from item to item.
+
+**Per-app volume** (control center, small "Apps" expander below the volume slider): one row per app that currently
+plays audio, like the Windows volume mixer (app icon = mute, name above the slider, value on the right). Only playback
+streams of real apps are shown (`media.class` "Stream/Output/Audio"); background services, effect chains, short system
+sounds and recording streams (cava, screen recorders) are left out, and several streams of one app (Firefox tabs) are
+one row. See `services/Audio.qml`.
+
+### Transparency (Settings → Quickshell → Appearance → Transparency)
+
+| Mode | What it does |
+|---|---|
+| **Off** | Everything solid black |
+| **Popups** | Panels, menus, notifications and the OSD are translucent black with Hyprland blur. Extra switch **Solid popups with windows**: popups turn black as soon as 1 or more windows are open on the workspace |
+| **Everywhere** | Same, plus the bar. **Black with windows** (Bar page): Never (always glass), 1 window (black with exactly 1 tiled window, glass with none or 2 and more) or Any (black as soon as a window is open) |
+
+**Opacity** (shown when transparency is on) sets how solid the translucent surfaces are: 25–100 %, default 80 %, 100 % = black.
+
+**Exclude kitty terminal** (Bar page, shown in Everywhere): kitty windows don't count for the bar, so it stays translucent while only kitty is open.
+
+Floating windows never count. **Transparent when empty** (Bar page) still works on top: with no windows at all the bar stays fully see-through. With **Group boxes** it is always on (only the boxes show while the workspace is empty).
+
+### App opacity (Settings → Apps → Opacity)
+
+The same translucent look for normal apps, with Hyprland's blur behind it. Every app has its own row with its icon (black and white):
+
+| Row | What it does |
+|---|---|
+| **All apps** | 25–100 %, sets every app below to the same value. Same math as the shell's Opacity (black at X %), so equal numbers look equal |
+| **kitty** | kitty's `background_opacity` (text stays solid), live |
+| **Tidal (SONE)** | The whole window fades, text too (a Hyprland window rule set by Quickshell), live |
+| **Files (Nautilus)**, **File dialogs** (GTK3 "Save as" / "Open", Thunar), **Vesktop**, **Firefox** | Switch + slider. On: one tinted layer (black at the slider value), everything above it transparent. Off: the app goes back to how it was before (Nautilus to the value from the backup, blocks removed) |
+
+Settings keys: `appOpacity` (All apps), `appOpacity<App>` (-1 = like All apps), `appGlass<App>` (1 on, 0 off, -1 = like the old `appGlass` switch).
+
+### Hyprland (Settings → Hyprland)
+
+**Corner rounding**, **Shadows**, **Blur size**, **Blur passes** (Windows page) and **Direct scanout** Off / Games / On plus **Dynamic Hyprland integration** (Layout & rendering page). Applied live with `hyprctl eval 'hl.config(...)'` on top of `hyprland.lua`, which stays untouched; Quickshell sets them again on start and after every config reload. Each row shows whether the value comes from `hyprland.lua` or was set here; **Reset** goes back to the `hyprland.lua` value (Hyprland reloads once). Blur size / passes also set the shell-glass values so the bar matches.
+
+How app opacity works: the settings start `python3 ~/.local/bin/qs-glass-apply`. It reads the values from `settings.json` and only edits marked spots (first touch of a file makes `<file>.bak-qsglass`):
+
+- **GTK4 / Nautilus** `~/.config/gtk-4.0/gtk.css`: only the two opacity numbers
+- **GTK3** `~/.config/gtk-3.0/gtk.css`: a `/* qs-glass:begin … end */` block at the end (overrides the GTK theme, the theme itself is not touched; undecorated windows like the dock stay as they are)
+- **kitty** `background_opacity` (+ `dynamic_background_opacity yes`), reloaded with `SIGUSR1`
+- **Vesktop** QuickCSS block (reloads live, includes the call area), Vencord `transparent: true`, and `splashBackground` removed (with it Vesktop paints the window opaque, so transparency turns black)
+- **Firefox** `user.js` block (transparency prefs and the portal file picker), `chrome/userChrome.css`, `chrome/userContent.css`, opacity in `chrome/qs-glass.css`. Needs a Firefox restart. Web pages with their own background stay opaque
+
+**Black instead of see-through** always means the window has no alpha channel (usually an X11/XWayland window), not wrong CSS. That's why Firefox (running under X11) uses the portal file dialog: the portal runs natively under Wayland. Steam can't be made translucent this way: its transparent-window flag makes the content area 0 px tall under Hyprland.
+
+Hyprland doesn't blur popups and menus by default (`decoration:blur:popups`), so menus are kept denser.
+
+### Dynamic floating bar (Settings → Bar → Floating bar → Dynamic)
+
+With exactly 1 tiled window the bar docks to the top edge (no gap, square corners), with none or 2 and more it floats
+again. Floating windows never count. This matches a smart-gaps rule like `hl.workspace_rule({ workspace = "w[tv1]", gaps_out = 0 })`.
+
+The bar and the windows use the same curve, `smooth_out` (easeOutQuint, `0.22, 1, 0.36, 1`), defined in
+`hyprland.lua` for `windows` / `windowsIn`. `md3_decel` covered half the way in 3 frames and then crept along for
+~100 ms, which looked like the last frames were skipped ("snapping in"); easeOutQuint lands evenly.
+Duration: Settings → Bar → **Dock animation** (default 400 ms, Reset button; the windows use `speed = 3` = 300 ms).
+**Floating position** moves the floating bar up or down (default 8 px from the top edge, Reset button).
+
+With Dynamic on, the bar always reserves only its own height at the top. The 8 px gap under the floating bar comes
+from Hyprland's outer gap instead, so `hyprland.lua` needs the top gap raised by 8:
+
+```lua
+general = {
+    gaps_out = { top = 18, right = 10, bottom = 10, left = 10 },  -- 10 + 8 for the floating bar
+},
+hl.workspace_rule({ workspace = "w[tv1]", gaps_out = 0, gaps_in = 0 })  -- smart gaps: one window = no gaps
+```
+
+Why: if the shell switched the reserved space, Quickshell would move the bar and Hyprland the windows, and Hyprland
+always starts a few milliseconds later. With `md3_decel` that is 1-2 px, enough for a flickering line between bar and
+window. This way only Hyprland moves windows (in one go) and the bar slides over them. Turning Dynamic off: set
+`top` back to 10.
+
+Docked, the bar is a bit thicker at the bottom (Settings → Bar → Bar height → **Docked**, default 39 px vs 37 floating,
+**Reset** goes back to 37 / 39). The extra pixels lie over the top rows of the window. Reason: closing one of two
+windows makes the other grow 18 px upward while the bar only slides 8 px; with the same curve the window still creeps
+its last pixel when the bar has already arrived, and the wallpaper flashed through as a line. The icons move down by
+With Dynamic on, the icons sit 1 px lower in both states, so they look centered docked and floating without
+shifting during the transition. Keep Docked at least 2 px above Floating.
+
+Smoothness details in `Bar.qml`: left/right edges and corners slide with sub-pixel precision; top/bottom edges and the
+contents move in whole pixels (sharp text), rounded toward the target so the last pixel step happens during the fast
+part of the motion. The bottom edge is one continuous curve (position + docked extra) rounded down, so once a window
+reaches the bar no gap can reopen. Set `border_size = 0` for a single window in only one rule; two rules setting it
+made the windows jitter when the smart gaps switched.
+
+**Launcher position** (Settings → Bar → Content): **Center** (default) opens the launcher exactly in the middle of the
+screen, fading in with a short glide; **From the logo** slides it out from under the bar below the launcher logo, with
+the same animation, speed and curves as the dashboard and control center.
+
+**Profile** (Settings → System → Profile): the profile picture is the account picture that KDE Plasma and SDDM share
+(AccountsService, `/var/lib/AccountsService/icons/<user>`, otherwise `~/.face.icon` / `~/.face`), shown as a rounded
+square in the control center header, in the bottom left corner of the settings and on the lock screen. Clicking it
+opens the profile page. The page has a picture picker right in the settings (Pictures / Downloads / Wallpapers / Home,
+subfolders, the newest 120 images, square thumbnails from the wallpaper cache). Clicking an image opens a classic crop
+dialog: square crop area, darkened outside, drag to move, scroll / slider / − + to zoom (up to 5×). "Use picture" saves
+exactly the visible area as a 256 × 256 PNG and sets it system-wide through AccountsService (`busctl … SetIconFile`, no
+password for your own account), so KDE, SDDM and hyprlock show it too. The previous picture is backed up once
+(`face-original` in the shell's state folder, "Restore original"). **Display name**: your own name for the shell and the
+lock screen (empty = the full account name from GECOS, otherwise the login name). See `services/User.qml`,
+`components/Avatar.qml`, `modules/settings/CropDialog.qml`.
+
+**Gaming** (Settings → System → Gaming):
+- **Variable refresh rate**: Off / Always / Fullscreen / Games (`misc:vrr` 0–3), applied live with `hyprctl eval` like the
+  other Hyprland values; hyprland.lua stays unchanged, Reset goes back to its value.
+- **MangoHud**: pick the global `MangoHud.conf` or a game config (`<exe>.conf`, Proton: `wine-<exe>`) from a dropdown,
+  "+ Game" creates a new one as a copy of the global config (a game config replaces the global one completely, MangoHud
+  doesn't merge them). Settings: show the HUD at game start, position, what it shows (FPS, frame time, CPU, GPU,
+  temperatures, RAM, VRAM, ...), FPS limit and limit method, vsync for Vulkan and OpenGL. Only the affected line is
+  written, unknown lines and comments stay. Note: `MANGOHUD_CONFIG=…,no_display` in `/etc/environment` hides the HUD at
+  start regardless of the file. See `services/MangoHud.qml`.
+
+**Lock screen** ([`hypr/hyprlock.conf`](hypr/hyprlock.conf)): glass like the panels (the screen blurred with 65 % black on
+top), big thin clock and the date like the dashboard, the account picture as a rounded square, the display name from the
+shell (`~/.local/state/quickshell/by-shell/oled-bw/user-name`), a dark password field with round dots, smooth fades.
+For plain black, comment out `path = screenshot`.
+
+**Corner radius** (Settings → Appearance) sets the corners of panels, cards and the floating bar in real pixels, the
+same unit as `rounding` in `hyprland.lua` (10 = exactly like the windows). Buttons and selection boxes inside get a bit
+less (radius / 1.4, small parts × 0.6). Before, the slider set the middle value, so 7 looked like Hyprland's 10.
+
+**Subpixel glide** (Settings → Bar and Settings → Animations, same switch): the bar's dock animation moves between
+pixels like Hyprland windows, panels sliding out from under the bar (dashboard, control center, launcher) glide between
+pixels, and in the menus expanding lists (per-app volume, Wi-Fi password field), the control center height on a page
+change and rows sliding into place glide too. Anything with text that moves is drawn as an image
+only while moving (Qt always snaps native text to whole pixels), so it is a touch softer in motion and crisp at rest.
+Off = those move in whole pixels. Panels, selection and hover boxes, sliders and switches always glide smoothly.
+
+**Animations tab** (Settings → Animations): on/off, subpixel glide, global duration, bar docking (ms + curve), and for dashboard /
+control center, launcher / settings / power menu, notifications, workspaces, OSD and buttons a duration factor plus
+curves (click the right / left half of a curve button for the next / previous curve). **Reset all animations** goes
+back to the defaults. The windows in Hyprland keep their own curve from `hyprland.lua`.
+
+**Smooth text** (Settings → Quickshell → Performance, off by default) draws text with Qt's distance-field renderer so text and icons
+can move by fractions of a pixel. Smoother motion, slightly softer glyphs.
+
+The blur itself comes from Hyprland, so `hyprland.lua` needs it for the Quickshell layers (blur must also be enabled under `decoration`):
+
+```lua
+-- replaces the old qs-.* rule: no Hyprland animation, blur behind translucent parts
+hl.layer_rule({ match = { namespace = "qs-.*" }, no_anim = true, blur = true, ignore_alpha = 0.5 })
+-- bar: blur only the wallpaper, not windows (otherwise a window right below the bar darkens its lower edge)
+hl.layer_rule({ match = { namespace = "qs-bar" }, xray = true })
+```
+
+Why `xray` for the bar: by default a layer blurs everything rendered behind it, windows included, and the blur pulls in
+pixels from a few dozen pixels around. A dark translucent window directly under the docked bar then shows up as a dark
+gradient along the bar's bottom edge (it looks like a shadow, but turning off `decoration.shadow` doesn't change it).
+With `xray` the bar blurs only the wallpaper, like tiled windows already do. Popups keep blurring the windows behind them.
+
+**Shell glass** (Settings → Bar, on by default): the bar draws the blurred wallpaper itself instead of getting Hyprland blur.
+Hyprland only blurs behind pixels above `ignore_alpha`, so a half-covered pixel row at a gliding edge got no blur and the window
+below showed through as a dark line. With shell glass the bar is opaque within its shape and its edge pixels blend normally.
+The bar then uses its own layer name without `qs-`, so it needs its own rule (and no blur):
+
+```lua
+hl.layer_rule({ match = { namespace = "qsglass-bar" }, no_anim = true })
+```
+
+**Glass blur** (Settings → Bar) picks who blurs the bar's glass:
+- **Own** (shell glass, layer `qsglass-bar`): the bar blurs the wallpaper file itself (see below). Pixel-exact like
+  kitty, but only for a static wallpaper set through waypaper / awww.
+- **Hyprland** (layer `qs-bar`): Hyprland's layer blur with `xray` and `ignore_alpha 0.5`, the bar only draws the black
+  on top like kitty's background. Works with any wallpaper program and with animated wallpapers, with the values from
+  `decoration:blur`. While gliding, the glass area stays on whole pixels so every glass pixel is above `ignore_alpha`
+  and gets blurred (no dark line); the content still glides smoothly.
+
+Switching recreates the bar, because Hyprland's rules depend on the layer name.
+
+With **Own**, the glass looks like a kitty window with `background_opacity 0.55` (Transparency 55 %): `components/HyprBlur.qml` runs
+Hyprland's own blur shaders stage by stage. The blur values are in Settings → Bar → Glass blur values ("From Hyprland"
+reads them from `hyprctl`). The wallpaper path is read from waypaper's `config.ini`, and `qs-glasswall` decodes and scales it
+exactly like awww (build it once, see section 2). Measured against a real kitty window, 92.7 % of the pixels are identical
+and the rest is off by 1 of 255 levels. Details in the
+[Quickshell Stutter Guide](Quickshell%20Stutter%20Guide.md#5d-shell-glass-no-dark-line-same-look-as-kitty).
+
+`ignore_alpha`: Hyprland only blurs pixels that are more opaque than this value. With `0.5`, fully transparent areas
+and the dim behind the launcher / settings / power menu stay unblurred, but surfaces need Opacity above 50 % for blur.
+The cards in dimmed panels sit on the dim, so together they are always above 0.5. For the other popups add:
+
+```lua
+-- popups without a dim behind them: blur down to the slider minimum (25 %)
+hl.layer_rule({ match = { namespace = "qs-(dashboard|control|notifications|osd)" }, ignore_alpha = 0.2 })
+```
+
+The bar stays at 0.5 (blur only from 55 % Opacity up).
+
+The tray menu is a popup window, not a layer. For blur there too, add `popups = true` to `decoration.blur`.
+
+## 2. Install / restore
+
+```bash
+sudo pacman -S --needed quickshell inter-font ttf-jetbrains-mono-nerd ttf-nerd-fonts-symbols
+# optional, used by the shell: hyprlock hyprsunset networkmanager bluez bluez-utils blueman nvidia-utils
+
+cd ~/config-backup
+cp -r quickshell ~/.config/
+cp hypr/hyprland.lua ~/.config/hypr/
+mkdir -p ~/.local/bin ~/.local/state/quickshell/by-shell/oled-bw
+cp home/.local/bin/qs-start home/.local/bin/qs home/.local/bin/quickshell home/.local/bin/qs-restart home/.local/bin/qs-glass-apply ~/.local/bin/
+chmod +x ~/.local/bin/qs-start ~/.local/bin/qs ~/.local/bin/quickshell ~/.local/bin/qs-restart ~/.local/bin/qs-glass-apply
+cp home/.local/state/quickshell/by-shell/oled-bw/settings.json ~/.local/state/quickshell/by-shell/oled-bw/
+mkdir -p ~/.local/share/dbus-1/services
+cp home/.local/share/dbus-1/services/org.freedesktop.Notifications.service ~/.local/share/dbus-1/services/
+
+# shell glass: the wallpaper helper (needs rust; without it the bar decodes the wallpaper itself)
+cargo build --release --locked --manifest-path ~/.config/quickshell/tools/glasswall/Cargo.toml \
+    --target-dir ~/.cache/quickshell/glasswall-target
+install -Dm755 ~/.cache/quickshell/glasswall-target/release/qs-glasswall ~/.local/bin/qs-glasswall
+```
+
+Log out and back in. Then check:
+
+```bash
+which qs quickshell        # both must be ~/.local/bin/..., not /usr/bin/...
+for p in $(pgrep -x 'qs|quickshell'); do echo "$p: $(grep -ci mangohud /proc/$p/maps)"; done   # must print 0
+```
+
+If `which` shows `/usr/bin/...`, `~/.local/bin` is too late in your `PATH`. Add this to the top of `hyprland.lua`:
+
+```lua
+hl.env("PATH", os.getenv("HOME") .. "/.local/bin:" .. os.getenv("PATH"))
+```
+
+Only one notification daemon can run: keep `swaync`, `dunst` and `mako` out of the autostart.
+
+## 3. Why the start script exists (NVIDIA)
+
+Symptom: shell animations never felt like 170 Hz. Measured: **85 fps**, and **90–100 ms** hitches when opening a panel.
+Three problems stacked on top of each other:
+
+1. **MangoHud inside the shell.** `/etc/environment` loads MangoHud into every OpenGL program via `LD_PRELOAD`
+   (that is how all games get the FPS cap without launch options, see [README → Global MangoHud](README.md#global-mangohud-system-wide)).
+   Quickshell got it too, including the FPS cap and an extra vsync.
+2. **Qt + OpenGL on NVIDIA.** Qt disables threaded OpenGL rendering when the GL vendor is NVIDIA
+   ([QTBUG-95817](https://bugreports.qt.io/browse/QTBUG-95817), resize freeze) and falls back to the *basic* render loop,
+   which drives animations with a fixed ~16 ms timer (~60 Hz). Forcing `QSG_RENDER_LOOP=threaded` gave exactly 85 fps
+   (half of 170: every frame waited for two refreshes). Details: [omarchy issue #7268](https://github.com/omacom/omarchy/issues/7268).
+3. **Panels were recreated on every open** (new Wayland surface + swapchain), which blocked the shell for ~90 ms.
+4. **Uneven animation steps on Vulkan.** In the threaded render loop Qt advances every animation by exactly one
+   refresh interval (1/170 s) per rendered frame, assuming each frame reaches the screen exactly one refresh later.
+   On NVIDIA + Wayland that isn't always true, so motion sped up and slowed down from frame to frame. It looked like
+   frame generation (Lossless Scaling 30 → 120): wobbly, jagged edges, most visible with slow animations.
+   The FPS counter still showed a steady 170, because it counts frames sent, not when they are shown.
+
+Fix:
+
+- `QSG_RHI_BACKEND=vulkan`: on Vulkan the threaded render loop is Qt's default and the driver does vsync like in games → stable 170 fps.
+- `MANGOHUD=0`, `unset LD_PRELOAD`, `DISABLE_LSFGVK=1`, `DISABLE_VKBASALT=1`: keeps the game layers out of the shell. Games are unchanged.
+  The scripts first save the original values as `QS_APP_*`, and `services/Apps.qml` gives them back to everything the
+  launcher starts. Without that, Steam started from the launcher (and every game started from it) ran without MangoHud,
+  so without its FPS limit and vsync. After updating the scripts, log out and back in once.
+- Panels stay mapped (see the table in section 1).
+- `QSG_USE_SIMPLE_ANIMATION_DRIVER=1`: animations follow the real clock instead of fixed per-frame steps, so motion
+  stays even when single frames arrive a bit early or late.
+
+Result: constant **170 fps**, longest gap between two frames **~7 ms**, also while opening panels.
+
+| What I tried (OpenGL) | Result |
+|---|---|
+| Default (basic loop on NVIDIA) | animations at ~60 Hz |
+| `QSG_RENDER_LOOP=threaded` | exactly 85 fps |
+| + `__GL_SYNC_TO_VBLANK=0` (back then, with other problems still in place) | 85 fps |
+| `QSG_NO_VSYNC=1` + driver vsync | once 170, not reproducible, back to 85 |
+| **Vulkan** | **stable 170 fps, max 7 ms** |
+| **OpenGL now: threaded + `__GL_SYNC_TO_VBLANK=0`** (measured again with the finished shell) | **stable 170 fps, max 9 ms** |
+
+### OpenGL or Vulkan (Settings → Quickshell → Performance → Renderer)
+
+OpenGL is the default (left), Vulkan the alternative. Switching saves `"renderBackend"` and restarts the shell
+(`~/.local/bin/qs-restart`); `qs-start` and both wrappers read the choice from `~/.config/quickshell/render-env.sh`
+and set `QSG_RHI_BACKEND` accordingly (Qt can only pick the backend at startup).
+
+- **Half frame rate (85 fps):** the NVIDIA driver waits for the vblank inside every `eglSwapBuffers`, and on Wayland
+  Qt additionally waits for Hyprland's frame callback before swapping, so every frame took two refreshes.
+  `//@ pragma Env __GL_SYNC_TO_VBLANK=0` in `shell.qml` removes the driver's wait; Hyprland's frame callbacks still pace
+  the shell (no tearing). As a pragma it only applies to Quickshell itself: programs started from the launcher get the
+  original environment and keep their vsync. With Vulkan it has no effect.
+- **Shaders:** on Wayland Qt uses OpenGL **ES**. The `.qsb` files only contained GLSL 330/440, so every custom shader
+  failed (`No GLSL shader code found`, `fragment shader input qt_TexCoord0 ... has no matching output`). They are now
+  also built for GLSL ES and GLSL 150 from the same `.frag` sources (the SPIR-V for Vulkan is byte-identical), e.g.
+  `qsb --glsl "100es,120,150" --hlsl 50 --msl 12 -o x.frag.qsb x.frag`.
+  `barshape`, `hyprfinish` and `hyprresample` use integer math and need ES 3.00 (`--glsl "150,300es"`). GLSL ES requires
+  both stages in the same version and Qt's built-in vertex shader only exists as ES 1.00, so these three get a
+  pass-through vertex shader (`shaders/*.vert`) with the same uniform block, used only when the backend is OpenGL.
+- Checked frame by frame: the bar looks identical under Vulkan and OpenGL (Hyprland blur and shell glass), no shader
+  warnings, 170 fps with 4 animating windows and while opening/closing panels.
+
+## 4. Measuring the frame rate
+
+Settings → Quickshell → Performance → **FPS counter**, or:
+
+```bash
+qs ipc call fps toggle
+```
+
+The box under the bar shows `fps` (frames actually sent to Hyprland, counted against the real clock)
+and `max` (longest gap between two frames in the last second). The line at the bottom moves constantly, so you can also see
+whether motion is even. Good values on a 170 Hz monitor: **~170 fps, max ~6–8 ms**.
+
+## 5. Other Quickshell shells (Caelestia, Noctalia, ...)
+
+**Vulkan / no MangoHud:** automatic. The `qs` and `quickshell` wrappers in `~/.local/bin` apply the fix to every config:
+
+```bash
+qs -c caelestia
+~/.local/bin/qs-start -c <name>      # same thing, explicit
+```
+
+Shells with their own launcher (e.g. `caelestia shell -d`) find the wrappers as long as `~/.local/bin` is first in Hyprland's `PATH` (section 2).
+Otherwise put the variables in front of their start command:
+
+```bash
+env -u LD_PRELOAD MANGOHUD=0 DISABLE_LSFGVK=1 DISABLE_VKBASALT=1 QSG_RHI_BACKEND=vulkan <start command>
+```
+
+Check once per new shell that it doesn't force its own backend:
+
+```bash
+grep -rn "pragma Env" ~/.config/quickshell/<name>/shell.qml   # QSG_RHI_BACKEND=opengl would override the wrapper
+```
+
+**Panel hitch:** that is code inside each shell. Measure first with this portable counter: save it as `FpsOverlay.qml`
+next to the other shell's `shell.qml`, add `FpsOverlay {}` to its root block (`ShellRoot { ... }` or `Scope { ... }`),
+then `qs -c <name> ipc call fps toggle`. If `max` jumps to 50 ms or more when opening a panel, that shell recreates
+its panel windows and needs the same change as `components/OverlayPanel.qml`.
+
+<details>
+<summary>Portable <code>FpsOverlay.qml</code> (works without this shell's theme files)</summary>
+
+```qml
+import QtQuick
+import QtQuick.Window
+import Quickshell
+import Quickshell.Io
+import Quickshell.Wayland
+
+// Portable FPS counter for any Quickshell config.
+// Toggle: qs ipc call fps toggle   (named config: qs -c <name> ipc call fps toggle)
+PanelWindow {
+    id: root
+
+    property bool shown: false
+    property int frames: 0
+    property real last: Date.now()
+    property real prev: 0
+    property real worst: 0
+
+    visible: root.shown
+    color: "transparent"
+    implicitWidth: 190
+    implicitHeight: 32
+    anchors { top: true; right: true }
+    margins { top: 60; right: 8 }
+    exclusionMode: ExclusionMode.Ignore
+    WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.namespace: "qs-fps"
+    mask: Region {}
+
+    Rectangle {
+        id: box
+        anchors.fill: parent
+        color: "#000000"
+        border.width: 1
+        border.color: "#2e2e2e"
+        radius: 5
+        clip: true
+
+        Text {
+            id: label
+            anchors.centerIn: parent
+            color: "#ffffff"
+            font.pixelSize: 15
+            font.bold: true
+            text: "– fps"
+        }
+
+        Rectangle {
+            id: sweep
+            y: box.height - 3
+            width: 12
+            height: 2
+            color: "#ffffff"
+            NumberAnimation on x {
+                running: root.shown
+                from: 0
+                to: box.width - sweep.width
+                duration: 1000
+                loops: Animation.Infinite
+            }
+        }
+    }
+
+    Connections {
+        target: label.Window.window
+        function onFrameSwapped() {
+            const t = Date.now();
+            if (root.prev > 0)
+                root.worst = Math.max(root.worst, t - root.prev);
+            root.prev = t;
+            root.frames++;
+        }
+    }
+
+    Timer {
+        interval: 1000
+        running: root.shown
+        repeat: true
+        onTriggered: {
+            const now = Date.now();
+            const dt = now - root.last;
+            label.text = Math.round(root.frames * 1000 / dt) + " fps  ·  max " + Math.round(root.worst) + " ms";
+            root.frames = 0;
+            root.worst = 0;
+            root.last = now;
+        }
+    }
+
+    onShownChanged: {
+        root.frames = 0;
+        root.worst = 0;
+        root.prev = 0;
+        root.last = Date.now();
+        label.text = "– fps";
+    }
+
+    IpcHandler {
+        target: "fps"
+        function toggle(): void { root.shown = !root.shown; }
+    }
+}
+```
+
+</details>
+
+## 6. AMD / Intel
+
+The OpenGL problem (point 2 in section 3) only exists on NVIDIA. On Mesa drivers (AMD, Intel) Qt already uses the
+threaded loop with OpenGL, so Vulkan brings no gain there, but it also works fine. Keep the MangoHud / lsfg-vk / vkBasalt
+lines on every GPU: with Vulkan, a global `MANGOHUD=1` would otherwise load MangoHud's Vulkan layer into the shell.
+
+To use Vulkan only on NVIDIA, replace the backend line in `qs-start` and both wrappers with:
+
+```bash
+[ -e /proc/driver/nvidia/version ] && export QSG_RHI_BACKEND=vulkan
+```
+
+NVIDIA-only parts to change after switching to AMD: Settings → *GPU monitor (nvidia-smi)*, the NVIDIA max-clock setup
+([`nvidia-maxperf-setup.sh`](nvidia-maxperf-setup.sh) → [`amdgpu-maxperf-setup.sh`](amdgpu-maxperf-setup.sh)) and `__GL_SYNC_TO_VBLANK` in `/etc/environment`.
+
+## 7. Troubleshooting and rollback
+
+For stutter, jitter and short freezes see the **[Quickshell Stutter Guide](Quickshell%20Stutter%20Guide.md)**: causes, how to measure them, all fixes.
+
+| Problem | Fix |
+|---|---|
+| Shell frozen | `pkill -9 -x 'qs\|quickshell'`, then `setsid -f ~/.local/bin/qs-start >/dev/null 2>&1`. Make sure only one instance runs: `pgrep -ax 'qs\|quickshell'` |
+| Animations look like frame generation (wobbly, jagged edges, uneven motion) | `QSG_USE_SIMPLE_ANIMATION_DRIVER=1` missing: check `tr '\0' '\n' < /proc/$(pgrep -xo 'qs\|quickshell')/environ \| grep SIMPLE`. It has to be in `qs-start` and both wrappers |
+| No blur behind transparent surfaces | The `qs-.*` layer rule needs `blur = true`, and `ignore_alpha` must be below the Opacity value (section 1) |
+| Problems with Vulkan | Settings → Quickshell → Performance → Renderer → **OpenGL** (restarts the shell, also 170 fps on NVIDIA, see section 3) |
+| `qt.qpa.wayland.textinput: ... disableSurface ... but 0x0 is focused` when opening or closing a panel | Harmless: panels take the keyboard while open (Esc, typing in the launcher). When they release it, Qt's text-input bookkeeping (for input methods) has already moved on and warns. Typing still works. Hidden by the start script and wrappers with `qt.qpa.wayland.textinput.warning=false` |
+| No notifications / `Could not register notification server` | Another daemon owns the notification server. Find it with `busctl --user status org.freedesktop.Notifications \| grep -E '^(PID\|Comm)='`, kill it, restart Quickshell. To stop D-Bus from auto-starting swaync / dunst / mako again (e.g. when an app sends a notification while Quickshell is down), install the override file from section 1 and reload D-Bus: `busctl --user call org.freedesktop.DBus /org/freedesktop/DBus org.freedesktop.DBus ReloadConfig` |
+| Short freezes (~60 ms) whenever you run a command in a terminal, open/close kitty or focus a window; the FPS counter jumps to 60–130 ms | Quickshell's app list (`DesktopEntries`, used by the launcher) watches the `applications` folders **and all their parent folders**, including your home folder. Any file created, deleted or renamed directly in `~` triggers a full rescan of every `.desktop` file 100 ms later. zsh does exactly that on every command (`~/.zsh_history` lock file + rename). Fix: move the history out of `~`: `mkdir -p ~/.local/state/zsh && mv ~/.zsh_history ~/.local/state/zsh/history`, set `HISTFILE=~/.local/state/zsh/history` in `~/.zshrc`, close all terminals. Check with `inotifywait -m -e create,delete,move ~` that nothing else writes to `~` all the time |
+| Logs | `qs log` |
+| Log full of `qt.svg.draw: The requested buffer size is too big, ignoring` or `qt.svg: Invalid path data` | Harmless warnings about broken SVG icons: masks with an empty area (Qt can't allocate a 0-pixel buffer) or invalid path data (drawn up to the broken part). The start script and wrappers hide them with `QT_LOGGING_RULES=qt.svg*.warning=false` |
+| Back to Waybar + swaync + rofi | In `hyprland.lua`: comment out the `qs-start` line, remove the `--` in front of `waybar &` and `swaync &`, set `Super + R` back to `hl.dsp.exec_cmd(menu)`. Also `rm ~/.local/share/dbus-1/services/org.freedesktop.Notifications.service` |
+| Back to the old design | `mv ~/.config/quickshell ~/.config/quickshell.new && cp -r quickshell-old-design ~/.config/quickshell` (same settings file, Quickshell reloads by itself) |
+| Remove the wrappers | `rm ~/.local/bin/qs ~/.local/bin/quickshell` (the real commands are in `/usr/bin`) |
+
+Kill all instances and start fresh with a pause in between, otherwise `qs ipc` may still reach the old instance:
+
+```bash
+qs kill; sleep 1
+setsid -f ~/.local/bin/qs-start >/dev/null 2>&1; sleep 2
+```

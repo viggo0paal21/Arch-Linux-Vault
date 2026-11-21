@@ -1,0 +1,32 @@
+/* GTK-4 / libadwaita pitch-black force */
+@define-color window_bg_color #000000;
+@define-color window_fg_color #ffffff;
+@define-color view_bg_color #000000;
+@define-color view_fg_color #ffffff;
+@define-color headerbar_bg_color #000000;
+@define-color headerbar_fg_color #ffffff;
+@define-color headerbar_border_color #1a1a1a;
+@define-color headerbar_backdrop_color #000000;
+@define-color card_bg_color #000000;
+@define-color card_fg_color #ffffff;
+@define-color popover_bg_color #000000;
+@define-color popover_fg_color #ffffff;
+@define-color dialog_bg_color #000000;
+@define-color dialog_fg_color #ffffff;
+@define-color sidebar_bg_color #000000;
+@define-color sidebar_fg_color #ffffff;
+
+window,
+.background,
+.view {
+    background-color: #000000;
+    color: #ffffff;
+}
+
+headerbar {
+    background-color: #000000;
+    background-image: none;
+    color: #ffffff;
+    border-bottom: 1px solid #1a1a1a;
+    box-shadow: none;
+}

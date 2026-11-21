@@ -1,0 +1,70 @@
+{
+    // TOP BAR
+    "position": "top",
+    "height": 30,
+    "margin-top": 0,
+    "margin-left": 0,
+    "margin-right": 0,
+
+    // SCREEN CORNERS (drawn by ~/.config/quickshell/corners)
+    // true = all 4 corners, "top" = only the 2 under the bar, false = off
+    "screen-corners": false,
+
+
+    // MODULES
+    "modules-left": ["custom/cat", "hyprland/workspaces", "hyprland/window"],
+    "modules-center": ["clock"],
+    "modules-right": ["tray", "bluetooth", "network", "cpu", "memory", "pulseaudio"],
+
+
+    // SETTINGS PER MODULE
+    "clock": {
+        "format": "{:%a %d.%m.  %H:%M}"
+    },
+    "cpu": {
+        "format": "\uf4bc {usage}%"
+    },
+
+    "bluetooth": {
+        "format": "\udb80\udcaf",
+        "format-off": "\udb80\udcb2",
+        "format-disabled": "",
+        "format-connected": "\udb80\udcb1 {num_connections}",
+        "on-click": "blueman-manager"
+
+    },
+
+    "custom/cat": {
+    "format": "(=^.^=)",
+    "tooltip-format": "meow"
+     },
+
+    "memory": {
+        "format": "\uefc5 {percentage}%"
+    },
+    "pulseaudio": {
+        "format": "\ue638 {volume}%"
+    },
+    "hyprland/workspaces": {
+        "format": "{icon}",
+        "format-icons": {
+            "active":  "●",
+            "default": "○",
+            "empty":   "○"
+        }
+    },
+    "hyprland/window": {
+        "format": "{title}"
+    },
+    "tray": {
+        "icon-size": 15,
+        "spacing": 10
+    },
+    "network": {
+    "format-ethernet": "\udb80\ude00",
+    "format-wifi": "\uf1eb",
+    "format-disconnected": "\udb81\uddaa",
+    "tooltip-format": "{ifname}: {ipaddr}"
+    },
+
+}

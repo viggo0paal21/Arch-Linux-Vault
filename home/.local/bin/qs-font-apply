@@ -1,0 +1,210 @@
+#!/usr/bin/env python3
+# qs-font-apply FONT [PREVIOUS_SHELL_FONT]
+#
+# Sets FONT as the system UI font for every app. Called by Quickshell Settings > Appearance > System font.
+#   - GTK 3 / GTK 4: gtk-font-name in ~/.config/gtk-3.0 and gtk-4.0 settings.ini, plus gsettings
+#     (org.gnome.desktop.interface font-name / document-font-name, read live by GTK apps on Wayland)
+#   - X11 apps (e.g. Firefox on X11): Gtk/FontName in ~/.config/xsettingsd/xsettingsd.conf, if that file exists
+#   - Qt, Electron, Chromium and everything else that asks for the generic "sans-serif" / "system-ui":
+#     ~/.config/fontconfig/conf.d/60-qs-system-font.conf (an alias, explicitly requested fonts stay as they are)
+#   - qt6ct / qt5ct: only if their config already has a [Fonts] section
+# The font size stays as it is. Monospace fonts (kitty, code) are not touched.
+#
+# On the first run the previous state is saved to ~/.local/state/qs-font/backup.
+# qs-font-revert restores exactly that state.
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+from xml.sax.saxutils import escape
+
+HOME = os.path.expanduser("~")
+CFG = os.environ.get("XDG_CONFIG_HOME") or os.path.join(HOME, ".config")
+STATE = os.path.join(HOME, ".local", "state", "qs-font")
+BACKUP = os.path.join(STATE, "backup")
+GTK3 = os.path.join(CFG, "gtk-3.0", "settings.ini")
+GTK4 = os.path.join(CFG, "gtk-4.0", "settings.ini")
+XSET = os.path.join(CFG, "xsettingsd", "xsettingsd.conf")
+QT6 = os.path.join(CFG, "qt6ct", "qt6ct.conf")
+QT5 = os.path.join(CFG, "qt5ct", "qt5ct.conf")
+FC = os.path.join(CFG, "fontconfig", "conf.d", "60-qs-system-font.conf")
+FILES = [GTK3, GTK4, XSET, QT6, QT5]
+GKEYS = ["font-name", "document-font-name"]
+
+
+def log(msg):
+    print("qs-font-apply: " + msg, file=sys.stderr)
+
+
+def read(path):
+    with open(path, encoding="utf-8", errors="surrogateescape") as f:
+        return f.read()
+
+
+def write(path, text):
+    # Atomic write. Follows symlinks (gtk-4.0 files can be links), keeps the file mode.
+    real = os.path.realpath(path)
+    os.makedirs(os.path.dirname(real), exist_ok=True)
+    mode = os.stat(real).st_mode & 0o7777 if os.path.exists(real) else 0o644
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(real), prefix=".qs-font-")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", errors="surrogateescape") as f:
+            f.write(text)
+        os.chmod(tmp, mode)
+        os.replace(tmp, real)
+    except BaseException:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+        raise
+
+
+def gsettings(*args):
+    if not shutil.which("gsettings"):
+        return None
+    try:
+        r = subprocess.run(["gsettings", *args], capture_output=True, text=True, timeout=5)
+    except Exception:
+        return None
+    return r.stdout.strip() if r.returncode == 0 else None
+
+
+def backup(prev_shell_font):
+    # Only once: the state before the very first change
+    if os.path.exists(os.path.join(BACKUP, "manifest.json")):
+        return
+    os.makedirs(STATE, exist_ok=True)
+    tmp = tempfile.mkdtemp(dir=STATE, prefix=".backup-")
+    manifest = {"files": {}, "gsettings": {}, "shellFont": prev_shell_font, "fontconfig": os.path.exists(FC)}
+    for i, path in enumerate(FILES):
+        if os.path.exists(path):
+            shutil.copy2(os.path.realpath(path), os.path.join(tmp, str(i)))
+            manifest["files"][path] = str(i)
+        else:
+            manifest["files"][path] = None
+    if manifest["fontconfig"]:
+        shutil.copy2(FC, os.path.join(tmp, "fontconfig"))
+    for key in GKEYS:
+        manifest["gsettings"][key] = gsettings("get", "org.gnome.desktop.interface", key)
+    with open(os.path.join(tmp, "manifest.json"), "w") as f:
+        json.dump(manifest, f, indent=1)
+    if os.path.exists(BACKUP):
+        shutil.rmtree(BACKUP)
+    os.replace(tmp, BACKUP)
+
+
+def current_size():
+    # Size from the current GTK setting ("Noto Sans  10" -> "10"), 10 if there is none
+    if os.path.exists(GTK3):
+        m = re.search(r"^gtk-font-name\s*=\s*(.*)$", read(GTK3), re.M)
+        if m:
+            s = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*$", m.group(1))
+            if s:
+                return s.group(1)
+    return "10"
+
+
+def set_ini(path, key, value, section="[Settings]", create=True):
+    if not os.path.exists(path):
+        if not create:
+            return
+        text = section + "\n"
+    else:
+        text = read(path)
+    line = key + "=" + value
+    pat = re.compile(r"^" + re.escape(key) + r"\s*=.*$", re.M)
+    if pat.search(text):
+        text = pat.sub(lambda m: line, text, count=1)
+    elif section in text:
+        i = text.index(section) + len(section)
+        text = text[:i] + "\n" + line + text[i:]
+    else:
+        text = text.rstrip("\n") + ("\n\n" if text.strip() else "") + section + "\n" + line + "\n"
+    if not text.endswith("\n"):
+        text += "\n"
+    write(path, text)
+
+
+def set_xsettings(spec):
+    if not os.path.exists(XSET):
+        return
+    text = read(XSET)
+    line = 'Gtk/FontName "' + spec.replace('"', '\\"') + '"'
+    pat = re.compile(r"^Gtk/FontName\s.*$", re.M)
+    text = pat.sub(lambda m: line, text, count=1) if pat.search(text) else text.rstrip("\n") + "\n" + line + "\n"
+    write(XSET, text)
+    subprocess.run(["pkill", "-HUP", "-x", "xsettingsd"], capture_output=True)
+
+
+def set_qtct(path, font, size):
+    # Only when qt6ct/qt5ct already manages fonts: replace the family in general="Family,size,..."
+    if not os.path.exists(path):
+        return
+    text = read(path)
+    m = re.search(r"^\[Fonts\]\s*$", text, re.M)
+    if not m:
+        return
+    pat = re.compile(r'^general\s*=\s*"?([^,"\n]*),([^"\n]*)"?\s*$', re.M)
+    mm = pat.search(text, m.end())
+    if mm:
+        new = 'general="' + font.replace('"', "") + "," + mm.group(2) + '"'
+        text = text[: mm.start()] + new + text[mm.end():]
+    else:
+        new = 'general="' + font.replace('"', "") + "," + size + ',-1,5,400,0,0,0,0,0,0,0,0,0,0,1"'
+        text = text[: m.end()] + "\n" + new + text[m.end():]
+    write(path, text)
+
+
+def set_fontconfig(font):
+    f = escape(font)
+    xml = f"""<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+<!-- Written by qs-font-apply (Quickshell Settings > Appearance > System font). qs-font-revert removes it.
+     Apps that ask for the generic sans-serif / system-ui font get "{f}". Fonts an app asks for by name stay. -->
+<fontconfig>
+  <alias binding="strong">
+    <family>sans-serif</family>
+    <prefer><family>{f}</family></prefer>
+  </alias>
+  <alias binding="strong">
+    <family>system-ui</family>
+    <prefer><family>{f}</family></prefer>
+  </alias>
+</fontconfig>
+"""
+    write(FC, xml)
+
+
+def main():
+    if len(sys.argv) < 2 or not sys.argv[1].strip():
+        print("usage: qs-font-apply FONT [PREVIOUS_SHELL_FONT]", file=sys.stderr)
+        return 2
+    font = sys.argv[1].strip()
+    prev_shell = sys.argv[2].strip() if len(sys.argv) > 2 else ""
+    backup(prev_shell)
+    size = current_size()
+    spec = font + " " + size
+    steps = [
+        ("gtk-3.0", lambda: set_ini(GTK3, "gtk-font-name", spec)),
+        ("gtk-4.0", lambda: set_ini(GTK4, "gtk-font-name", spec)),
+        ("xsettingsd", lambda: set_xsettings(spec)),
+        ("qt6ct", lambda: set_qtct(QT6, font, size)),
+        ("qt5ct", lambda: set_qtct(QT5, font, size)),
+        ("fontconfig", lambda: set_fontconfig(font)),
+        ("gsettings", lambda: [gsettings("set", "org.gnome.desktop.interface", k, spec) for k in GKEYS]),
+    ]
+    failed = []
+    for name, fn in steps:
+        try:
+            fn()
+        except Exception as e:  # one broken part must not stop the others
+            failed.append(name)
+            log(f"{name}: {e}")
+    log(f"system font set to '{spec}'" + (f" (failed: {', '.join(failed)})" if failed else ""))
+    return 1 if failed else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

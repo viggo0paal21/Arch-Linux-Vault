@@ -1,0 +1,5 @@
+/* MODE: off – bar always black (managed by toggle-transparency.sh) */
+window#waybar,
+window#waybar.solo {
+  background-color: @bg;
+}

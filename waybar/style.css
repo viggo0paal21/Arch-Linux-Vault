@@ -1,0 +1,93 @@
+/* * = APPLIES TO EVERYTHING */
+* {
+    font-family: "Noto Sans", "JetBrains Mono Nerd Font Propo";
+    font-size: 13px;
+    font-weight: 700;
+}
+
+
+/* BAR ITSELF */
+window#waybar {
+    background: rgba(0, 0, 0, 0.75);
+    color: #ffffff;
+    transition: background-color 250ms ease;
+}
+
+window#waybar.solo {
+    background-color: #000000;
+}
+
+window#waybar.solo.kitty {
+    background-color: rgba(0, 0, 0, 0.75);
+}
+
+#custom-cat {
+    font-family: "JetBrainsMono Nerd Font";
+    /* margin-right: 400px; */
+}
+
+/* WORKSPACE BUTTONS, GREY INACTIVE WHITE ACTIVE */
+@define-color text #ffffff;
+@define-color middle #5a5a5a;
+@define-color red #ffffff;
+
+
+#workspaces button {
+    color: @text;
+    padding: 0 12px;
+    border-radius: 0;
+    border: 1px solid transparent;
+}
+
+#workspaces button.empty {
+    color: @middle;
+}
+
+
+
+#window {
+    margin-left: 20px;
+}
+
+/* ITEMS PADDING */
+#tray, #clock, #cpu, #memory, #pulseaudio, #network {
+    padding: 0 8px;
+}
+
+
+
+/* TRAY RIGHT-CLICK MENUS */
+menu {
+    background-color: #000000bf;
+    border: 1px solid #ffffff;
+    border-radius: 10px;
+    padding: 4px;
+}
+
+menuitem {
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+menuitem:hover {
+    background-color: #ffffff;
+    color: #000000;
+}
+
+/* POPUP EXTRA BORDER IS INVISIBLE */
+window.popup,
+.csd.popup decoration {
+    background-color: transparent;
+    border: none;
+    border-radius: 10px;
+    box-shadow: none;
+}
+
+/* GROUP BOXES
+.modules-left,
+.modules-center,
+.modules-right {
+    background-color: rgba(0, 0, 0, 0.75);
+    border-radius: 10px;
+    padding: 0 8px;
+} */

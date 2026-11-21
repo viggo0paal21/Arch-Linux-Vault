@@ -1,0 +1,52 @@
+import QtQuick
+import qs.config
+
+// Switch. Doesn't set "checked" itself, it reports toggled().
+Item {
+    id: root
+
+    property bool checked: false
+
+    signal toggled
+
+    implicitWidth: 38
+    implicitHeight: 22
+
+    Rectangle {
+        anchors.fill: parent
+        radius: height / 2
+        color: root.checked ? Theme.accent : Theme.fillStrong
+
+        Behavior on color {
+            CAnim {}
+        }
+    }
+
+    Rectangle {
+        anchors.verticalCenter: parent.verticalCenter
+        property real kx: root.checked ? root.width - width - 4 : 4
+
+        // subpixel like the bar
+        x: kx
+        width: root.height - 8
+        height: width
+        radius: width / 2
+        color: root.checked ? Theme.accentFg : Theme.textDim
+
+        Behavior on kx {
+            Anim {
+                duration: Theme.ctlFast
+                easing.bezierCurve: Theme.curveSmooth
+            }
+        }
+        Behavior on color {
+            CAnim {}
+        }
+    }
+
+    MouseArea {
+        anchors.fill: parent
+        cursorShape: Qt.PointingHandCursor
+        onClicked: root.toggled()
+    }
+}

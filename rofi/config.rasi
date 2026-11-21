@@ -1,0 +1,79 @@
+configuration {
+    modi: "drun";
+    show-icons: true;
+    display-drun: "apps";
+}
+
+@theme "/dev/null"
+
+
+*{
+    bg: #000000;
+    bg-glass: #000000bf;
+    fg: #FFFFFF;
+    dim: #737373;
+    accent: #FFFFFF;
+
+    font: "Noto Sans 12";
+    background-color: transparent;
+    text-color: @fg;
+}
+
+
+window {
+    background-color: @bg-glass;
+    width: 600px;
+    //    background-color: @bg;
+    border: 1px;
+    border-radius: 10px;
+    border-color: @accent;
+    padding: 12px;
+}
+
+
+
+
+inputbar {
+    children: [ entry ];
+    spacing: 10px;
+    padding: 0 0 10px 0;
+}
+
+
+prompt {
+    text-color: @accent;
+}
+
+
+entry {
+    placeholder: "search";
+    placeholder-color: @dim;
+}
+
+
+
+listview {
+    lines: 8;
+    spacing: 4px;
+}
+
+
+element selected {
+    background-color: @accent;
+    text-color: @bg;
+    border-radius: 5px;
+}
+
+element {
+    padding: 4px 8px;
+}
+
+
+element-icon {
+    size: 20px;
+}
+
+
+element-text {
+    text-color: inherit;
+}

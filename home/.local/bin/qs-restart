@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Restart Quickshell (e.g. after switching Vulkan/OpenGL in the settings).
+# Waits until the old instance is gone: two at the same time made Vulkan freeze.
+pkill -x quickshell 2>/dev/null
+for i in $(seq 50); do pgrep -x quickshell >/dev/null || break; sleep 0.1; done
+pkill -9 -x quickshell 2>/dev/null
+setsid -f "$HOME/.local/bin/qs-start" >/dev/null 2>&1 < /dev/null

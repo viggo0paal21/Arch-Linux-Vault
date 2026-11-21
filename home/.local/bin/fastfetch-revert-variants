@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Undoes "fastfetch adapts to the window size". Afterwards it works like before: fastfetch only if
+# the big variant fits into the window completely, otherwise nothing, and no redraw when shrinking.
+# The new files (fastfetch-show, kitty-shell/zdotdir, ~/.config/fastfetch/variants) stay in place
+# but are no longer used.
+B="$HOME/.local/bin"
+for f in "$B/kitty-shell/zsh" "$B/fastfetch-logo" "$B/fastfetch-fit"; do
+    if [ -f "$f.bak-variants" ]; then
+        cp -p "$f.bak-variants" "$f" && echo "restored: $f"
+    else
+        echo "backup missing: $f.bak-variants"
+    fi
+done
+# Re-link the image for the old version
+[ -x "$B/fastfetch-logo" ] && "$B/fastfetch-logo" >/dev/null 2>&1
+echo "Done. New kitty windows work like before again."

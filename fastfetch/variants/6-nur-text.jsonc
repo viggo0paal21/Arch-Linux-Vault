@@ -1,0 +1,142 @@
+{
+    "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+    "logo": {
+        "type": "none"
+    },
+    "display": {
+        "color": {
+            "keys": "white",
+            "title": "bright_white",
+            "output": "bright_white",
+            "separator": "90"
+        },
+        "percent": {
+            "color": {
+                "green": "white",
+                "yellow": "bright_white",
+                "red": "bright_white"
+            }
+        },
+        "bar": {
+            "color": {
+                "elapsed": "bright_white",
+                "total": "90",
+                "border": "90"
+            }
+        }
+    },
+    "modules": [
+        "break",
+        {
+            "type": "custom",
+            "format": "\u001b[90m┌─────────────────Hardware─────────────────┐"
+        },
+        {
+            "type": "cpu",
+            "key": "│ ├󰻠 ",
+            "keyColor": "white",
+            "format": "{name}"
+        },
+        {
+            "type": "gpu",
+            "key": "│ ├󰍹 ",
+            "keyColor": "white",
+            "temp": false,
+            "detectionMethod": "pci",
+            "format": "{name}"
+        },
+        {
+            "type": "memory",
+            "key": "│ ├󰑭 ",
+            "keyColor": "white",
+            "format": "{used} / {total}"
+        },
+        {
+            "type": "disk",
+            "key": "└ └󰋊 ",
+            "keyColor": "white",
+            "format": "{size-used} / {size-total}"
+        },
+        {
+            "type": "custom",
+            "format": "\u001b[90m└──────────────────────────────────────────┘"
+        },
+        "break",
+        {
+            "type": "custom",
+            "format": "\u001b[90m┌─────────────────Software─────────────────┐"
+        },
+        {
+            "type": "os",
+            "key": "  OS",
+            "keyColor": "bold_bright_white",
+            "format": "{name}"
+        },
+        {
+            "type": "kernel",
+            "key": "│ ├󰌽 ",
+            "keyColor": "white",
+            "format": "{release}"
+        },
+        {
+            "type": "packages",
+            "key": "│ ├󰏗 ",
+            "keyColor": "white",
+            "format": "{all} total"
+        },
+        {
+            "type": "shell",
+            "key": "└ └󰞷 ",
+            "keyColor": "white"
+        },
+        "break",
+        {
+            "type": "lm",
+            "key": "│ ├󰍁 ",
+            "keyColor": "white"
+        },
+        {
+            "type": "wm",
+            "key": "│ ├󱂬 ",
+            "keyColor": "white"
+        },
+        {
+            "type": "terminal",
+            "key": "└ └󰆍 ",
+            "keyColor": "white"
+        },
+        {
+            "type": "custom",
+            "format": "\u001b[90m└──────────────────────────────────────────┘"
+        },
+        "break",
+        {
+            "type": "custom",
+            "format": "\u001b[90m┌────────────Uptime / Age / DT─────────────┐"
+        },
+        {
+            "type": "command",
+            "key": "  ›  OS Age  ",
+            "keyColor": "white",
+            "text": "birth_install=$(stat -c %W /); current=$(date +%s); time_progression=$((current - birth_install)); days_difference=$((time_progression / 86400)); echo $days_difference days"
+        },
+        {
+            "type": "uptime",
+            "key": "  ›  Uptime  ",
+            "keyColor": "white"
+        },
+        {
+            "type": "datetime",
+            "key": "  ›  DateTime  ",
+            "keyColor": "white"
+        },
+        {
+            "type": "custom",
+            "format": "\u001b[90m└──────────────────────────────────────────┘"
+        },
+        {
+            "type": "custom",
+            "format": "  \u001b[38;5;240m● \u001b[38;5;243m● \u001b[38;5;246m● \u001b[38;5;249m● \u001b[38;5;251m● \u001b[38;5;253m● \u001b[38;5;255m● \u001b[38;5;15m●\u001b[0m"
+        }
+    ]
+}
