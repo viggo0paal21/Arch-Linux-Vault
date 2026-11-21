@@ -1,7 +1,7 @@
 :root {
-    --window-bg-color: rgba(0, 0, 0, 0.75);  /* Window Background Color */
+    --window-bg-color: rgba(0, 0, 0, 0.85);  /* Window Background Color */
     --window-fg-color: #ffffff;  /* Window Foreground Color */
-    --view-bg-color: rgba(0, 0, 0, 0.75);  /* View Background Color */
+    --view-bg-color: rgba(0, 0, 0, 0.85);  /* View Background Color */
     --view-fg-color: #ffffff;  /* View Foreground Color */
 
     --window-radius: 10px;

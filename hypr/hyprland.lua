@@ -40,26 +40,42 @@ hl.on("config.reloaded", function() hl.exec_cmd("sleep 2 && MANGOHUD=0 qs -n -p 
 
 
 
+-- ==== WINDOW RULES ==== --
+hl.window_rule({ match = { title  = "Noctis Mini Player" }, border_size = 0, })
+
+
+
 -- ==== SETTINGS ==== --
 hl.config({
     input = {
         kb_layout = "de"
     },
     general = {
-        gaps_in = 5, 
+        gaps_in = 5,
         gaps_out = 10,
         border_size = 1,
         col = {
-        active_border = "rgba(ffffffff)",
-        inactive_border = "rgba(444444ff)",
+            active_border   = "rgba(ffffffff)",
+            inactive_border = "rgba(444444ff)",
+        },
+        --==== FLOATING WINDOW SNAPPING ====--
+        snap = {
+            enabled      = true,
+            window_gap   = 15,
+            monitor_gap  = 15,
+            respect_gaps = true,
+        },
     },
-    },
+
     decoration = {
         rounding = 10,
+        shadow = {
+            enabled = false,
+        },
         blur = {
             enabled = true,
             size = 2,
-            passes = 4,}
+            passes = 2,}
     }
 })
 
@@ -117,6 +133,7 @@ hl.animation({ leaf = "zoomFactor", enabled = true, speed = 3 / tempo, bezier = 
 --====LAYER RULES====--
 hl.layer_rule({ match = { namespace = "rofi" }, blur = true, ignore_alpha = 0 })
 hl.layer_rule({ match = { namespace = "waybar" }, blur = true, blur_popups = true,ignore_alpha = 0 })
+hl.layer_rule({ match = { namespace = "swaync-.*" }, blur = true, ignore_alpha = 0 })
 
 --====================================================================================--
 --====================================================================================--
