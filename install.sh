@@ -54,7 +54,8 @@ PACKAGES=(
 )
 
 # Vault folders that are NOT ~/.config folders.
-SKIP_DIRS=(home etc oled-bw quickshell-old-design)
+# experimental/ = optional AI-made extras, never installed automatically (see its README)
+SKIP_DIRS=(home etc oled-bw quickshell-old-design experimental)
 
 # Files from home/ that must not be copied:
 #  - the D-Bus override blocks swaync from getting notifications (old Quickshell setup)

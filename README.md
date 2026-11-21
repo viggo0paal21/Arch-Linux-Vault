@@ -23,7 +23,7 @@ What [`install.sh`](install.sh) does:
 
 1. **Programs:** full system upgrade (`pacman -Syu`), then every program the configs need with `pacman -S --needed` (already installed ones are skipped). Anything pacman doesn't know is installed from the AUR with yay; if yay is missing, it installs yay first. `lib32-*` packages need the [multilib] repo, see [Install the programs](#install-the-programs).
 2. **Backup:** every file on the PC that is about to be replaced and differs from the vault is copied to `~/.config-backup-before-install-<date>` first.
-3. **Files:** every config folder → `~/.config/<folder>`, `starship.toml` and `mimeapps.list` → `~/.config/`, `home/` → `~` (scripts in `~/.local/bin` get made executable), `etc/sudoers.d/pwfeedback` → `/etc/sudoers.d/` (checked with `visudo` first). Not copied: guides and README, `quickshell-old-design/` (alternative design), `oled-bw/` (duplicate) and the old D-Bus override (it would block swaync).
+3. **Files:** every config folder → `~/.config/<folder>`, `starship.toml` and `mimeapps.list` → `~/.config/`, `home/` → `~` (scripts in `~/.local/bin` get made executable), `etc/sudoers.d/pwfeedback` → `/etc/sudoers.d/` (checked with `visudo` first). Not copied: guides and README, `quickshell-old-design/` (alternative design), `oled-bw/` (duplicate), `experimental/` (optional extras, see below) and the old D-Bus override (it would block swaync).
 4. **Extras:** bluetooth on at boot, Nautilus as default file manager, blueman tray icon off, GTK 4 font Noto Sans + dark mode (gsettings, libadwaita apps like Nautilus read the font from there), font cache rebuilt.
 
 Options: `./install.sh --yes` (no question at the start), `./install.sh --no-packages` (only copy the files). Then log out and back in.
@@ -164,6 +164,7 @@ Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
 | [`etc/`](etc) | Files from outside `~/.config` (skipped by the restore loop in [Restore the configs](#restore-the-configs)) |
 | [`home/`](home) | Files that belong directly in `~` (`.zshrc`, `.local/bin` scripts, Quickshell settings in `.local/state`, D-Bus override in `.local/share`). Also skipped by the restore loop |
 | [`oled-bw/`](oled-bw) | Settings of the old Quickshell shell (same file as in `home/.local/state/quickshell/by-shell/oled-bw/`) |
+| [`experimental/`](experimental) | **Not in use, never installed automatically.** AI-made experiments, see [Experimental: Rice Control](#experimental-rice-control) |
 
 ## Hyprland: how my config is split
 
@@ -185,6 +186,15 @@ Black rounded corners under the bar, so the screen looks rounded like the window
 - on/off: `"screen-corners": true | "top" | false` in `waybar/config.jsonc`, takes effect immediately
 
 Started by `hyprland.lua` with `qs -n -p ~/.config/quickshell/corners` (`-n` = never twice). `-p` is needed because a `shell.qml` directly in `~/.config/quickshell` (the old shell) makes Quickshell ignore named subfolders.
+
+## Experimental: Rice Control
+
+**Not part of my rice**, an AI-made experiment (Claude, 21.11.2026) in [`experimental/rice-control/`](experimental/rice-control). A small GTK 4 app that sets border, colors, rounding, opacity, blur, gaps and fonts for everything at once, with a live preview. `install.sh` ignores it.
+
+- On: `bash experimental/rice-control/enable.sh` (then a left click on the cat in Waybar opens it)
+- Off: `bash experimental/rice-control/disable.sh` (everything back byte for byte, no traces)
+
+Details in its [README](experimental/rice-control/README.md).
 
 ## Shell: zsh (old setup, not in use)
 

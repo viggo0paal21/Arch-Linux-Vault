@@ -1,0 +1,7 @@
+#!/bin/sh
+# Rice Control: the look of the whole desktop in one place.
+#   rice-control          open the app (Waybar: click the cat)
+#   rice-control apply    write ~/.config/rice-control/theme.json into every program again
+#   rice-control undo     back to the look before the last apply
+# The code lives in ~/.local/share/rice-control/rice/
+PYTHONPATH="$HOME/.local/share/rice-control${PYTHONPATH:+:$PYTHONPATH}" exec python3 -P -m rice "$@"
