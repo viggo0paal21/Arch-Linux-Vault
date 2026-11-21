@@ -214,8 +214,9 @@ for dir in "$VAULT"/*/; do
     done < <(find "$dir" -type f -print0)
 done
 
-# starship prompt -> ~/.config/starship.toml
+# single files -> ~/.config (starship prompt, default apps like Nautilus for folders)
 put_file "$VAULT/starship.toml" "$HOME/.config/starship.toml"
+put_file "$VAULT/mimeapps.list" "$HOME/.config/mimeapps.list"
 
 # home/ -> ~ (scripts in ~/.local/bin, Quickshell settings, ~/.zshrc)
 while IFS= read -r -d '' f; do
