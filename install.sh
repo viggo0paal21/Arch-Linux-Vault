@@ -261,6 +261,13 @@ if command -v gsettings >/dev/null; then
     gsettings set org.blueman.general plugin-list "['!StatusNotifierItem']" 2>/dev/null \
         && info "blueman tray icon off"
 fi
+if command -v gsettings >/dev/null; then
+    # GTK 4 / libadwaita apps (Nautilus) take their font from here, not from settings.ini
+    gsettings set org.gnome.desktop.interface font-name 'Noto Sans 10' 2>/dev/null \
+        && gsettings set org.gnome.desktop.interface document-font-name 'Noto Sans 10' 2>/dev/null \
+        && gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null \
+        && info "GTK 4 font: Noto Sans, dark mode"
+fi
 if command -v fc-cache >/dev/null; then
     fc-cache -f >/dev/null && info "font cache rebuilt"
 fi

@@ -24,7 +24,7 @@ What [`install.sh`](install.sh) does:
 1. **Programs:** full system upgrade (`pacman -Syu`), then every program the configs need with `pacman -S --needed` (already installed ones are skipped). Anything pacman doesn't know is installed from the AUR with yay; if yay is missing, it installs yay first. `lib32-*` packages need the [multilib] repo, see [Install the programs](#install-the-programs).
 2. **Backup:** every file on the PC that is about to be replaced and differs from the vault is copied to `~/.config-backup-before-install-<date>` first.
 3. **Files:** every config folder → `~/.config/<folder>`, `starship.toml` → `~/.config/`, `home/` → `~` (scripts in `~/.local/bin` get made executable), `etc/sudoers.d/pwfeedback` → `/etc/sudoers.d/` (checked with `visudo` first). Not copied: guides and README, `quickshell-old-design/` (alternative design), `oled-bw/` (duplicate) and the old D-Bus override (it would block swaync).
-4. **Extras:** bluetooth on at boot, Nautilus as default file manager, blueman tray icon off, font cache rebuilt.
+4. **Extras:** bluetooth on at boot, Nautilus as default file manager, blueman tray icon off, GTK 4 font Noto Sans + dark mode (gsettings, libadwaita apps like Nautilus read the font from there), font cache rebuilt.
 
 Options: `./install.sh --yes` (no question at the start), `./install.sh --no-packages` (only copy the files). Then log out and back in.
 
