@@ -12,12 +12,14 @@ my personal `~/.config` files (Hyprland rice), maintenance and performance guide
 ## Install everything with one command
 
 ```bash
-git clone https://github.com/viggo0paal21/Arch-Linux-Vault.git ~/config-backup
-cd ~/config-backup
-./install.sh
+bash <(curl -fsSL https://raw.githubusercontent.com/viggo0paal21/Arch-Linux-Vault/main/install.sh)
 ```
 
-[`install.sh`](install.sh) (run it as your normal user, not with `sudo`, it asks for the password itself):
+That's all. The script downloads this vault to `~/config-backup` by itself (installs `git` first if needed; if the folder already exists it is updated with `git pull`) and installs from there. Run it as your normal user, not with `sudo`, it asks for the password itself.
+
+If you already have the vault on the PC: `~/config-backup/install.sh`
+
+What [`install.sh`](install.sh) does:
 
 1. **Programs:** full system upgrade (`pacman -Syu`), then every program the configs need with `pacman -S --needed` (already installed ones are skipped). Anything pacman doesn't know is installed from the AUR with yay; if yay is missing, it installs yay first. `lib32-*` packages need the [multilib] repo, see [Install the programs](#install-the-programs).
 2. **Backup:** every file on the PC that is about to be replaced and differs from the vault is copied to `~/.config-backup-before-install-<date>` first.

@@ -7,12 +7,16 @@
 #  3. copies every file from the vault to its place on the PC
 #  4. small extras (bluetooth on at boot, Nautilus as file manager, fonts)
 #
-#  Usage (as your normal user, NOT with sudo):
-#      git clone https://github.com/viggo0paal21/Arch-Linux-Vault.git ~/config-backup
-#      cd ~/config-backup
-#      ./install.sh            asks once before it starts
-#      ./install.sh --yes      no question
-#      ./install.sh --no-packages   only copy the files, install nothing
+#  Usage (as your normal user, NOT with sudo), just this one line:
+#      bash <(curl -fsSL https://raw.githubusercontent.com/viggo0paal21/Arch-Linux-Vault/main/install.sh)
+#  The script downloads the vault to ~/config-backup by itself (or updates it
+#  if it is already there) and then installs from there.
+#
+#  Or from an existing copy of the vault:
+#      ~/config-backup/install.sh
+#
+#  Options:  --yes          no question at the start
+#            --no-packages  only copy the files, install nothing
 # ==========================================================================
 
 set -euo pipefail
@@ -62,7 +66,10 @@ SKIP_HOME=(
 
 # ---- helpers -------------------------------------------------------------
 
-VAULT="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+REPO_URL="${VAULT_REPO:-https://github.com/viggo0paal21/Arch-Linux-Vault.git}"
+CLONE_DIR="$HOME/config-backup"   # my backup scripts expect this name
+SCRIPT="${BASH_SOURCE[0]:-}"
+VAULT="$(cd "$(dirname "$(readlink -f "${SCRIPT:-.}")")" 2>/dev/null && pwd || true)"   # empty if started via curl
 BACKUP="$HOME/.config-backup-before-install-$(date +%Y%m%d-%H%M%S)"
 ASSUME_YES=0
 DO_PACKAGES=1
@@ -71,10 +78,13 @@ for arg in "$@"; do
     case "$arg" in
         --yes|-y)      ASSUME_YES=1 ;;
         --no-packages) DO_PACKAGES=0 ;;
-        -h|--help)     sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help)     sed -n '2,20p' "$SCRIPT" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *)             echo "unknown option: $arg (see --help)"; exit 1 ;;
     esac
 done
+
+# questions are read from the keyboard, even when the script itself comes from curl
+if { : < /dev/tty; } 2>/dev/null; then TTY=/dev/tty; else TTY=/dev/stdin; fi
 
 say()  { printf '\n\033[1m==> %s\033[0m\n' "$*"; }
 info() { printf '    %s\n' "$*"; }
@@ -115,6 +125,26 @@ if ! command -v pacman >/dev/null; then
     exit 1
 fi
 
+# Started on its own (e.g. with curl) instead of from inside the vault?
+# Then download the vault first and start the install.sh in there.
+if [ ! -f "$SCRIPT" ] || [ ! -d "$VAULT/hypr" ] || [ ! -f "$VAULT/README.md" ]; then
+    say "Getting the vault"
+    if ! command -v git >/dev/null; then
+        info "git is missing, installing it"
+        # shellcheck disable=SC2024  # reading the keyboard as the normal user is intended
+        sudo pacman -Syu --needed git < "$TTY"
+    fi
+    if [ -d "$CLONE_DIR/.git" ]; then
+        info "updating $CLONE_DIR"
+        git -C "$CLONE_DIR" pull --ff-only || warn "could not update, using the copy that is already there"
+    else
+        info "downloading to $CLONE_DIR"
+        git clone "$REPO_URL" "$CLONE_DIR"
+    fi
+    # questions (this script, pacman, yay) must come from the keyboard, not from curl
+    exec bash "$CLONE_DIR/install.sh" "$@" < "$TTY"
+fi
+
 say "Arch-Linux-Vault installer"
 info "Vault:   $VAULT"
 info "Home:    $HOME"
@@ -125,7 +155,7 @@ info "4. extras: bluetooth at boot, Nautilus as file manager, font cache"
 
 if [ "$ASSUME_YES" -eq 0 ]; then
     printf '\nContinue? [y/N] '
-    read -r answer
+    read -r answer < "$TTY"
     case "$answer" in y|Y|yes|j|J|ja) ;; *) echo "Cancelled, nothing changed."; exit 0 ;; esac
 fi
 
