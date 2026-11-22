@@ -1,0 +1,9 @@
+[SddmGreeterTheme]
+Name=rice
+Description=Schwarz-weiss, 80 % Glas, passend zum Hyprland-Rice
+Author=Viggo
+Type=sddm-theme
+Version=1.0
+MainScript=Main.qml
+ConfigFile=theme.conf
+QtVersion=6
