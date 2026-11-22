@@ -27,8 +27,26 @@
         "format-off": "\udb80\udcb2",
         "format-disabled": "",
         "format-connected": "\udb80\udcb1 {num_connections}",
-        "on-click": "blueman-manager"
+        "on-click": "blueman-manager",
 
+        // Rechtsklick: eigenes Menue (bluetooth-menu.xml), ersetzt das Tray-Menue von blueman
+        "menu": "on-click-right",
+        "menu-file": "~/.config/waybar/bluetooth-menu.xml",
+        "menu-actions": {
+            "off": "bluetoothctl power off",
+            "on": "bluetoothctl power on",
+            "disconnect": "bluetoothctl disconnect",
+            "devices": "blueman-manager",
+            "sendto": "blueman-sendto",
+            "adapters": "blueman-adapters"
+        },
+
+        // Hover-Text
+        "tooltip-format": "Bluetooth an",
+        "tooltip-format-off": "Bluetooth aus",
+        "tooltip-format-connected": "Bluetooth aktiv\n{device_enumerate}",
+        "tooltip-format-enumerate-connected": "{device_alias}",
+        "tooltip-format-enumerate-connected-battery": "{device_alias}  {device_battery_percentage}%"
     },
 
     "custom/cat": {

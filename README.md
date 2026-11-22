@@ -43,7 +43,7 @@ Options: `./install.sh --yes` (no question at the start), `./install.sh --no-pac
 | Part | Program | Files |
 |---|---|---|
 | Window manager | Hyprland, Lua config | [`hypr/hyprland.lua`](hypr/hyprland.lua) (my own), plus [`hypr/system.lua`](hypr/system.lua) and [`hypr/performance.lua`](hypr/performance.lua) (pulled in with `require`) |
-| Bar | Waybar as one floating bar (10 px from the edges like the windows, rounded 15 px): Arch logo (Nerd Font `\uf303`, click opens rofi), workspaces as grey dots where the active one stretches into a white pill (CSS `transition`, 300 ms), window title, clock with date, tray, Bluetooth with number of devices, network, CPU, RAM, volume with a slider that slides out on hover (`group/volume` drawer + `pulseaudio/slider`) (Nerd Font icons) | [`waybar/config.jsonc`](waybar/config.jsonc), [`waybar/style.css`](waybar/style.css) |
+| Bar | Waybar as one floating bar (10 px from the edges like the windows, rounded 15 px): Arch logo (Nerd Font `\uf303`, click opens rofi), workspaces as grey dots where the active one stretches into a white pill (CSS `transition`, 300 ms), window title, clock with date, tray, Bluetooth with number of devices (left click = blueman-manager, right click = own menu from `waybar/bluetooth-menu.xml` with on/off, disconnect, devices, send files, adapters; hover = connected devices with battery), network, CPU, RAM, volume with a slider that slides out on hover (`group/volume` drawer + `pulseaudio/slider`) (Nerd Font icons) | [`waybar/config.jsonc`](waybar/config.jsonc), [`waybar/style.css`](waybar/style.css) |
 | Launcher | rofi (`Super + R`) | [`rofi/config.rasi`](rofi/config.rasi) |
 | Notifications | swaync, default layout with my colors: 80 % black, 10 px radius, no shadow | [`swaync/`](swaync) |
 | Terminal | kitty, 80 % opacity, beam cursor with a short cursor trail | [`kitty/kitty.conf`](kitty/kitty.conf) |
@@ -60,6 +60,8 @@ Options: `./install.sh --yes` (no question at the start), `./install.sh --no-pac
 ### How the look works
 
 - **Colors:** true black `#000000` and white `#ffffff`, grey `#5a5a5a` for inactive things.
+- **Wallpaper:** Waypaper sets and remembers it (`waypaper --restore` at login). For animated Steam Wallpaper Engine wallpapers the backend is `linux-wallpaperengine` (needs `linux-wallpaperengine` in PATH); Waypaper stores the item's `preview.jpg` and starts its folder. Picking another wallpaper in Waypaper (image or Wallpaper Engine) is saved automatically.
+- **Bluetooth tray icon hidden:** blueman-applet keeps running (pairing dialogs), only its tray plugin is off: `gsettings set org.blueman.general plugin-list '["!StatusNotifierItem"]'` (single quotes outside, otherwise zsh reads `!` as history), then restart `blueman-applet`. Undo: `gsettings reset org.blueman.general plugin-list`.
 - **Rounding:** `rounding = 10` in `hyprland.lua`, the same 10 px in rofi, GTK, menus, hyprtoolkit. Smart gaps (1 tiled window = no gaps, no border, no rounding) are at the end of `hyprland.lua`, currently commented out (`--[[ ... ]]`) so a single window keeps its gaps under the floating bar.
 - **Transparency (80 %) + light blur:** the background is 80 % black, the text stays fully white. Hyprland's blur (`decoration.blur`, `size = 2`, `passes = 2`) softens everything behind it a little. History: 75 % with `passes = 4` looked like frosted glass (that was mostly the strong blur), then 85 % with `passes = 2`, now 80 %. Why 80: screens store opacity as 0–255, and 0.8 × 255 = 204 exactly (hex `cc`), while 0.75 and 0.85 have to be rounded (`bf`, `d9`). On bright wallpapers 80 % stays dark, on dark ones it looks almost like 85 %. `.bak-transparenz80` / `.bak-transparenz85` files on my PC hold the previous values.
   - kitty: `background_opacity 0.8`
@@ -152,7 +154,7 @@ Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
 | [`swaync/`](swaync) | **In use.** Notifications: imports the default `/etc/xdg/swaync/style.css` first, then overrides its `:root` variables (80 % black glass, 10 px radius, no shadow) |
 | [`systemd/`](systemd) | User timers (Arch-Update weekly check, see below) |
 | [`vibrantLinux/`](vibrantLinux) | Per-app color saturation (CS2) |
-| [`waybar/`](waybar) | **In use.** Status bar: `config.jsonc` + `style.css`. The module is still called `custom/cat` and still runs `scripts/cat.sh` / `scripts/cat-rofi.sh` (rofi on click), but shows the Arch logo now; `cat.svg` / `cat-happy.svg` are the old drawn cat, kept but unused. The other scripts and `transparency*.css` belong to the old setup |
+| [`waybar/`](waybar) | **In use.** Status bar: `config.jsonc` + `style.css` + `bluetooth-menu.xml` (GtkBuilder menu for the Bluetooth module, actions in `menu-actions`). The module is still called `custom/cat` and still runs `scripts/cat.sh` / `scripts/cat-rofi.sh` (rofi on click), but shows the Arch logo now; `cat.svg` / `cat-happy.svg` are the old drawn cat, kept but unused. The other scripts and `transparency*.css` belong to the old setup |
 | [`waypaper/`](waypaper) | **In use.** Wallpaper picker (backend awww) |
 | [`xdg-desktop-portal/`](xdg-desktop-portal) | Portals (screen sharing, file picker) |
 
@@ -167,7 +169,7 @@ Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
 
 ## Hyprland: how my config is split
 
-- [`hypr/hyprland.lua`](hypr/hyprland.lua): my own config. Monitor, autostart (Waybar, swaync, awww + waypaper, blueman-applet), look (gaps, borders, rounding, light blur, shadows off), floating windows snap to the gaps (`general.snap`), window rule for the Noctis mini player (no border), keybinds, animations (curve "snap"; workspaces slide with "wsglide", 350 ms, no overshoot), `Super + V` = float at 5:3 in the center, layer rules (blur for rofi, Waybar and swaync), smart gaps.
+- [`hypr/hyprland.lua`](hypr/hyprland.lua): my own config. Monitor, autostart (wallpaper first: awww + `waypaper --restore`, then Waybar, swaync, blueman-applet), look (gaps, borders, rounding, light blur, shadows off), floating windows snap to the gaps (`general.snap`), window rule for the Noctis mini player (no border), keybinds, animations (curve "snap"; workspaces slide with "wsglide", 350 ms, no overshoot), `Super + V` = float at 5:3 in the center, layer rules (blur for rofi, Waybar and swaync), smart gaps.
 - [`hypr/system.lua`](hypr/system.lua): background stuff so apps run and look right (cursor size, Qt through qt6ct, GTK dark + portal, hyprpolkitagent, arch-update tray, fixes). `GTK_THEME` must stay off, otherwise `gtk-4.0/gtk.css` is ignored.
 - [`hypr/performance.lua`](hypr/performance.lua): gaming and latency from the old setup (MangoHud env, tearing allowed, direct scanout, VRR fullscreen-only, cursor settings for VRR, flat mouse, rules for videos and DOOM, `Super + Home` = direct scanout check).
 

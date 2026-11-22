@@ -28,10 +28,11 @@ hl.monitor({ output = "DP-1", mode = "2560x1440@170", position = "auto", scale =
 
 -- ==== AUTOSTART ==== --
 hl.on("hyprland.start", function()
+-- Wallpaper zuerst: waypaper setzt das zuletzt gewaehlte Wallpaper (awww-Bild oder Wallpaper Engine)
+hl.exec_cmd("awww-daemon")
+hl.exec_cmd("sleep 0.5 && waypaper --restore")
 hl.exec_cmd("waybar")
 hl.exec_cmd("swaync")
-hl.exec_cmd("awww-daemon")
-hl.exec_cmd("sleep 1 && waypaper --restore")
 hl.exec_cmd("blueman-applet")
 end)
 

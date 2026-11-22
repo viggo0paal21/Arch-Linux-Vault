@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <object class="GtkMenu" id="menu">
+    <child>
+      <object class="GtkMenuItem" id="off">
+        <property name="label">Bluetooth aus</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="on">
+        <property name="label">Bluetooth an</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="disconnect">
+        <property name="label">Gerät trennen</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkSeparatorMenuItem" id="sep1"/>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="devices">
+        <property name="label">Geräte…</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="sendto">
+        <property name="label">Dateien senden…</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="adapters">
+        <property name="label">Adapter…</property>
+      </object>
+    </child>
+  </object>
+</interface>
