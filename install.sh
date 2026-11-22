@@ -33,7 +33,6 @@ PACKAGES=(
     grim slurp wl-clipboard            # screenshot bind (Super + Shift + S)
     # bar, launcher, notifications, terminal
     waybar rofi swaync kitty
-    nwg-dock-hyprland                  # dock (started by ~/.local/bin/dock)
     blueman bluez bluez-utils pavucontrol
     # wallpaper
     waypaper awww
