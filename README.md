@@ -154,7 +154,7 @@ Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
 | [`Kvantum/`](Kvantum) | **In use.** Qt theme engine: `MonoGlass/` = my copy of Monochrome (true black, white text, 80 % glass), active through `kvantum.kvconfig`. `Monochrome/` = the original theme |
 | [`MangoHud/`](MangoHud) | **In use.** Stable FPS limiter and performance overlay for games (global + per game: cs2, lichii, UnleashedRecomp) |
 | [`nwg-dock-hyprland/`](nwg-dock-hyprland) | *Not in use* (tried on 22.11.2026, not in the autostart). `style.css` = rice-matched dock (80 % black, 12.25 px corners, Noto Sans, white pill under the active app), started with `home/.local/bin/dock`, pinned apps in `home/.cache/nwg-dock-pinned`. `launch.sh`, `style-dark.css`, `style-light.css` belong to the old setup |
-| [`nwg-look/`](nwg-look) | GTK settings tool |
+| [`nwg-look/`](nwg-look) | *Not installed anymore* (removed 22.11.2026 together with lxappearance). Settings of the GTK settings tool nwg-look. Theme, icons, cursor and font are now set by hand: gsettings (`org.gnome.desktop.interface`), `gtk-3.0/settings.ini`, `xsettingsd/xsettingsd.conf` |
 | [`qt6ct/`](qt6ct) | **In use.** Qt 6 settings: style `kvantum`, Noto Sans; color schemes (`simplerice.conf` was my own palette before Kvantum) |
 | [`quickshell/`](quickshell) | *Old shell, not in use:* bar, launcher, control center, dashboard, notifications, OSD, power menu. See [Quickshell Guide](Quickshell%20Guide.md). The screen corners that were in `quickshell/corners/` are now an optional extra in [`experimental/ai-extras/`](experimental/ai-extras) |
 | [`quickshell-old-design/`](quickshell-old-design) | The same old shell with its **old design** (before the November 2026 redesign), kept as an alternative. Copy it to `~/.config/quickshell` instead of `quickshell/`. The whole repo at that point is also the branch [`quickshell-old-design`](https://github.com/viggo0paal21/-archived-Arch-Linux-Vault/tree/quickshell-old-design) ([zip](https://github.com/viggo0paal21/-archived-Arch-Linux-Vault/archive/refs/heads/quickshell-old-design.zip)) of the old vault |
@@ -165,7 +165,7 @@ Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
 | [`waybar/`](waybar) | **In use.** Status bar: `config.jsonc` + `style.css` + `bluetooth-menu.xml` (GtkBuilder menu for the Bluetooth module, actions in `menu-actions`). The module is still called `custom/cat` and still runs `scripts/cat.sh` / `scripts/cat-rofi.sh` (rofi on click), but shows the Arch logo now; `cat.svg` / `cat-happy.svg` are the old drawn cat, kept but unused. The other scripts and `transparency*.css` belong to the old setup |
 | [`waypaper/`](waypaper) | **In use.** Wallpaper picker (backend awww) |
 | [`xdg-desktop-portal/`](xdg-desktop-portal) | Portals (screen sharing, file picker) |
-| [`xsettingsd/`](xsettingsd) | **In use.** Theme (Back-In-Black), icons, cursor, font (Noto Sans 10) and font smoothing without subpixel (`Xft/RGBA "none"`) for X11 programs. Careful: nwg-look rewrites this file and `gtk-3.0/settings.ini` completely on every Apply, drops `Gtk/FontName` and writes `font-rgba-order` (`rgb`) into `Xft/RGBA` / `gtk-xft-rgba` even when `font-antialiasing` is `grayscale`, which turns subpixel text back on. After using nwg-look set both back to `none` (or untick the two files in nwg-look's Preferences) |
+| [`xsettingsd/`](xsettingsd) | **In use.** Theme (Back-In-Black), icons, cursor, font (Noto Sans 10) and font smoothing without subpixel (`Xft/RGBA "none"`) for X11 programs. Careful: nwg-look rewrites this file and `gtk-3.0/settings.ini` completely on every Apply, drops `Gtk/FontName` and writes `font-rgba-order` (`rgb`) into `Xft/RGBA` / `gtk-xft-rgba` even when `font-antialiasing` is `grayscale`, which turns subpixel text back on. That's why nwg-look is not installed anymore. To change something by hand: edit the line here and run `pkill -HUP xsettingsd` |
 
 ### Other
 
@@ -356,7 +356,7 @@ _Updated on 21.11.2026: official packages via pacman, everything else via yay (A
 | waypaper | Wallpaper picker | `waypaper` (AUR), `awww` (successor of swww) |
 | vibrantLinux | Per-app color saturation | `vibrantlinux` (AUR) |
 | xdg-desktop-portal | Portals (screen sharing, file picker) | `xdg-desktop-portal`, `xdg-desktop-portal-hyprland`, `xdg-desktop-portal-gtk` |
-| nwg-look | GTK settings tool | `nwg-look` |
+| *old:* nwg-look | GTK settings tool (removed, see `xsettingsd/`) | `nwg-look` |
 | *old:* quickshell | Old shell | `quickshell`, `inter-font`, `ttf-nerd-fonts-symbols` |
 | *old:* hyprpanel | HyprPanel (bar) | `ags-hyprpanel-git` (AUR) |
 | *old:* home/.zshrc | Zsh shell | see `shell-packages.txt` |
@@ -367,7 +367,7 @@ _Updated on 21.11.2026: official packages via pacman, everything else via yay (A
 **1. Official packages (pacman):**
 
 ```bash
-sudo pacman -Syu --needed hyprland hyprlock hyprpolkitagent xdg-desktop-portal xdg-desktop-portal-hyprland xdg-desktop-portal-gtk grim slurp wl-clipboard waybar blueman pavucontrol rofi swaync kitty fastfetch cava fontconfig noto-fonts ttf-jetbrains-mono-nerd gtk3 gtk4 kvantum kvantum-qt5 qt6ct qt6-wayland mangohud lib32-mangohud nautilus nwg-look
+sudo pacman -Syu --needed hyprland hyprlock hyprpolkitagent xdg-desktop-portal xdg-desktop-portal-hyprland xdg-desktop-portal-gtk grim slurp wl-clipboard waybar blueman pavucontrol rofi swaync kitty fastfetch cava fontconfig noto-fonts ttf-jetbrains-mono-nerd gtk3 gtk4 kvantum kvantum-qt5 qt6ct qt6-wayland mangohud lib32-mangohud nautilus xsettingsd
 ```
 
 > `lib32-…` packages need the **multilib** repository. If pacman can't find them,
