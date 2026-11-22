@@ -1,2 +1,15 @@
-# starship: default prompt (empty = everything default).
-# Old AI version: starship.toml.bak-ai
+format = "$os$directory"
+
+[os]
+disabled = false
+style = "bold white"
+format = "  [$symbol ]($style)"
+
+[os.symbols]
+Arch = "\uf303"
+
+[directory]
+style = "bold white"
+read_only_style = "bold white"
+home_symbol = "\uf015 ~"
+format = "[$path]($style)[$read_only]($read_only_style) "

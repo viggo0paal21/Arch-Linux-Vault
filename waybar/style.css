@@ -32,9 +32,42 @@ window#waybar {
     background: rgba(0, 0, 0, 0.8);
     color: #ffffff;
     transition: background-color 250ms ease;
+    border-radius: 15px;
 }
 
-window#waybar.solo {
+/* VOLUME SLIDER */
+#pulseaudio-slider {
+    margin: 0 8px 0 0;
+    padding: 0;
+    min-height: 0;
+}
+
+#pulseaudio-slider trough {
+    margin: 0;
+    min-width: 80px;
+    min-height: 4px;
+    border-radius: 2px;
+    background-color: #333333;
+}
+
+#pulseaudio-slider highlight {
+    margin: 0;
+    min-height: 4px;
+    border-radius: 2px;
+    background-color: #ffffff;
+}
+
+#pulseaudio-slider slider {
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+    min-height: 0;
+    background: none;
+    border: none;
+    box-shadow: none;
+}
+
+/* window#waybar.solo {
     background-color: #000000;
 }
 
@@ -45,19 +78,12 @@ window#waybar.solo.kitty {
 window#waybar.solo.zen {
     background-color: rgba(0, 0, 0, 0.8);
 }
-
+*/
 #custom-cat {
-    background-image: url("cat.svg");
-    background-size: 46px 22px;
-    background-repeat: no-repeat;
-    background-position: center;
-    min-width: 46px;
+    font-size: 16px;
     padding: 0 6px;
 }
 
-#custom-cat.happy {
-    background-image: url("cat-happy.svg");
-}
 
 /* WORKSPACE BUTTONS, GREY INACTIVE WHITE ACTIVE */
 @define-color text #ffffff;
@@ -66,14 +92,32 @@ window#waybar.solo.zen {
 
 
 #workspaces button {
-    color: @text;
-    padding: 0 12px;
-    border-radius: 0;
-    border: 1px solid transparent;
+    min-width: 8px;
+    min-height: 8px;
+    padding: 0;
+    margin: 11px 5px;
+    border-radius: 4px;
+    border: none;
+    background-color: @middle;
+    box-shadow: none;
+    transition: all 300ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-#workspaces button.empty {
-    color: @middle;
+#workspaces button label {
+    font-size: 1px;
+    min-height: 0;
+    padding: 0;
+    margin: 0;
+}
+
+#workspaces button.active {
+    min-width: 24px;
+    background-color: @text;
+}
+
+
+#workspaces button.active:hover {
+    background-color: @text;
 }
 
 
@@ -85,6 +129,7 @@ window#waybar.solo.zen {
 /* ITEMS PADDING */
 #tray, #clock, #cpu, #memory, #pulseaudio, #network {
     padding: 0 8px;
+    margin-right: 8px;
 }
 
 
@@ -116,11 +161,22 @@ window.popup,
     box-shadow: none;
 }
 
-/* GROUP BOXES
+
+.modules-left {
+    padding-left: 10px;
+}
+
+.modules-right {
+    padding-right: 10px;
+}
+
+
+/* GROUP BOXES 
 .modules-left,
 .modules-center,
 .modules-right {
     background-color: rgba(0, 0, 0, 0.8);
-    border-radius: 10px;
+    border-radius: 20px;
     padding: 0 8px;
-} */
+} 
+*/

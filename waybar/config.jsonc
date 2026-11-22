@@ -3,15 +3,15 @@
     "position": "top",
     "layer": "top",
     "height": 30,
-    "margin-top": 0,
-    "margin-left": 0,
-    "margin-right": 0,
+    "margin-top": 10,
+    "margin-left": 10,
+    "margin-right": 10,
 
 
     // MODULES
     "modules-left": ["custom/cat", "hyprland/workspaces", "hyprland/window"],
     "modules-center": ["clock"],
-    "modules-right": ["tray", "bluetooth", "network", "cpu", "memory", "pulseaudio"],
+    "modules-right": ["tray", "bluetooth", "network", "cpu", "memory", "group/volume"],
 
 
     // SETTINGS PER MODULE
@@ -32,7 +32,7 @@
     },
 
     "custom/cat": {
-        "format": " ",
+        "format": "\uf303",
         "exec": "~/.config/waybar/scripts/cat.sh",
         "return-type": "json",
         "signal": 8,
@@ -42,16 +42,34 @@
     "memory": {
         "format": "\uefc5 {percentage}%"
     },
+
+
+
+
+        "group/volume": {
+        "orientation": "horizontal",
+        "drawer": {
+            "transition-duration": 300,
+            "transition-left-to-right": false
+        },
+        "modules": ["pulseaudio", "pulseaudio/slider"]
+    },
+    "pulseaudio/slider": {
+        "min": 0,
+        "max": 100,
+        "orientation": "horizontal"
+    },
+
+
+
+
+
+
     "pulseaudio": {
         "format": "\ue638 {volume}%"
     },
-    "hyprland/workspaces": {
-        "format": "{icon}",
-        "format-icons": {
-            "active":  "●",
-            "default": "○",
-            "empty":   "○"
-        }
+        "hyprland/workspaces": {
+        "format": ""
     },
     "hyprland/window": {
         "format": "{title}"

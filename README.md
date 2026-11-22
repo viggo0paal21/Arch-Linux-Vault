@@ -43,10 +43,10 @@ Options: `./install.sh --yes` (no question at the start), `./install.sh --no-pac
 | Part | Program | Files |
 |---|---|---|
 | Window manager | Hyprland, Lua config | [`hypr/hyprland.lua`](hypr/hyprland.lua) (my own), plus [`hypr/system.lua`](hypr/system.lua) and [`hypr/performance.lua`](hypr/performance.lua) (pulled in with `require`) |
-| Bar | Waybar: drawn pixel cat (`cat.svg`, 46×22, shown 1:1 so it stays sharp) with "meow" tooltip; click opens rofi and the cat closes its eyes happily (`cat-happy.svg`) until rofi is closed again, workspace dots, window title, clock with date, tray, Bluetooth with number of devices, network, CPU, RAM, volume (Nerd Font icons) | [`waybar/config.jsonc`](waybar/config.jsonc), [`waybar/style.css`](waybar/style.css) |
+| Bar | Waybar as one floating bar (10 px from the edges like the windows, rounded 15 px): Arch logo (Nerd Font `\uf303`, click opens rofi), workspaces as grey dots where the active one stretches into a white pill (CSS `transition`, 300 ms), window title, clock with date, tray, Bluetooth with number of devices, network, CPU, RAM, volume with a slider that slides out on hover (`group/volume` drawer + `pulseaudio/slider`) (Nerd Font icons) | [`waybar/config.jsonc`](waybar/config.jsonc), [`waybar/style.css`](waybar/style.css) |
 | Launcher | rofi (`Super + R`) | [`rofi/config.rasi`](rofi/config.rasi) |
 | Notifications | swaync, default layout with my colors: 80 % black, 10 px radius, no shadow | [`swaync/`](swaync) |
-| Terminal | kitty, 80 % opacity | [`kitty/kitty.conf`](kitty/kitty.conf) |
+| Terminal | kitty, 80 % opacity, beam cursor with a short cursor trail | [`kitty/kitty.conf`](kitty/kitty.conf) |
 | System info | fastfetch, small Arch logo | [`fastfetch/config.jsonc`](fastfetch/config.jsonc) |
 | Lock screen | hyprlock, minimal | [`hypr/hyprlock.conf`](hypr/hyprlock.conf) |
 | File manager | Nautilus (`Super + E`) | uses [`gtk-4.0/`](gtk-4.0) |
@@ -60,11 +60,11 @@ Options: `./install.sh --yes` (no question at the start), `./install.sh --no-pac
 ### How the look works
 
 - **Colors:** true black `#000000` and white `#ffffff`, grey `#5a5a5a` for inactive things.
-- **Rounding:** `rounding = 10` in `hyprland.lua`, the same 10 px in rofi, GTK, menus, hyprtoolkit. Smart gaps (1 tiled window = no gaps, no border, no rounding) are at the end of `hyprland.lua`.
+- **Rounding:** `rounding = 10` in `hyprland.lua`, the same 10 px in rofi, GTK, menus, hyprtoolkit. Smart gaps (1 tiled window = no gaps, no border, no rounding) are at the end of `hyprland.lua`, currently commented out (`--[[ ... ]]`) so a single window keeps its gaps under the floating bar.
 - **Transparency (80 %) + light blur:** the background is 80 % black, the text stays fully white. Hyprland's blur (`decoration.blur`, `size = 2`, `passes = 2`) softens everything behind it a little. History: 75 % with `passes = 4` looked like frosted glass (that was mostly the strong blur), then 85 % with `passes = 2`, now 80 %. Why 80: screens store opacity as 0–255, and 0.8 × 255 = 204 exactly (hex `cc`), while 0.75 and 0.85 have to be rounded (`bf`, `d9`). On bright wallpapers 80 % stays dark, on dark ones it looks almost like 85 %. `.bak-transparenz80` / `.bak-transparenz85` files on my PC hold the previous values.
   - kitty: `background_opacity 0.8`
   - rofi: `bg-glass: #000000cc` (`cc` = 80 %), blur through a layer rule in `hyprland.lua`
-  - Waybar: `rgba(0, 0, 0, 0.8)` (bar, tooltips, tray menus), layer rule with `blur_popups` for the tray menus; turns solid black with a 250 ms fade when exactly one tiled window is open (class `.solo`), except when that window is kitty (`.solo.kitty`) or Zen (`.solo.zen`). Waybar sits on the `top` layer (`"layer": "top"`), like my old Quickshell bar, so maximized apps can't cover it
+  - Waybar: `rgba(0, 0, 0, 0.8)` (bar, tooltips, tray menus), layer rule with `blur_popups` for the tray menus; the `.solo` rules (solid black with one window) are commented out for the floating bar. Waybar sits on the `top` layer (`"layer": "top"`), like my old Quickshell bar, so maximized apps can't cover it
   - GTK 3: `window.background` 80 %, everything inside transparent (otherwise layers stack up), own selection color, rounded right-click menus
   - GTK 4 / libadwaita: CSS variables in `:root` (`--window-bg-color`, `--view-bg-color`, sidebar/headerbar transparent)
   - Qt: Kvantum theme MonoGlass (`reduce_window_opacity=20`, Kvantum counts the other way round: 20 % see-through = 80 % opaque). Kvantum only makes the window background transparent, lists stay opaque; OBS uses its own theme and ignores Kvantum
@@ -124,7 +124,7 @@ Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
 |---|---|
 | (none) | **Current:** plain bash with Arch's defaults, fastfetch is not started automatically |
 | [`home/.zshrc`](home/.zshrc) | *Old setup.* Zsh config (plugins, aliases, history settings) → `~/.zshrc` |
-| [`starship.toml`](starship.toml) | Starship prompt config → `~/.config/starship.toml` (now reset to the default prompt) |
+| [`starship.toml`](starship.toml) | Starship prompt config → `~/.config/starship.toml`: only the Arch logo and the folder (home = house icon + `~`), white |
 | [`mimeapps.list`](mimeapps.list) | Default apps (Nautilus for folders, Zen for links, imv for images, zathura for PDFs, mpv for videos) → `~/.config/mimeapps.list` |
 | [`shell-packages.txt`](shell-packages.txt) | Packages for the old zsh setup (zsh, plugins, Starship, eza, bat, fd, ripgrep, lazygit) |
 
@@ -152,7 +152,7 @@ Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
 | [`swaync/`](swaync) | **In use.** Notifications: imports the default `/etc/xdg/swaync/style.css` first, then overrides its `:root` variables (80 % black glass, 10 px radius, no shadow) |
 | [`systemd/`](systemd) | User timers (Arch-Update weekly check, see below) |
 | [`vibrantLinux/`](vibrantLinux) | Per-app color saturation (CS2) |
-| [`waybar/`](waybar) | **In use.** Status bar: `config.jsonc` + `style.css`, the cat `cat.svg` + `cat-happy.svg`. `scripts/cat.sh` (tells Waybar which cat to show: class `happy` while rofi runs) and `scripts/cat-rofi.sh` (opens rofi on click, sends Waybar signal 8 when rofi opens and closes) are in use; the other scripts and `transparency*.css` belong to the old setup |
+| [`waybar/`](waybar) | **In use.** Status bar: `config.jsonc` + `style.css`. The module is still called `custom/cat` and still runs `scripts/cat.sh` / `scripts/cat-rofi.sh` (rofi on click), but shows the Arch logo now; `cat.svg` / `cat-happy.svg` are the old drawn cat, kept but unused. The other scripts and `transparency*.css` belong to the old setup |
 | [`waypaper/`](waypaper) | **In use.** Wallpaper picker (backend awww) |
 | [`xdg-desktop-portal/`](xdg-desktop-portal) | Portals (screen sharing, file picker) |
 
@@ -167,7 +167,7 @@ Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
 
 ## Hyprland: how my config is split
 
-- [`hypr/hyprland.lua`](hypr/hyprland.lua): my own config. Monitor, autostart (Waybar, swaync, awww + waypaper, blueman-applet), look (gaps, borders, rounding, light blur, shadows off), floating windows snap to the gaps (`general.snap`), window rule for the Noctis mini player (no border), keybinds, animations (curve "snap"), `Super + V` = float at 5:3 in the center, layer rules (blur for rofi, Waybar and swaync), smart gaps.
+- [`hypr/hyprland.lua`](hypr/hyprland.lua): my own config. Monitor, autostart (Waybar, swaync, awww + waypaper, blueman-applet), look (gaps, borders, rounding, light blur, shadows off), floating windows snap to the gaps (`general.snap`), window rule for the Noctis mini player (no border), keybinds, animations (curve "snap"; workspaces slide with "wsglide", 350 ms, no overshoot), `Super + V` = float at 5:3 in the center, layer rules (blur for rofi, Waybar and swaync), smart gaps.
 - [`hypr/system.lua`](hypr/system.lua): background stuff so apps run and look right (cursor size, Qt through qt6ct, GTK dark + portal, hyprpolkitagent, arch-update tray, fixes). `GTK_THEME` must stay off, otherwise `gtk-4.0/gtk.css` is ignored.
 - [`hypr/performance.lua`](hypr/performance.lua): gaming and latency from the old setup (MangoHud env, tearing allowed, direct scanout, VRR fullscreen-only, cursor settings for VRR, flat mouse, rules for videos and DOOM, `Super + Home` = direct scanout check).
 

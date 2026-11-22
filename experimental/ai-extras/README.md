@@ -70,3 +70,5 @@ Noctis mini player opacity. Changes you made to the look files while the extras 
 - Never fully tried in my real session (built and tested in a copy of my configs).
 - `size = { 1320, 900 }` in the window rule in `theme.lua`: not sure the syntax is right.
 - Waybar reloaded with `SIGUSR2` dropped `style.css` once, so the app restarts Waybar completely.
+
+> **Note (22.11.2026):** the extras were written for the old Waybar (flat bar, cat). Since the floating bar with the Arch logo and the workspace pills, `enable.sh` refuses with "Stelle nicht genau einmal gefunden" and changes nothing. It has to be adapted before it works again.

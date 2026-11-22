@@ -49,7 +49,7 @@ hl.config({
     },
     general = {
         gaps_in = 5,
-        gaps_out = 10,
+        gaps_out = { top = 10, right = 10, bottom = 10, left = 10 },
         border_size = 1,
         col = {
             active_border   = "rgba(ffffffff)",
@@ -110,6 +110,7 @@ end
 -- ==== ANIMATIONS ==== --
 hl.curve("snap", { type = "bezier", points = { {0.16, 1}, {0.3, 1} }})
 hl.curve("linear", {type = "bezier", points = {{0, 0}, {1, 1} } })
+hl.curve("wsglide", { type = "bezier", points = { {0.05, 0.9}, {0.1, 1} } })
 
 
 hl.animation({ leaf = "global", enabled = true, speed = 2 / tempo, bezier = "snap" })
@@ -121,7 +122,8 @@ hl.animation({ leaf = "fadeOut", enabled = true, speed = 1 / tempo, bezier = "li
 hl.animation({ leaf = "layers", enabled = true, speed = 1.5 / tempo, bezier = "snap", style = "fade" })
 hl.animation({ leaf = "layersOut", enabled = true, speed = 1 / tempo, bezier = "linear", style = "fade" })
 hl.animation({ leaf = "fadeLayersOut", enabled = true, speed = 1 / tempo, bezier = "linear" })
-hl.animation({ leaf = "workspaces", enabled = true, speed = 2 / tempo, bezier = "snap", style = "slidefade 10%" })
+-- Workspaces: Kurve wie "wind" aus mkhmtolzhas/mkhmtdots, aber ohne Ueberschwingen (1 statt 1.05), 350 ms (1.75 / 0.5), Stil slide
+hl.animation({ leaf = "workspaces", enabled = true, speed = 1.75 / tempo, bezier = "wsglide" })
 hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 2 / tempo, bezier = "snap", style = "slidefadevert 10%" })
 hl.animation({ leaf = "zoomFactor", enabled = true, speed = 3 / tempo, bezier = "snap" })
 
@@ -176,7 +178,7 @@ hl.bind(mod .. " + V", toggle_float)
 
 
 
-
+--[[
 
 --====================================================================================--
 --====================================================================================--
@@ -191,3 +193,6 @@ hl.window_rule({ match = { float = false, workspace = "f[1]" }, rounding = 0, bo
 
 hl.window_rule({ match = { float = false, workspace = "w[tv1]" }, border_size = 0 })
 hl.window_rule({ match = { float = false, workspace = "f[1]" }, border_size = 0 })
+
+
+]]
