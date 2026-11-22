@@ -33,6 +33,7 @@ hl.exec_cmd("swaync")
 hl.exec_cmd("awww-daemon")
 hl.exec_cmd("sleep 1 && waypaper --restore")
 hl.exec_cmd("blueman-applet")
+hl.exec_cmd("xsettingsd")   -- Theme/Schrift fuer X11-Programme (Zen, Datei-Dialog)
 end)
 
 

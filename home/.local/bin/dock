@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Startet das Dock (nwg-dock-hyprland), Optik in ~/.config/nwg-dock-hyprland/style.css,
+# feste Apps in ~/.cache/nwg-dock-pinned.
+#   -p bottom -mb 10   unten, 10 px ueber dem Rand (wie die Hyprland-Gaps)
+#   -i 36              Icongroesse
+#   -d -hd 0           Autohide: erscheint sofort, wenn die Maus unten an den Rand geht
+#   -l top             nicht ueber Vollbild-Spielen (Direct Scanout bleibt)
+#   -nolauncher        kein extra App-Launcher-Knopf (dafuer gibt es rofi)
+#   -iw special        Fenster aus dem Special-Workspace nicht anzeigen
+
+# ein schon laufendes Dock beenden (der Prozessname ist auf 15 Zeichen gekuerzt)
+pkill -x nwg-dock-hyprla 2>/dev/null
+pkill -x nwg-dock-hyprland 2>/dev/null
+
+exec nwg-dock-hyprland \
+    -p bottom -mb 10 \
+    -i 36 \
+    -d -hd 0 \
+    -l top \
+    -nolauncher \
+    -iw special \
+    -s style.css \
+    >/dev/null 2>&1

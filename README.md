@@ -3,7 +3,7 @@
 Everything I need to keep my Arch Linux system running and to rebuild it from scratch:
 my personal `~/.config` files (Hyprland rice), maintenance and performance guides, and helper scripts.
 
-> **State: 21.11.2026.** Since 19.11.2026 my rice is **self-built** (written and understood by me, line by line):
+> **State: 22.11.2026.** Since 19.11.2026 my rice is **self-built** (written and understood by me, line by line):
 > Hyprland (Lua config) + Waybar + rofi + swaync + kitty, black and white, slightly transparent with blur.
 > The old AI-made setup (Quickshell shell "oled-bw", zsh with fastfetch in kitty) is still in this repo,
 > but **no longer in use**. Everything from it is kept, nothing was deleted, see [What changed](#what-changed-since-the-old-vault).
@@ -46,12 +46,15 @@ Options: `./install.sh --yes` (no question at the start), `./install.sh --no-pac
 | Bar | Waybar as one floating bar (10 px from the edges like the windows, rounded 12.25 px): Arch logo (Nerd Font `\uf303`, click opens rofi), workspaces as grey dots where the active one stretches into a white pill (CSS `transition`, 300 ms), window title, clock with date, tray, Bluetooth with number of devices (left click = blueman-manager, right click = own menu from `waybar/bluetooth-menu.xml` with on/off, disconnect, devices, send files, adapters; hover = connected devices with battery), network, CPU, RAM, volume with a slider that slides out on hover (`group/volume` drawer + `pulseaudio/slider`) (Nerd Font icons) | [`waybar/config.jsonc`](waybar/config.jsonc), [`waybar/style.css`](waybar/style.css) |
 | Launcher | rofi (`Super + R`) | [`rofi/config.rasi`](rofi/config.rasi) |
 | Notifications | swaync, default layout with my colors: 80 % black, 10 px radius, no shadow | [`swaync/`](swaync) |
-| Terminal | kitty, 80 % opacity, beam cursor with a short cursor trail (`resize_debounce_time 0 0` and `sync_to_monitor no` are leftovers from testing a resize glitch, they didn't change it) | [`kitty/kitty.conf`](kitty/kitty.conf) |
+| Terminal | kitty, 80 % opacity, beam cursor with a short cursor trail (`sync_to_monitor no` is a leftover from testing a resize glitch, it didn't change it) | [`kitty/kitty.conf`](kitty/kitty.conf) |
+| Dock | nwg-dock-hyprland, hidden at the bottom edge and pops up when the mouse touches it. 80 % black, 12.25 px corners like the bar, white pill under the active app. Pinned: Discord, Steam, Zen, Claude. Started with `dock` (not in the autostart yet) | [`nwg-dock-hyprland/style.css`](nwg-dock-hyprland/style.css), [`home/.local/bin/dock`](home/.local/bin/dock), [`home/.cache/nwg-dock-pinned`](home/.cache/nwg-dock-pinned) |
+| Browser | Zen Browser, started through XWayland (`env MOZ_ENABLE_WAYLAND=0`) because it hangs on start under native Wayland with NVIDIA; transparency on in its prefs. Own `.desktop` overrides with the XWayland start and absolute icon paths (so the dock shows the real app icons, not the icon theme's) | [`home/.local/share/applications/`](home/.local/share/applications) |
 | Discord | Official Discord + Vencord (`vencord-installer-bin`), window transparency on in Vencord settings. Two themes based on refact0r's Midnight: **Glass 80** (panels 80 % black with 10 px gaps showing the blurred wallpaper) and **Glass 80 Flat** (one 80 % surface for the whole window, no boxes). Only enable one. Window buttons hidden | [`Vencord/themes/`](Vencord/themes) |
-| System info | fastfetch, small Arch logo | [`fastfetch/config.jsonc`](fastfetch/config.jsonc) |
+| System info | fastfetch, small Arch logo. Plus `fetch` (rotating 3D Arch logo) with only user, OS, shell, WM, disk and RAM in white; alias in `~/.zshrc`: `fetch --rotate-y --no-color --height $(( $(tput lines) - 6 ))` | [`fastfetch/config.jsonc`](fastfetch/config.jsonc), [`fetch/config`](fetch/config) |
 | Lock screen | hyprlock, minimal | [`hypr/hyprlock.conf`](hypr/hyprlock.conf) |
 | File manager | Nautilus (`Super + E`) | uses [`gtk-4.0/`](gtk-4.0) |
-| GTK 3 / GTK 4 apps | own CSS: true black, white text, 80 % glass | [`gtk-3.0/gtk.css`](gtk-3.0/gtk.css), [`gtk-4.0/gtk.css`](gtk-4.0/gtk.css) |
+| GTK 3 / GTK 4 apps | own CSS: true black, white text, 80 % glass. GTK theme underneath: Back-In-Black (in `~/.themes`, not in this repo) | [`gtk-3.0/gtk.css`](gtk-3.0/gtk.css), [`gtk-4.0/gtk.css`](gtk-4.0/gtk.css) |
+| X11 apps (Zen, its file dialog) | xsettingsd hands theme, icons and font to X11 programs (started in the autostart of `hyprland.lua`). Without it they fall back to grey Adwaita | [`xsettingsd/xsettingsd.conf`](xsettingsd/xsettingsd.conf) |
 | Qt apps | qt6ct (style `kvantum`) + my Kvantum theme **MonoGlass** | [`qt6ct/qt6ct.conf`](qt6ct/qt6ct.conf), [`Kvantum/MonoGlass/`](Kvantum/MonoGlass), [`Kvantum/kvantum.kvconfig`](Kvantum/kvantum.kvconfig) |
 | Screen-share picker | hyprtoolkit (comes with xdg-desktop-portal-hyprland) | [`hypr/hyprtoolkit.conf`](hypr/hyprtoolkit.conf) |
 | Font | Noto Sans everywhere (kitty: its own default), JetBrainsMono Nerd Font for icons | [`fontconfig/`](fontconfig), `settings.ini` in [`gtk-3.0/`](gtk-3.0) and [`gtk-4.0/`](gtk-4.0) |
@@ -63,12 +66,13 @@ Options: `./install.sh --yes` (no question at the start), `./install.sh --no-pac
 - **Colors:** true black `#000000` and white `#ffffff`, grey `#5a5a5a` for inactive things.
 - **Wallpaper:** Waypaper sets and remembers it (`waypaper --restore` at login). For animated Steam Wallpaper Engine wallpapers the backend is `linux-wallpaperengine` (needs `linux-wallpaperengine` in PATH); Waypaper stores the item's `preview.jpg` and starts its folder. Picking another wallpaper in Waypaper (image or Wallpaper Engine) is saved automatically.
 - **Bluetooth tray icon hidden:** blueman-applet keeps running (pairing dialogs), only its tray plugin is off: `gsettings set org.blueman.general plugin-list '["!StatusNotifierItem"]'` (single quotes outside, otherwise zsh reads `!` as history), then restart `blueman-applet`. Undo: `gsettings reset org.blueman.general plugin-list`.
+- **X11 apps get their settings from xsettingsd, not from `settings.ini` / gsettings:** Zen runs on XWayland, and the GTK file dialog it asks for (drawn by `xdg-desktop-portal-gtk`) opens on X11 too, so it can hang on Zen's window. GTK on X11 asks xsettingsd for theme and font. Without a running xsettingsd it falls back to Adwaita dark, that's why the dialog was grey. Check what's running: `hyprctl clients -j | jq -r '.[] | "\(.class) | \(.title) | xwayland=\(.xwayland)"'`.
 - **Rounding:** `rounding = 10` in `hyprland.lua`, the same 10 px in rofi, GTK, menus, hyprtoolkit. Smart gaps (1 tiled window = no gaps, no border, no rounding) are at the end of `hyprland.lua`, currently commented out (`--[[ ... ]]`) so a single window keeps its gaps under the floating bar.
 - **Transparency (80 %) + light blur:** the background is 80 % black, the text stays fully white. Hyprland's blur (`decoration.blur`, `size = 2`, `passes = 2`) softens everything behind it a little. History: 75 % with `passes = 4` looked like frosted glass (that was mostly the strong blur), then 85 % with `passes = 2`, now 80 %. Why 80: screens store opacity as 0–255, and 0.8 × 255 = 204 exactly (hex `cc`), while 0.75 and 0.85 have to be rounded (`bf`, `d9`). On bright wallpapers 80 % stays dark, on dark ones it looks almost like 85 %. `.bak-transparenz80` / `.bak-transparenz85` files on my PC hold the previous values.
   - kitty: `background_opacity 0.8`
   - rofi: `bg-glass: #000000cc` (`cc` = 80 %), blur through a layer rule in `hyprland.lua`
   - Waybar: `rgba(0, 0, 0, 0.8)` (bar, tooltips, tray menus), layer rule with `blur_popups` for the tray menus; the `.solo` rules (solid black with one window) are commented out for the floating bar. Waybar sits on the `top` layer (`"layer": "top"`), like my old Quickshell bar, so maximized apps can't cover it
-  - GTK 3: `window.background` 80 %, everything inside transparent (otherwise layers stack up), own selection color, rounded right-click menus
+  - GTK 3: `window.background.csd` and `dialog.background.csd` 80 %, everything inside transparent (otherwise layers stack up), own selection color, rounded right-click menus. Only windows with `.csd` (normal app windows) get the glass, so the dock and its invisible hotspot (layer-shell, no `.csd`) stay fully transparent. In the file dialog the theme paints the sidebar and path bar solid black, `filechooser .sidebar` / `#pathbarbox` make them transparent
   - GTK 4 / libadwaita: CSS variables in `:root` (`--window-bg-color`, `--view-bg-color`, sidebar/headerbar transparent)
   - Qt: Kvantum theme MonoGlass (`reduce_window_opacity=20`, Kvantum counts the other way round: 20 % see-through = 80 % opaque). Kvantum only makes the window background transparent, lists stay opaque; OBS uses its own theme and ignores Kvantum
   - hyprtoolkit (screen-share picker): `background = 0xCC000000` (here the alpha comes **first**: `0xAARRGGBB`)
@@ -115,7 +119,8 @@ Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
 | [`qs`](home/.local/bin/qs), [`quickshell`](home/.local/bin/quickshell) | *Old, not in use* (the screen corners used them, now in [`experimental/ai-extras/`](experimental/ai-extras)). Wrappers around `/usr/bin/qs` and `/usr/bin/quickshell`: Vulkan backend, without MangoHud / lsfg-vk / vkBasalt, so it applies to every Quickshell config |
 | [`qs-start`](home/.local/bin/qs-start) | *Old shell.* Started Quickshell from the Hyprland autostart: Vulkan backend, without MangoHud / lsfg-vk / vkBasalt. See [Quickshell Guide](Quickshell%20Guide.md#3-why-the-start-script-exists-nvidia) |
 | [`qs-restart`](home/.local/bin/qs-restart) | *Old shell.* Restarts the Quickshell shell |
-| [`qs-dock`](home/.local/bin/qs-dock), [`qs-glass-apply`](home/.local/bin/qs-glass-apply) | *Old shell.* Dock launcher for nwg-dock-hyprland and the helper for Settings > Apps > Opacity (per-app opacity), see the [Quickshell Guide](Quickshell%20Guide.md) |
+| [`dock`](home/.local/bin/dock) | **In use.** Starts nwg-dock-hyprland with my flags (bottom, 10 px margin, 36 px icons, autohide, `top` layer so fullscreen games keep direct scanout, no launcher button, no special-workspace windows). Ends a running dock first |
+| [`qs-dock`](home/.local/bin/qs-dock), [`qs-glass-apply`](home/.local/bin/qs-glass-apply) | *Old shell.* Dock launcher for nwg-dock-hyprland (replaced by `dock`) and the helper for Settings > Apps > Opacity (per-app opacity), see the [Quickshell Guide](Quickshell%20Guide.md) |
 | [`qs-font-apply`](home/.local/bin/qs-font-apply), [`qs-font-revert`](home/.local/bin/qs-font-revert) | *Old shell.* Quickshell Settings > System > Font: sets the UI font for GTK 3/4 (settings.ini + gsettings), xsettingsd, qt5ct/qt6ct and fontconfig (`sans-serif` / `system-ui`). The first run saves the old state; `qs-font-revert` restores it and hides the menu again |
 | [`kitty-shell/`](home/.local/bin/kitty-shell) | *Not in use* (kitty now uses plain bash). kitty started zsh through this wrapper (`shell` line in the old `kitty.conf`). It showed fastfetch before the first prompt when Quickshell Settings > Apps > kitty > "Fastfetch in kitty" was on. While only fastfetch was visible its values updated live about once a second (the image stays, no flicker); typing `fastfetch` brought it back like at the start, live again |
 | [`fastfetch-show`](home/.local/bin/fastfetch-show), [`fastfetch-fit`](home/.local/bin/fastfetch-fit), [`fastfetch-logo`](home/.local/bin/fastfetch-logo) | *Not in use.* fastfetch for kitty: picks the biggest variant from [`fastfetch/variants/`](fastfetch/variants) that fits the window, shows it instantly from the last kitty's snapshot and swaps in the fresh values right after, redraws a smaller one when the window shrinks, and cycles the images from Settings > Apps > kitty > "Fastfetch images" (one per new kitty, pixel-exact for the cell size) |
@@ -137,16 +142,17 @@ Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
 |---|---|
 | [`autostart/`](autostart) | Autostart entries from KDE / Cinnamon (all disabled, leftovers, Hyprland doesn't read them) |
 | [`cava/`](cava) | **In use.** Music visualizer in the terminal |
+| [`fetch/`](fetch) | **In use.** `fetch` (3D logo): which info lines it shows, white labels |
 | [`fastfetch/`](fastfetch) | **In use.** System info in the terminal: `config.jsonc` = my own small version ("Arch (btw)", white percentages). The `.txt` logos and `variants/` belong to the old setup |
 | [`fontconfig/`](fontconfig) | **In use.** Font settings: `sans-serif` / `system-ui` → Noto Sans |
 | [`gtk-3.0/`](gtk-3.0) | **In use.** GTK 3: colors, 80 % glass, rounded right-click menus, font in `settings.ini` |
 | [`gtk-4.0/`](gtk-4.0) | **In use.** GTK 4 / libadwaita: CSS variables in `:root` (black/white, 80 % glass, radius) |
 | [`hypr/`](hypr) | **In use.** `hyprland.lua` (my own), `system.lua` (env, autostart, fixes), `performance.lua` (MangoHud, VRR, tearing, direct scanout, mouse), `hyprlock.conf`, `hyprtoolkit.conf` (screen-share picker). `hyprland.lua.bak` = the old AI version from the old vault |
 | [`hyprpanel/`](hyprpanel) | HyprPanel (bar) OUTDATED NOT IN USE |
-| [`kitty/`](kitty) | **In use.** Terminal: only `background_opacity 0.8` |
+| [`kitty/`](kitty) | **In use.** Terminal: 80 % opacity, beam cursor with trail |
 | [`Kvantum/`](Kvantum) | **In use.** Qt theme engine: `MonoGlass/` = my copy of Monochrome (true black, white text, 80 % glass), active through `kvantum.kvconfig`. `Monochrome/` = the original theme |
 | [`MangoHud/`](MangoHud) | **In use.** Stable FPS limiter and performance overlay for games (global + per game: cs2, lichii, UnleashedRecomp) |
-| [`nwg-dock-hyprland/`](nwg-dock-hyprland) | Dock of the old setup, not in use |
+| [`nwg-dock-hyprland/`](nwg-dock-hyprland) | **In use.** Dock: `style.css` (80 % black, 12.25 px corners, Noto Sans, white pill under the active app). `launch.sh`, `style-dark.css`, `style-light.css` belong to the old setup |
 | [`nwg-look/`](nwg-look) | GTK settings tool |
 | [`qt6ct/`](qt6ct) | **In use.** Qt 6 settings: style `kvantum`, Noto Sans; color schemes (`simplerice.conf` was my own palette before Kvantum) |
 | [`quickshell/`](quickshell) | *Old shell, not in use:* bar, launcher, control center, dashboard, notifications, OSD, power menu. See [Quickshell Guide](Quickshell%20Guide.md). The screen corners that were in `quickshell/corners/` are now an optional extra in [`experimental/ai-extras/`](experimental/ai-extras) |
@@ -158,13 +164,14 @@ Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
 | [`waybar/`](waybar) | **In use.** Status bar: `config.jsonc` + `style.css` + `bluetooth-menu.xml` (GtkBuilder menu for the Bluetooth module, actions in `menu-actions`). The module is still called `custom/cat` and still runs `scripts/cat.sh` / `scripts/cat-rofi.sh` (rofi on click), but shows the Arch logo now; `cat.svg` / `cat-happy.svg` are the old drawn cat, kept but unused. The other scripts and `transparency*.css` belong to the old setup |
 | [`waypaper/`](waypaper) | **In use.** Wallpaper picker (backend awww) |
 | [`xdg-desktop-portal/`](xdg-desktop-portal) | Portals (screen sharing, file picker) |
+| [`xsettingsd/`](xsettingsd) | **In use.** Theme (Back-In-Black), icons, font (Noto Sans 10) and font smoothing without subpixel (`Xft/RGBA "none"`) for X11 programs |
 
 ### Other
 
 | Folder | What it is |
 |---|---|
 | [`etc/`](etc) | Files from outside `~/.config` (skipped by the restore loop in [Restore the configs](#restore-the-configs)) |
-| [`home/`](home) | Files that belong directly in `~` (`.zshrc`, `.local/bin` scripts, Quickshell settings in `.local/state`, D-Bus override in `.local/share`). Also skipped by the restore loop |
+| [`home/`](home) | Files that belong directly in `~` (`.zshrc`, `.local/bin` scripts, dock pinned list in `.cache`, `.desktop` overrides in `.local/share/applications`, Quickshell settings in `.local/state`, D-Bus override in `.local/share`). Also skipped by the restore loop |
 | [`oled-bw/`](oled-bw) | Settings of the old Quickshell shell (same file as in `home/.local/state/quickshell/by-shell/oled-bw/`) |
 | [`experimental/`](experimental) | **Not in use, never installed automatically.** AI-made experiments, see [Experimental: AI extras](#experimental-ai-extras) |
 

@@ -42,9 +42,22 @@ window.popup,
 @define-color theme_unfocused_selected_bg_color #ffffff;
 @define-color theme_unfocused_selected_fg_color #000000;
 
-/* GLASS EFFECT */
-window.background {
+/* GLASS EFFECT
+   Nur Fenster mit .csd = normale App-Fenster (GTK3 zeichnet unter Wayland seine
+   Titelleiste selbst und haengt dann .csd an). Layer-Shell-Fenster wie das Dock
+   und sein unsichtbarer Hotspot haben kein .csd und bleiben so durchsichtig. */
+window.background.csd,
+dialog.background.csd {
     background-color: rgba(0, 0, 0, 0.8);
+}
+
+/* DATEI-DIALOG
+   Back-In-Black malt Seitenleiste und Pfadleiste deckend schwarz (@bg_main).
+   Durchsichtig machen, damit das Glas vom Fenster durchscheint.
+   Gilt nur innerhalb vom Datei-Dialog (filechooser). */
+filechooser .sidebar,
+filechooser #pathbarbox {
+    background-color: transparent;
 }
 
 .view, treeview, iconview, scrolledwindow, viewport, menubar, toolbar {

@@ -33,6 +33,7 @@ PACKAGES=(
     grim slurp wl-clipboard            # screenshot bind (Super + Shift + S)
     # bar, launcher, notifications, terminal
     waybar rofi swaync kitty
+    nwg-dock-hyprland                  # dock (started by ~/.local/bin/dock)
     blueman bluez bluez-utils pavucontrol
     # wallpaper
     waypaper awww
@@ -42,6 +43,7 @@ PACKAGES=(
     fontconfig noto-fonts ttf-jetbrains-mono-nerd
     # GTK and Qt look
     gtk3 gtk4 nwg-look
+    xsettingsd                         # theme + font for X11 apps (Zen runs on XWayland)
     qt6ct qt6-wayland kvantum kvantum-qt5
     # apps
     nautilus
