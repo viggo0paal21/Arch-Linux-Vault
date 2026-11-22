@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Setzt beim Login das zuletzt ausgewaehlte Wallpaper wieder, egal ob es in Waypaper oder in der
+# App "Linux Wallpaper Engine" ausgewaehlt wurde (Start im Autostart von hyprland.lua).
+#
+# Beide Apps merken sich ihre Auswahl in einer Datei:
+#   Waypaper                ~/.config/waypaper/config.ini
+#   Linux Wallpaper Engine  ~/.config/Linux Wallpaper Engine/active-wallpapers.json
+# Die Datei, die zuletzt geaendert wurde, gehoert zur letzten Auswahl.
+
+WAYPAPER="$HOME/.config/waypaper/config.ini"
+LWE="$HOME/.config/Linux Wallpaper Engine/active-wallpapers.json"
+
+# -nt = "newer than": ist die Datei der App neuer als die von Waypaper?
+if [ -f "$LWE" ] && [ "$LWE" -nt "$WAYPAPER" ] &&
+   [ "$(jq '.activeWallpapers | length' "$LWE")" -gt 0 ]; then
+
+    # pro Bildschirm: --scaling <modus> --screen-root <bildschirm> --bg <wallpaper-ordner>
+    args=()
+    while IFS=$'\t' read -r screen bg scaling; do
+        args+=(--scaling "$scaling" --screen-root "$screen" --bg "$bg")
+    done < <(jq -r '.activeWallpapers[] | [.screen, .backgroundId, .scaling] | @tsv' "$LWE")
+
+    # Einstellungen fuer alle Bildschirme, aus dem ersten Eintrag
+    w='first(.activeWallpapers[])'
+    args+=(--fps "$(jq -r "$w.fps" "$LWE")" --volume "$(jq -r "$w.volume" "$LWE")")
+    [ "$(jq -r "$w.silent" "$LWE")" = true ]            && args+=(--silent)
+    [ "$(jq -r "$w.noAutomute" "$LWE")" = true ]        && args+=(--noautomute)
+    [ "$(jq -r "$w.noAudioProcessing" "$LWE")" = true ] && args+=(--no-audio-processing)
+    [ "$(jq -r "$w.disableMouse" "$LWE")" = true ]      && args+=(--disable-mouse)
+    [ "$(jq -r "$w.disableParallax" "$LWE")" = true ]   && args+=(--disable-parallax)
+    [ "$(jq -r "$w.noFullscreenPause" "$LWE")" = true ] && args+=(--no-fullscreen-pause)
+
+    # ein schon laufendes Wallpaper beenden (Prozessname auf 15 Zeichen gekuerzt)
+    pkill -x linux-wallpaper 2>/dev/null
+    exec linux-wallpaperengine "${args[@]}"
+else
+    # Waypaper war zuletzt (oder die App hat nichts gespeichert)
+    exec waypaper --restore
+fi

@@ -57,13 +57,14 @@ Options: `./install.sh --yes` (no question at the start), `./install.sh --no-pac
 | Qt apps | qt6ct (style `kvantum`) + my Kvantum theme **MonoGlass** | [`qt6ct/qt6ct.conf`](qt6ct/qt6ct.conf), [`Kvantum/MonoGlass/`](Kvantum/MonoGlass), [`Kvantum/kvantum.kvconfig`](Kvantum/kvantum.kvconfig) |
 | Screen-share picker | hyprtoolkit (comes with xdg-desktop-portal-hyprland) | [`hypr/hyprtoolkit.conf`](hypr/hyprtoolkit.conf) |
 | Font | Noto Sans everywhere (kitty: its own default), JetBrainsMono Nerd Font for icons | [`fontconfig/`](fontconfig), `settings.ini` in [`gtk-3.0/`](gtk-3.0) and [`gtk-4.0/`](gtk-4.0) |
-| Wallpaper | waypaper + awww | [`waypaper/config.ini`](waypaper/config.ini) |
+| Wallpaper | waypaper + awww for images, the app "Linux Wallpaper Engine" (GUI for `linux-wallpaperengine`) for animated Steam Wallpaper Engine wallpapers. At login `wallpaper-restore` sets the one picked last, in whichever of the two | [`waypaper/config.ini`](waypaper/config.ini), [`home/.local/bin/wallpaper-restore`](home/.local/bin/wallpaper-restore) |
+| Mouse cursor | `breeze_cursors` (Breeze Dark from KDE), 24 px: `XCURSOR_THEME` in `hypr/system.lua` (Hyprland itself and non-GTK apps), gsettings `cursor-theme` (Wayland GTK apps), `Gtk/CursorThemeName` in xsettingsd (X11 apps), `~/.local/share/icons/default/index.theme` (fallback) | [`hypr/system.lua`](hypr/system.lua), [`home/.local/share/icons/default/index.theme`](home/.local/share/icons/default/index.theme) |
 | Music visualizer | cava | [`cava/config`](cava/config) |
 
 ### How the look works
 
 - **Colors:** true black `#000000` and white `#ffffff`, grey `#5a5a5a` for inactive things.
-- **Wallpaper:** Waypaper sets and remembers it (`waypaper --restore` at login). For animated Steam Wallpaper Engine wallpapers the backend is `linux-wallpaperengine` (needs `linux-wallpaperengine` in PATH); Waypaper stores the item's `preview.jpg` and starts its folder. Picking another wallpaper in Waypaper (image or Wallpaper Engine) is saved automatically.
+- **Wallpaper:** two apps can set it, and both remember their pick in a file: Waypaper in `~/.config/waypaper/config.ini`, the Linux Wallpaper Engine app in `~/.config/Linux Wallpaper Engine/active-wallpapers.json`. At login `~/.local/bin/wallpaper-restore` (started in the autostart of `hyprland.lua`) checks which of the two files changed last: app file newer → it starts `linux-wallpaperengine` with the screen, folder, scaling, fps, volume etc. from that file; otherwise → `waypaper --restore`. Before, only Waypaper was asked, so a wallpaper picked in the app was replaced by Waypaper's old one after every reboot. Waypaper's own backend for Wallpaper Engine wallpapers is `linux-wallpaperengine` too (it stores the item's `preview.jpg` and starts its folder).
 - **Bluetooth tray icon hidden:** blueman-applet keeps running (pairing dialogs), only its tray plugin is off: `gsettings set org.blueman.general plugin-list '["!StatusNotifierItem"]'` (single quotes outside, otherwise zsh reads `!` as history), then restart `blueman-applet`. Undo: `gsettings reset org.blueman.general plugin-list`.
 - **X11 apps get their settings from xsettingsd, not from `settings.ini` / gsettings:** Zen runs on XWayland, and the GTK file dialog it asks for (drawn by `xdg-desktop-portal-gtk`) opens on X11 too, so it can hang on Zen's window. GTK on X11 asks xsettingsd for theme and font. Without a running xsettingsd it falls back to Adwaita dark, that's why the dialog was grey. Check what's running: `hyprctl clients -j | jq -r '.[] | "\(.class) | \(.title) | xwayland=\(.xwayland)"'`.
 - **Rounding:** `rounding = 10` in `hyprland.lua`, the same 10 px in rofi, GTK, menus, hyprtoolkit. Smart gaps (1 tiled window = no gaps, no border, no rounding) are at the end of `hyprland.lua`, currently commented out (`--[[ ... ]]`) so a single window keeps its gaps under the floating bar.
@@ -114,6 +115,7 @@ Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
 
 | File | What it is |
 |---|---|
+| [`wallpaper-restore`](home/.local/bin/wallpaper-restore) | **In use.** Sets the last picked wallpaper at login, from Waypaper or the Linux Wallpaper Engine app (whichever saved its pick last), see "How the look works" |
 | [`check-direct-scanout`](home/.local/bin/check-direct-scanout) | **In use.** Notification that shows whether Hyprland's direct scanout is active (`Super + Home`, bind in `hypr/performance.lua`) |
 | [`qs`](home/.local/bin/qs), [`quickshell`](home/.local/bin/quickshell) | *Old, not in use* (the screen corners used them, now in [`experimental/ai-extras/`](experimental/ai-extras)). Wrappers around `/usr/bin/qs` and `/usr/bin/quickshell`: Vulkan backend, without MangoHud / lsfg-vk / vkBasalt, so it applies to every Quickshell config |
 | [`qs-start`](home/.local/bin/qs-start) | *Old shell.* Started Quickshell from the Hyprland autostart: Vulkan backend, without MangoHud / lsfg-vk / vkBasalt. See [Quickshell Guide](Quickshell%20Guide.md#3-why-the-start-script-exists-nvidia) |
@@ -163,14 +165,14 @@ Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
 | [`waybar/`](waybar) | **In use.** Status bar: `config.jsonc` + `style.css` + `bluetooth-menu.xml` (GtkBuilder menu for the Bluetooth module, actions in `menu-actions`). The module is still called `custom/cat` and still runs `scripts/cat.sh` / `scripts/cat-rofi.sh` (rofi on click), but shows the Arch logo now; `cat.svg` / `cat-happy.svg` are the old drawn cat, kept but unused. The other scripts and `transparency*.css` belong to the old setup |
 | [`waypaper/`](waypaper) | **In use.** Wallpaper picker (backend awww) |
 | [`xdg-desktop-portal/`](xdg-desktop-portal) | Portals (screen sharing, file picker) |
-| [`xsettingsd/`](xsettingsd) | **In use.** Theme (Back-In-Black), icons, font (Noto Sans 10) and font smoothing without subpixel (`Xft/RGBA "none"`) for X11 programs |
+| [`xsettingsd/`](xsettingsd) | **In use.** Theme (Back-In-Black), icons, cursor, font (Noto Sans 10) and font smoothing without subpixel (`Xft/RGBA "none"`) for X11 programs. Careful: nwg-look rewrites this file and `gtk-3.0/settings.ini` completely on every Apply, drops `Gtk/FontName` and writes `font-rgba-order` (`rgb`) into `Xft/RGBA` / `gtk-xft-rgba` even when `font-antialiasing` is `grayscale`, which turns subpixel text back on. After using nwg-look set both back to `none` (or untick the two files in nwg-look's Preferences) |
 
 ### Other
 
 | Folder | What it is |
 |---|---|
 | [`etc/`](etc) | Files from outside `~/.config` (skipped by the restore loop in [Restore the configs](#restore-the-configs)) |
-| [`home/`](home) | Files that belong directly in `~` (`.zshrc`, `.local/bin` scripts, dock pinned list in `.cache` (dock not in use), Zen's `.desktop` override in `.local/share/applications`, Quickshell settings in `.local/state`, D-Bus override in `.local/share`). Also skipped by the restore loop |
+| [`home/`](home) | Files that belong directly in `~` (`.zshrc`, `.local/bin` scripts, dock pinned list in `.cache` (dock not in use), Zen's `.desktop` override in `.local/share/applications`, default cursor in `.local/share/icons/default`, Quickshell settings in `.local/state`, D-Bus override in `.local/share`). Also skipped by the restore loop |
 | [`oled-bw/`](oled-bw) | Settings of the old Quickshell shell (same file as in `home/.local/state/quickshell/by-shell/oled-bw/`) |
 | [`experimental/`](experimental) | **Not in use, never installed automatically.** AI-made experiments, see [Experimental: AI extras](#experimental-ai-extras) |
 

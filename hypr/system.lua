@@ -14,6 +14,7 @@
 ----------------------------
 
 -- Only take effect after the next login.
+hl.env("XCURSOR_THEME", "breeze_cursors")   -- Mauszeiger fuer Hyprland selbst und Nicht-GTK-Apps
 hl.env("XCURSOR_SIZE", "24")
 hl.env("HYPRCURSOR_SIZE", "24")
 
