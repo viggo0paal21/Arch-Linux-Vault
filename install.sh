@@ -277,9 +277,16 @@ if [ -d /usr/share/sddm ]; then
     sudo cp -r "$VAULT"/sddm/rice/. /usr/share/sddm/themes/rice/
     sudo chmod -R a+rX /usr/share/sddm/themes/rice
     sudo install -Dm644 "$VAULT/etc/sddm.conf.d/theme.conf" /etc/sddm.conf.d/theme.conf
-    # /etc/sddm.conf wins over sddm.conf.d: if it sets another theme, switch it there too (backup .bak-rice)
-    if [ -f /etc/sddm.conf ] && grep -q '^Current=' /etc/sddm.conf; then
-        sudo sed -i.bak-rice 's/^Current=.*/Current=rice/' /etc/sddm.conf
+    # /etc/sddm.conf wins over sddm.conf.d. Other themes write into it (backup .bak-rice):
+    #  - Current=<other theme>      -> Current=rice
+    #  - InputMethod=... and GreeterEnvironment=...QT_IM_MODULE=qtvirtualkeyboard (e.g. theme "silent")
+    #    put a huge virtual keyboard over every theme -> empty / commented out
+    if [ -f /etc/sddm.conf ]; then
+        sudo sed -i.bak-rice \
+            -e 's/^Current=.*/Current=rice/' \
+            -e 's/^InputMethod=.*/InputMethod=/' \
+            -e 's/^GreeterEnvironment=/#GreeterEnvironment=/' \
+            /etc/sddm.conf
     fi
     info "SDDM theme rice installed and selected"
     # start SDDM at boot (fails harmlessly if another display manager is already enabled)

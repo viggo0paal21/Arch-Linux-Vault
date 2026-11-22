@@ -279,7 +279,7 @@ Blur must also be enabled globally in `hyprland.lua` (`blur = { enabled = true }
 
 ## SDDM theme
 
-The theme lives in `sddm/rice/` (→ `~/.config/sddm/rice` with the installer). SDDM itself only reads themes from `/usr/share/sddm/themes` and runs as its own user `sddm`. **`install.sh` does all of this by itself** (step 4): copies the theme there, makes it readable, installs [`etc/sddm.conf.d/theme.conf`](etc/sddm.conf.d/theme.conf) (`Current=rice`), switches `Current=` in `/etc/sddm.conf` too if that file sets one (backup `.bak-rice`), and enables `sddm.service`.
+The theme lives in `sddm/rice/` (→ `~/.config/sddm/rice` with the installer). SDDM itself only reads themes from `/usr/share/sddm/themes` and runs as its own user `sddm`. **`install.sh` does all of this by itself** (step 4): copies the theme there, makes it readable, installs [`etc/sddm.conf.d/theme.conf`](etc/sddm.conf.d/theme.conf) (`Current=rice`), fixes `/etc/sddm.conf` if it exists (backup `.bak-rice`): `Current=rice`, `InputMethod=` empty and `GreeterEnvironment=` commented out, and enables `sddm.service`. Why the last two: my old theme "silent" had set `InputMethod=qtvirtualkeyboard` and `QT_IM_MODULE=qtvirtualkeyboard` there, which put a huge virtual keyboard over the rice theme.
 
 By hand (e.g. after changing the theme):
 
@@ -294,6 +294,8 @@ sudo chmod -R a+rX /usr/share/sddm/themes/rice
 # select it: /etc/sddm.conf wins over /etc/sddm.conf.d/ (on my PC it had Current=silent, my old theme)
 grep -rn "Current" /etc/sddm.conf /etc/sddm.conf.d/ 2>/dev/null
 sudo sed -i.bak-rice 's/^Current=.*/Current=rice/' /etc/sddm.conf
+# no virtual keyboard (left over from other themes)
+sudo sed -i.bak-keyboard -e 's/^InputMethod=.*/InputMethod=/' -e 's/^GreeterEnvironment=/#GreeterEnvironment=/' /etc/sddm.conf
 ```
 
 Password dots: own circles that pop in (scale + fade, 180 ms, OutCubic) and the row glides to the new center, like hyprlock's `inputFieldDots`. New wallpaper: replace `background.jpg` (2560×1440), copy the folder again. hyprlock uses the same file from `~/.config/sddm/rice/` and the same `avatar.png` idea (its own copy in `hypr/avatar.png`), both show the profile picture as a circle.
