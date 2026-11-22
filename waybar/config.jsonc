@@ -1,6 +1,7 @@
 {
     // TOP BAR
     "position": "top",
+    "layer": "top",
     "height": 30,
     "margin-top": 0,
     "margin-left": 0,

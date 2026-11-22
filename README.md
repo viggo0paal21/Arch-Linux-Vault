@@ -64,7 +64,7 @@ Options: `./install.sh --yes` (no question at the start), `./install.sh --no-pac
 - **Transparency (80 %) + light blur:** the background is 80 % black, the text stays fully white. Hyprland's blur (`decoration.blur`, `size = 2`, `passes = 2`) softens everything behind it a little. History: 75 % with `passes = 4` looked like frosted glass (that was mostly the strong blur), then 85 % with `passes = 2`, now 80 %. Why 80: screens store opacity as 0–255, and 0.8 × 255 = 204 exactly (hex `cc`), while 0.75 and 0.85 have to be rounded (`bf`, `d9`). On bright wallpapers 80 % stays dark, on dark ones it looks almost like 85 %. `.bak-transparenz80` / `.bak-transparenz85` files on my PC hold the previous values.
   - kitty: `background_opacity 0.8`
   - rofi: `bg-glass: #000000cc` (`cc` = 80 %), blur through a layer rule in `hyprland.lua`
-  - Waybar: `rgba(0, 0, 0, 0.8)` (bar, tooltips, tray menus), layer rule with `blur_popups` for the tray menus; turns solid black with a 250 ms fade when exactly one tiled window is open (class `.solo`), except when that window is kitty (`.solo.kitty`)
+  - Waybar: `rgba(0, 0, 0, 0.8)` (bar, tooltips, tray menus), layer rule with `blur_popups` for the tray menus; turns solid black with a 250 ms fade when exactly one tiled window is open (class `.solo`), except when that window is kitty (`.solo.kitty`) or Zen (`.solo.zen`). Waybar sits on the `top` layer (`"layer": "top"`), like my old Quickshell bar, so maximized apps can't cover it
   - GTK 3: `window.background` 80 %, everything inside transparent (otherwise layers stack up), own selection color, rounded right-click menus
   - GTK 4 / libadwaita: CSS variables in `:root` (`--window-bg-color`, `--view-bg-color`, sidebar/headerbar transparent)
   - Qt: Kvantum theme MonoGlass (`reduce_window_opacity=20`, Kvantum counts the other way round: 20 % see-through = 80 % opaque). Kvantum only makes the window background transparent, lists stay opaque; OBS uses its own theme and ignores Kvantum
@@ -125,7 +125,7 @@ Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
 | (none) | **Current:** plain bash with Arch's defaults, fastfetch is not started automatically |
 | [`home/.zshrc`](home/.zshrc) | *Old setup.* Zsh config (plugins, aliases, history settings) → `~/.zshrc` |
 | [`starship.toml`](starship.toml) | Starship prompt config → `~/.config/starship.toml` (now reset to the default prompt) |
-| [`mimeapps.list`](mimeapps.list) | Default apps (Nautilus for folders, Firefox for links, imv for images, zathura for PDFs, mpv for videos) → `~/.config/mimeapps.list` |
+| [`mimeapps.list`](mimeapps.list) | Default apps (Nautilus for folders, Zen for links, imv for images, zathura for PDFs, mpv for videos) → `~/.config/mimeapps.list` |
 | [`shell-packages.txt`](shell-packages.txt) | Packages for the old zsh setup (zsh, plugins, Starship, eza, bat, fd, ripgrep, lazygit) |
 
 ### Config folders (→ `~/.config`)
