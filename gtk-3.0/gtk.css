@@ -43,11 +43,10 @@ window.popup,
 @define-color theme_unfocused_selected_fg_color #000000;
 
 /* GLASS EFFECT
-   Nur Fenster mit .csd = normale App-Fenster (GTK3 zeichnet unter Wayland seine
-   Titelleiste selbst und haengt dann .csd an). Layer-Shell-Fenster wie das Dock
-   und sein unsichtbarer Hotspot haben kein .csd und bleiben so durchsichtig. */
-window.background.csd,
-dialog.background.csd {
+   Alle Fenster und Dialoge. (Am 22.11. kurz auf .csd eingeschraenkt fuers Dock,
+   dadurch waren Fenster ohne eigene Titelleiste wie blueman-manager deckend.) */
+window.background,
+dialog.background {
     background-color: rgba(0, 0, 0, 0.8);
 }
 
