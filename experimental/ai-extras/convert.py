@@ -54,9 +54,8 @@ EDITS = [
      '    // true = all 4 corners, "top" = only the 2 under the bar, false = off\n'
      '    "screen-corners": "top",\n\n\n    // MODULES'),
     ("waybar/config.jsonc",
-     '    "custom/cat": {\n    "format": "(=^.^=)",\n    "tooltip-format": "meow"\n     },',
-     '    "custom/cat": {\n    "format": "(=^.^=)",\n    "tooltip-format": "meow",\n'
-     '    "on-click": "~/.local/bin/rice-control"\n     },'),
+     '        "on-click": "~/.config/waybar/scripts/cat-rofi.sh"\n',
+     '        "on-click": "~/.local/bin/rice-control"\n'),
 
     ("waybar/style.css", '''/* * = APPLIES TO EVERYTHING */
 * {

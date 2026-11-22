@@ -43,7 +43,7 @@ Options: `./install.sh --yes` (no question at the start), `./install.sh --no-pac
 | Part | Program | Files |
 |---|---|---|
 | Window manager | Hyprland, Lua config | [`hypr/hyprland.lua`](hypr/hyprland.lua) (my own), plus [`hypr/system.lua`](hypr/system.lua) and [`hypr/performance.lua`](hypr/performance.lua) (pulled in with `require`) |
-| Bar | Waybar: cat `(=^.^=)` with "meow" tooltip, workspace dots, window title, clock with date, tray, Bluetooth with number of devices, network, CPU, RAM, volume (Nerd Font icons) | [`waybar/config.jsonc`](waybar/config.jsonc), [`waybar/style.css`](waybar/style.css) |
+| Bar | Waybar: drawn pixel cat (`cat.svg`, 46×22, shown 1:1 so it stays sharp) with "meow" tooltip; click opens rofi and the cat closes its eyes happily (`cat-happy.svg`) until rofi is closed again, workspace dots, window title, clock with date, tray, Bluetooth with number of devices, network, CPU, RAM, volume (Nerd Font icons) | [`waybar/config.jsonc`](waybar/config.jsonc), [`waybar/style.css`](waybar/style.css) |
 | Launcher | rofi (`Super + R`) | [`rofi/config.rasi`](rofi/config.rasi) |
 | Notifications | swaync, default layout with my colors: 80 % black, 10 px radius, no shadow | [`swaync/`](swaync) |
 | Terminal | kitty, 80 % opacity | [`kitty/kitty.conf`](kitty/kitty.conf) |
@@ -82,7 +82,7 @@ This vault contains **every file of the old vault**:
 - Scripts in `home/.local/bin/` whose code on my PC is identical but whose comments are still German keep the English version from the old vault.
 - **New files** that I use now: `hypr/performance.lua`, `hypr/system.lua`, `fontconfig/`, `Kvantum/MonoGlass/`, `qt6ct/colors/simplerice.conf`, `cava/config`.
 
-Not in use anymore, but kept: Quickshell shell `quickshell/`, `quickshell-old-design/`, `oled-bw/`, the zsh setup and the kitty-shell wrapper, `hyprpanel/`, `nwg-dock-hyprland/`, `rofi/monochrome.rasi`, `waybar/scripts/` and the `waybar/transparency*.css` files, `autostart/` (KDE / Cinnamon leftovers), the Quickshell scripts in `home/.local/bin/`.
+Not in use anymore, but kept: Quickshell shell `quickshell/`, `quickshell-old-design/`, `oled-bw/`, the zsh setup and the kitty-shell wrapper, `hyprpanel/`, `nwg-dock-hyprland/`, `rofi/monochrome.rasi`, the old `waybar/scripts/` (all but `cat.sh` / `cat-rofi.sh`) and the `waybar/transparency*.css` files, `autostart/` (KDE / Cinnamon leftovers), the Quickshell scripts in `home/.local/bin/`.
 
 ## Contents
 
@@ -152,7 +152,7 @@ Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
 | [`swaync/`](swaync) | **In use.** Notifications: imports the default `/etc/xdg/swaync/style.css` first, then overrides its `:root` variables (80 % black glass, 10 px radius, no shadow) |
 | [`systemd/`](systemd) | User timers (Arch-Update weekly check, see below) |
 | [`vibrantLinux/`](vibrantLinux) | Per-app color saturation (CS2) |
-| [`waybar/`](waybar) | **In use.** Status bar: `config.jsonc` + `style.css`. `scripts/` and `transparency*.css` belong to the old setup |
+| [`waybar/`](waybar) | **In use.** Status bar: `config.jsonc` + `style.css`, the cat `cat.svg` + `cat-happy.svg`. `scripts/cat.sh` (tells Waybar which cat to show: class `happy` while rofi runs) and `scripts/cat-rofi.sh` (opens rofi on click, sends Waybar signal 8 when rofi opens and closes) are in use; the other scripts and `transparency*.css` belong to the old setup |
 | [`waypaper/`](waypaper) | **In use.** Wallpaper picker (backend awww) |
 | [`xdg-desktop-portal/`](xdg-desktop-portal) | Portals (screen sharing, file picker) |
 

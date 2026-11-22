@@ -31,9 +31,12 @@
     },
 
     "custom/cat": {
-    "format": "(=^.^=)",
-    "tooltip-format": "meow"
-     },
+        "format": " ",
+        "exec": "~/.config/waybar/scripts/cat.sh",
+        "return-type": "json",
+        "signal": 8,
+        "on-click": "~/.config/waybar/scripts/cat-rofi.sh"
+    },
 
     "memory": {
         "format": "\uefc5 {percentage}%"

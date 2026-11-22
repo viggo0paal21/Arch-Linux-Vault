@@ -41,8 +41,8 @@ Noctis mini player opacity. Changes you made to the look files while the extras 
   `hypr/theme.lua`, `waybar/theme.css`, `gtk-3.0/theme.css`, `gtk-4.0/theme.css`,
   `swaync/theme.css`, `rofi/theme.rasi`, `kitty/theme.conf`, `fontconfig/conf.d/55-rice-fonts.conf`.
 - `enable.sh` moves the look values out of my configs and adds one import line instead
-  (`@import url("theme.css");`, `include theme.conf`, ...). In `waybar/config.jsonc` the cat
-  gets its click and the corners switch is added. In `hyprland.lua` an AI EXTRAS block gets
+  (`@import url("theme.css");`, `include theme.conf`, ...). In `waybar/config.jsonc` the cat's
+  click opens Rice Control instead of rofi and the corners switch is added. In `hyprland.lua` an AI EXTRAS block gets
   added at the very end: `require("theme")` plus the start of the corners
   (`qs -n -p ~/.config/quickshell/corners`, `-n` = never twice).
 - Programs that can't import files get single lines replaced: `hyprtoolkit.conf`,

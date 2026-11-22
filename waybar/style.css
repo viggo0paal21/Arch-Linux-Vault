@@ -43,8 +43,16 @@ window#waybar.solo.kitty {
 }
 
 #custom-cat {
-    font-family: "JetBrainsMono Nerd Font";
-    /* margin-right: 400px; */
+    background-image: url("cat.svg");
+    background-size: 46px 22px;
+    background-repeat: no-repeat;
+    background-position: center;
+    min-width: 46px;
+    padding: 0 6px;
+}
+
+#custom-cat.happy {
+    background-image: url("cat-happy.svg");
 }
 
 /* WORKSPACE BUTTONS, GREY INACTIVE WHITE ACTIVE */
