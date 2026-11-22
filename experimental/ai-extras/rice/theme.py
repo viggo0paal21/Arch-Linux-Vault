@@ -29,7 +29,7 @@ class Theme:
     rounding: int = 10
     background: str = "#000000"
     foreground: str = "#ffffff"
-    opacity: float = 0.85
+    opacity: float = 0.8
     blur: bool = True
     blur_size: int = 2
     blur_passes: int = 2
@@ -103,7 +103,7 @@ def css_rgba(hex_color, alpha):
 
 
 def alpha_byte(alpha):
-    """0.85 -> 'd9' (rofi, Hyprland and hyprtoolkit write alpha as hex)."""
+    """0.8 -> 'cc' (rofi, Hyprland and hyprtoolkit write alpha as hex)."""
     return f"{round(alpha * 255):02x}"
 
 
@@ -114,7 +114,7 @@ def mix(hex_a, hex_b, amount):
 
 
 def fmt_num(value):
-    """0.85 -> '0.85', 1.0 -> '1'."""
+    """0.8 -> '0.8', 1.0 -> '1'."""
     return f"{value:.2f}".rstrip("0").rstrip(".")
 
 

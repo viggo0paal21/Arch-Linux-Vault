@@ -1,12 +1,12 @@
 @import url("/etc/xdg/swaync/style.css");
 
-/* my look: 75 % black like kitty, the blur comes from Hyprland */
+/* my look: 80 % black like kitty, the blur comes from Hyprland */
 :root {
     --noti-bg: 0, 0, 0;
-    --noti-bg-alpha: 0.85;
+    --noti-bg-alpha: 0.8;
     --noti-bg-hover: rgba(255, 255, 255, 0.1);
-    --noti-bg-darker: rgba(0, 0, 0, 0.85);
-    --cc-bg: rgba(0, 0, 0, 0.85);
+    --noti-bg-darker: rgba(0, 0, 0, 0.8);
+    --cc-bg: rgba(0, 0, 0, 0.8);
     --border-radius: 10px;
     --notification-shadow: none;
 }

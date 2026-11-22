@@ -45,12 +45,12 @@ Options: `./install.sh --yes` (no question at the start), `./install.sh --no-pac
 | Window manager | Hyprland, Lua config | [`hypr/hyprland.lua`](hypr/hyprland.lua) (my own), plus [`hypr/system.lua`](hypr/system.lua) and [`hypr/performance.lua`](hypr/performance.lua) (pulled in with `require`) |
 | Bar | Waybar: cat `(=^.^=)` with "meow" tooltip, workspace dots, window title, clock with date, tray, Bluetooth with number of devices, network, CPU, RAM, volume (Nerd Font icons) | [`waybar/config.jsonc`](waybar/config.jsonc), [`waybar/style.css`](waybar/style.css) |
 | Launcher | rofi (`Super + R`) | [`rofi/config.rasi`](rofi/config.rasi) |
-| Notifications | swaync, default layout with my colors: 85 % black, 10 px radius, no shadow | [`swaync/`](swaync) |
-| Terminal | kitty, 85 % opacity | [`kitty/kitty.conf`](kitty/kitty.conf) |
+| Notifications | swaync, default layout with my colors: 80 % black, 10 px radius, no shadow | [`swaync/`](swaync) |
+| Terminal | kitty, 80 % opacity | [`kitty/kitty.conf`](kitty/kitty.conf) |
 | System info | fastfetch, small Arch logo | [`fastfetch/config.jsonc`](fastfetch/config.jsonc) |
 | Lock screen | hyprlock, minimal | [`hypr/hyprlock.conf`](hypr/hyprlock.conf) |
 | File manager | Nautilus (`Super + E`) | uses [`gtk-4.0/`](gtk-4.0) |
-| GTK 3 / GTK 4 apps | own CSS: true black, white text, 85 % glass | [`gtk-3.0/gtk.css`](gtk-3.0/gtk.css), [`gtk-4.0/gtk.css`](gtk-4.0/gtk.css) |
+| GTK 3 / GTK 4 apps | own CSS: true black, white text, 80 % glass | [`gtk-3.0/gtk.css`](gtk-3.0/gtk.css), [`gtk-4.0/gtk.css`](gtk-4.0/gtk.css) |
 | Qt apps | qt6ct (style `kvantum`) + my Kvantum theme **MonoGlass** | [`qt6ct/qt6ct.conf`](qt6ct/qt6ct.conf), [`Kvantum/MonoGlass/`](Kvantum/MonoGlass), [`Kvantum/kvantum.kvconfig`](Kvantum/kvantum.kvconfig) |
 | Screen-share picker | hyprtoolkit (comes with xdg-desktop-portal-hyprland) | [`hypr/hyprtoolkit.conf`](hypr/hyprtoolkit.conf) |
 | Font | Noto Sans everywhere (kitty: its own default), JetBrainsMono Nerd Font for icons | [`fontconfig/`](fontconfig), `settings.ini` in [`gtk-3.0/`](gtk-3.0) and [`gtk-4.0/`](gtk-4.0) |
@@ -61,14 +61,14 @@ Options: `./install.sh --yes` (no question at the start), `./install.sh --no-pac
 
 - **Colors:** true black `#000000` and white `#ffffff`, grey `#5a5a5a` for inactive things.
 - **Rounding:** `rounding = 10` in `hyprland.lua`, the same 10 px in rofi, GTK, menus, hyprtoolkit. Smart gaps (1 tiled window = no gaps, no border, no rounding) are at the end of `hyprland.lua`.
-- **Transparency (85 %) + light blur:** the background is 85 % black, the text stays fully white. Hyprland's blur (`decoration.blur`, `size = 2`, `passes = 2`) softens everything behind it a little. I went from 75 % and `passes = 4` to 85 % and `passes = 2`: strong "frosted glass" is a trend, nearly opaque with a soft blur stays readable on any wallpaper and doesn't age. `.bak-transparenz85` files on my PC hold the old 75 % values.
-  - kitty: `background_opacity 0.85`
-  - rofi: `bg-glass: #000000d9` (`d9` = 85 %), blur through a layer rule in `hyprland.lua`
-  - Waybar: `rgba(0, 0, 0, 0.85)` (bar, tooltips, tray menus), layer rule with `blur_popups` for the tray menus; turns solid black with a 250 ms fade when exactly one tiled window is open (class `.solo`), except when that window is kitty (`.solo.kitty`)
-  - GTK 3: `window.background` 85 %, everything inside transparent (otherwise layers stack up), own selection color, rounded right-click menus
+- **Transparency (80 %) + light blur:** the background is 80 % black, the text stays fully white. Hyprland's blur (`decoration.blur`, `size = 2`, `passes = 2`) softens everything behind it a little. History: 75 % with `passes = 4` looked like frosted glass (that was mostly the strong blur), then 85 % with `passes = 2`, now 80 %. Why 80: screens store opacity as 0–255, and 0.8 × 255 = 204 exactly (hex `cc`), while 0.75 and 0.85 have to be rounded (`bf`, `d9`). On bright wallpapers 80 % stays dark, on dark ones it looks almost like 85 %. `.bak-transparenz80` / `.bak-transparenz85` files on my PC hold the previous values.
+  - kitty: `background_opacity 0.8`
+  - rofi: `bg-glass: #000000cc` (`cc` = 80 %), blur through a layer rule in `hyprland.lua`
+  - Waybar: `rgba(0, 0, 0, 0.8)` (bar, tooltips, tray menus), layer rule with `blur_popups` for the tray menus; turns solid black with a 250 ms fade when exactly one tiled window is open (class `.solo`), except when that window is kitty (`.solo.kitty`)
+  - GTK 3: `window.background` 80 %, everything inside transparent (otherwise layers stack up), own selection color, rounded right-click menus
   - GTK 4 / libadwaita: CSS variables in `:root` (`--window-bg-color`, `--view-bg-color`, sidebar/headerbar transparent)
-  - Qt: Kvantum theme MonoGlass (`reduce_window_opacity=15`, Kvantum counts the other way round: 15 % see-through = 85 % opaque). Kvantum only makes the window background transparent, lists stay opaque; OBS uses its own theme and ignores Kvantum
-  - hyprtoolkit (screen-share picker): `background = 0xD9000000` (here the alpha comes **first**: `0xAARRGGBB`)
+  - Qt: Kvantum theme MonoGlass (`reduce_window_opacity=20`, Kvantum counts the other way round: 20 % see-through = 80 % opaque). Kvantum only makes the window background transparent, lists stay opaque; OBS uses its own theme and ignores Kvantum
+  - hyprtoolkit (screen-share picker): `background = 0xCC000000` (here the alpha comes **first**: `0xAARRGGBB`)
   - Steam, Firefox, Electron apps (Discord/Vesktop) draw their own background and stay opaque
 - **Color formats differ per program:** rofi `#RRGGBBAA`, hyprtoolkit `0xAARRGGBB`, Waybar / GTK 3 CSS only `rgba(…)` (GTK 3 does not understand 8-digit hex).
 
@@ -136,12 +136,12 @@ Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
 | [`cava/`](cava) | **In use.** Music visualizer in the terminal |
 | [`fastfetch/`](fastfetch) | **In use.** System info in the terminal: `config.jsonc` = my own small version ("Arch (btw)", white percentages). The `.txt` logos and `variants/` belong to the old setup |
 | [`fontconfig/`](fontconfig) | **In use.** Font settings: `sans-serif` / `system-ui` → Noto Sans |
-| [`gtk-3.0/`](gtk-3.0) | **In use.** GTK 3: colors, 85 % glass, rounded right-click menus, font in `settings.ini` |
-| [`gtk-4.0/`](gtk-4.0) | **In use.** GTK 4 / libadwaita: CSS variables in `:root` (black/white, 85 % glass, radius) |
+| [`gtk-3.0/`](gtk-3.0) | **In use.** GTK 3: colors, 80 % glass, rounded right-click menus, font in `settings.ini` |
+| [`gtk-4.0/`](gtk-4.0) | **In use.** GTK 4 / libadwaita: CSS variables in `:root` (black/white, 80 % glass, radius) |
 | [`hypr/`](hypr) | **In use.** `hyprland.lua` (my own), `system.lua` (env, autostart, fixes), `performance.lua` (MangoHud, VRR, tearing, direct scanout, mouse), `hyprlock.conf`, `hyprtoolkit.conf` (screen-share picker). `hyprland.lua.bak` = the old AI version from the old vault |
 | [`hyprpanel/`](hyprpanel) | HyprPanel (bar) OUTDATED NOT IN USE |
-| [`kitty/`](kitty) | **In use.** Terminal: only `background_opacity 0.85` |
-| [`Kvantum/`](Kvantum) | **In use.** Qt theme engine: `MonoGlass/` = my copy of Monochrome (true black, white text, 85 % glass), active through `kvantum.kvconfig`. `Monochrome/` = the original theme |
+| [`kitty/`](kitty) | **In use.** Terminal: only `background_opacity 0.8` |
+| [`Kvantum/`](Kvantum) | **In use.** Qt theme engine: `MonoGlass/` = my copy of Monochrome (true black, white text, 80 % glass), active through `kvantum.kvconfig`. `Monochrome/` = the original theme |
 | [`MangoHud/`](MangoHud) | **In use.** Stable FPS limiter and performance overlay for games (global + per game: cs2, lichii, UnleashedRecomp) |
 | [`nwg-dock-hyprland/`](nwg-dock-hyprland) | Dock of the old setup, not in use |
 | [`nwg-look/`](nwg-look) | GTK settings tool |
@@ -149,7 +149,7 @@ Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
 | [`quickshell/`](quickshell) | *Old shell, not in use:* bar, launcher, control center, dashboard, notifications, OSD, power menu. See [Quickshell Guide](Quickshell%20Guide.md). The screen corners that were in `quickshell/corners/` are now an optional extra in [`experimental/ai-extras/`](experimental/ai-extras) |
 | [`quickshell-old-design/`](quickshell-old-design) | The same old shell with its **old design** (before the November 2026 redesign), kept as an alternative. Copy it to `~/.config/quickshell` instead of `quickshell/`. The whole repo at that point is also the branch [`quickshell-old-design`](https://github.com/viggo0paal21/-archived-Arch-Linux-Vault/tree/quickshell-old-design) ([zip](https://github.com/viggo0paal21/-archived-Arch-Linux-Vault/archive/refs/heads/quickshell-old-design.zip)) of the old vault |
 | [`rofi/`](rofi) | **In use.** App launcher: `config.rasi` contains everything (settings + theme, `@theme "/dev/null"`). `monochrome.rasi` = theme of the old setup |
-| [`swaync/`](swaync) | **In use.** Notifications: imports the default `/etc/xdg/swaync/style.css` first, then overrides its `:root` variables (85 % black glass, 10 px radius, no shadow) |
+| [`swaync/`](swaync) | **In use.** Notifications: imports the default `/etc/xdg/swaync/style.css` first, then overrides its `:root` variables (80 % black glass, 10 px radius, no shadow) |
 | [`systemd/`](systemd) | User timers (Arch-Update weekly check, see below) |
 | [`vibrantLinux/`](vibrantLinux) | Per-app color saturation (CS2) |
 | [`waybar/`](waybar) | **In use.** Status bar: `config.jsonc` + `style.css`. `scripts/` and `transparency*.css` belong to the old setup |
@@ -212,7 +212,7 @@ Then log out and back in.
 
 **Current setup (in use):**
 
-- **Look:** true black at 85 % with blur, white 1 px border, 10 px rounding, Noto Sans 12, only a search field (no "apps" prompt), selected entry white with black text
+- **Look:** true black at 80 % with blur, white 1 px border, 10 px rounding, Noto Sans 12, only a search field (no "apps" prompt), selected entry white with black text
 - **Files:** only `rofi/config.rasi` (settings and theme in one file, `@theme "/dev/null"` switches off rofi's default theme)
 - **Shortcut:** `Super + R` → `rofi -show drun` (variable `menu` in `hyprland.lua`)
 - **Blur:** layer rule in `hyprland.lua`:

@@ -68,7 +68,7 @@ EDITS = [
 /* TOOLTIPS (e.g. "meow") */
 tooltip,
 tooltip.background {
-    background-color: rgba(0, 0, 0, 0.85);
+    background-color: rgba(0, 0, 0, 0.8);
     border: 1px solid #ffffff;
     border-radius: 10px;
     box-shadow: none;
@@ -89,7 +89,7 @@ tooltip label {
 
 /* BAR ITSELF */
 window#waybar {
-    background: rgba(0, 0, 0, 0.85);
+    background: rgba(0, 0, 0, 0.8);
     color: #ffffff;
     transition: background-color 250ms ease;
 }
@@ -99,7 +99,7 @@ window#waybar.solo {
 }
 
 window#waybar.solo.kitty {
-    background-color: rgba(0, 0, 0, 0.85);
+    background-color: rgba(0, 0, 0, 0.8);
 }
 ''', '''/* Colors, font, borders and rounding: theme.css, written by Rice Control (click the cat).
    It also defines @rice_bg, @rice_fg, @rice_glass and @rice_border for this file. */
@@ -134,7 +134,7 @@ window#waybar.solo.kitty {
     ("waybar/style.css", '#workspaces button {\n    color: @text;', '#workspaces button {\n    color: @rice_fg;'),
     ("waybar/style.css", '''/* TRAY RIGHT-CLICK MENUS */
 menu {
-    background-color: rgba(0, 0, 0, 0.85);
+    background-color: rgba(0, 0, 0, 0.8);
     border: 1px solid #ffffff;
     border-radius: 10px;
     padding: 4px;
@@ -214,13 +214,13 @@ window.popup,
 '''),
 
     ("swaync/style.css", '''
-/* my look: 75 % black like kitty, the blur comes from Hyprland */
+/* my look: 80 % black like kitty, the blur comes from Hyprland */
 :root {
     --noti-bg: 0, 0, 0;
-    --noti-bg-alpha: 0.85;
+    --noti-bg-alpha: 0.8;
     --noti-bg-hover: rgba(255, 255, 255, 0.1);
-    --noti-bg-darker: rgba(0, 0, 0, 0.85);
-    --cc-bg: rgba(0, 0, 0, 0.85);
+    --noti-bg-darker: rgba(0, 0, 0, 0.8);
+    --cc-bg: rgba(0, 0, 0, 0.8);
     --border-radius: 10px;
     --notification-shadow: none;
 }''', '''
@@ -234,7 +234,7 @@ window.popup,
 
 *{
     bg: #000000;
-    bg-glass: #000000d9;
+    bg-glass: #000000cc;
     fg: #FFFFFF;
     dim: #737373;
     accent: #FFFFFF;
@@ -280,7 +280,7 @@ window {
 
 ''', ''),
 
-    ("kitty/kitty.conf", "background_opacity 0.85",
+    ("kitty/kitty.conf", "background_opacity 0.8",
      "# opacity, colors and font: theme.conf, written by Rice Control (click the cat in Waybar)\n"
      "include theme.conf\n"),
 ]
@@ -288,7 +288,7 @@ window {
 # whole files replaced (old = None): only if they still contain this
 WHOLE_FILE_MARKERS = {
     "gtk-3.0/gtk.css": "@define-color theme_bg_color          #000000;",
-    "gtk-4.0/gtk.css": "--window-bg-color: rgba(0, 0, 0, 0.85);",
+    "gtk-4.0/gtk.css": "--window-bg-color: rgba(0, 0, 0, 0.8);",
 }
 
 

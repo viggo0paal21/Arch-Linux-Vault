@@ -8,7 +8,7 @@
 /* TOOLTIPS (e.g. "meow") */
 tooltip,
 tooltip.background {
-    background-color: rgba(0, 0, 0, 0.85);
+    background-color: rgba(0, 0, 0, 0.8);
     border: 1px solid #ffffff;
     border-radius: 10px;
     box-shadow: none;
@@ -29,7 +29,7 @@ tooltip label {
 
 /* BAR ITSELF */
 window#waybar {
-    background: rgba(0, 0, 0, 0.85);
+    background: rgba(0, 0, 0, 0.8);
     color: #ffffff;
     transition: background-color 250ms ease;
 }
@@ -39,7 +39,7 @@ window#waybar.solo {
 }
 
 window#waybar.solo.kitty {
-    background-color: rgba(0, 0, 0, 0.85);
+    background-color: rgba(0, 0, 0, 0.8);
 }
 
 #custom-cat {
@@ -79,7 +79,7 @@ window#waybar.solo.kitty {
 
 /* TRAY RIGHT-CLICK MENUS */
 menu {
-    background-color: rgba(0, 0, 0, 0.85);
+    background-color: rgba(0, 0, 0, 0.8);
     border: 1px solid #ffffff;
     border-radius: 10px;
     padding: 4px;
@@ -108,7 +108,7 @@ window.popup,
 .modules-left,
 .modules-center,
 .modules-right {
-    background-color: rgba(0, 0, 0, 0.85);
+    background-color: rgba(0, 0, 0, 0.8);
     border-radius: 10px;
     padding: 0 8px;
 } */

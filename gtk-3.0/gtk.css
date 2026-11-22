@@ -44,7 +44,7 @@ window.popup,
 
 /* GLASS EFFECT */
 window.background {
-    background-color: rgba(0, 0, 0, 0.85);
+    background-color: rgba(0, 0, 0, 0.8);
 }
 
 .view, treeview, iconview, scrolledwindow, viewport, menubar, toolbar {
