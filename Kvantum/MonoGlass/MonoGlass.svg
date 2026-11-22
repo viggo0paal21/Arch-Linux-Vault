@@ -123,7 +123,7 @@
   </g>
  </g>
  <g transform="translate(.00264425 45.000002)">
-  <rect id="window-normal" y="520" width="40" height="40" style="fill:#1e1e20"/>
+  <rect id="window-normal" y="520" width="40" height="40" style="fill:#000000"/>
  </g>
  <g transform="translate(.00264425 45.000002)">
   <rect id="grip-pressed" x="85" y="505" width="10" height="10" style="fill-opacity:0"/>
