@@ -23,6 +23,7 @@ Rectangle {
     readonly property color hairline: "#26ffffff"  // 1-px-Rand, 15 % Weiss
     readonly property color subtle: "#bfffffff"    // Nebentext, 75 % Weiss
     readonly property real radius: 10              // wie rounding = 10 in hyprland.lua
+    readonly property int maxDots: 22              // so viele Punkte passen ins Feld
     readonly property string fontName: config.font !== "" ? config.font : "Noto Sans"
 
     // ---- Benutzer und Sitzung ----
@@ -131,7 +132,7 @@ Rectangle {
         font.pixelSize: 20
     }
 
-    // ---- Profilbild: abgerundetes Quadrat mit Haarlinie ----
+    // ---- Profilbild: Kreis mit Haarlinie ----
     Item {
         id: avatar
         width: 96
@@ -152,7 +153,7 @@ Rectangle {
         Rectangle {
             id: faceMask
             anchors.fill: parent
-            radius: root.radius
+            radius: width / 2
             visible: false
             layer.enabled: true
         }
@@ -168,7 +169,7 @@ Rectangle {
         // ohne Bild: Anfangsbuchstabe auf Glas
         Rectangle {
             anchors.fill: parent
-            radius: root.radius
+            radius: width / 2
             color: root.glass
             visible: face.status !== Image.Ready
             Text {
@@ -182,7 +183,7 @@ Rectangle {
         }
         Rectangle {
             anchors.fill: parent
-            radius: root.radius
+            radius: width / 2
             color: "transparent"
             border.width: 1
             border.color: root.hairline
@@ -232,10 +233,10 @@ Rectangle {
             verticalAlignment: TextInput.AlignVCenter
             horizontalAlignment: TextInput.AlignHCenter
             echoMode: TextInput.Password
-            passwordCharacter: "●"
-            color: "white"
-            selectionColor: "white"
-            selectedTextColor: "black"
+            // eigener Text unsichtbar, die Punkte zeichnet die Row darunter
+            color: "transparent"
+            selectionColor: "transparent"
+            selectedTextColor: "transparent"
             font.family: root.fontName
             font.pixelSize: 14
             font.letterSpacing: 3
@@ -244,6 +245,41 @@ Rectangle {
             cursorDelegate: Item {}   // kein Strich: die Punkte zeigen schon, dass getippt wird
             Keys.onReturnPressed: root.login()
             Keys.onEnterPressed: root.login()
+            // pro Zeichen ein Eintrag in dotModel: neue Punkte kommen dazu, alte bleiben stehen
+            onTextChanged: {
+                var n = Math.min(text.length, root.maxDots)
+                while (dotModel.count < n) dotModel.append({})
+                while (dotModel.count > n) dotModel.remove(dotModel.count - 1)
+            }
+        }
+
+        // Punkte wie bei hyprlock: echte Kreise, jeder neue ploppt weich auf
+        ListModel { id: dotModel }
+        Row {
+            id: dots
+            // nicht per anchors zentriert, sondern ueber x mit Animation:
+            // kommt ein Punkt dazu, gleitet die Reihe weich zur neuen Mitte statt zu springen
+            x: (parent.width - width) / 2
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 4
+            Behavior on x { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+            Repeater {
+                model: dotModel
+                delegate: Rectangle {
+                    id: dot
+                    width: 9
+                    height: 9
+                    radius: width / 2
+                    color: "white"
+                    scale: 0
+                    opacity: 0
+                    ParallelAnimation {
+                        running: true
+                        NumberAnimation { target: dot; property: "scale"; to: 1; duration: 180; easing.type: Easing.OutCubic }
+                        NumberAnimation { target: dot; property: "opacity"; to: 1; duration: 180; easing.type: Easing.OutCubic }
+                    }
+                }
+            }
         }
         Text {
             anchors.centerIn: parent

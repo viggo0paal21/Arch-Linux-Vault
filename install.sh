@@ -33,6 +33,7 @@ PACKAGES=(
     grim slurp wl-clipboard            # screenshot bind (Super + Shift + S)
     # bar, launcher, notifications, terminal
     waybar rofi swaync kitty
+    sddm                               # login screen, theme "rice" from sddm/rice
     blueman bluez bluez-utils pavucontrol
     # wallpaper
     waypaper awww
@@ -151,7 +152,7 @@ info "Home:    $HOME"
 [ "$DO_PACKAGES" -eq 1 ] && info "1. install programs (pacman --needed, AUR via yay)"
 info "2. back up files that get replaced to: $BACKUP"
 info "3. copy all config files from the vault (existing ones are replaced)"
-info "4. extras: bluetooth at boot, Nautilus as file manager, font cache"
+info "4. extras: bluetooth at boot, Nautilus as file manager, SDDM theme, font cache"
 
 if [ "$ASSUME_YES" -eq 0 ]; then
     printf '\nContinue? [y/N] '
@@ -268,6 +269,25 @@ if command -v gsettings >/dev/null; then
         && gsettings set org.gnome.desktop.interface document-font-name 'Noto Sans 10' 2>/dev/null \
         && gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null \
         && info "GTK 4 font: Noto Sans, dark mode"
+fi
+if [ -d /usr/share/sddm ]; then
+    # SDDM only reads themes from /usr/share/sddm/themes, and runs as its own user "sddm":
+    # copy the theme there and make it readable for everyone (a+rX)
+    sudo mkdir -p /usr/share/sddm/themes/rice
+    sudo cp -r "$VAULT"/sddm/rice/. /usr/share/sddm/themes/rice/
+    sudo chmod -R a+rX /usr/share/sddm/themes/rice
+    sudo install -Dm644 "$VAULT/etc/sddm.conf.d/theme.conf" /etc/sddm.conf.d/theme.conf
+    # /etc/sddm.conf wins over sddm.conf.d: if it sets another theme, switch it there too (backup .bak-rice)
+    if [ -f /etc/sddm.conf ] && grep -q '^Current=' /etc/sddm.conf; then
+        sudo sed -i.bak-rice 's/^Current=.*/Current=rice/' /etc/sddm.conf
+    fi
+    info "SDDM theme rice installed and selected"
+    # start SDDM at boot (fails harmlessly if another display manager is already enabled)
+    if sudo systemctl enable sddm.service 2>/dev/null; then
+        info "SDDM starts at boot"
+    else
+        warn "SDDM not enabled: another display manager is active (disable it first)"
+    fi
 fi
 if command -v fc-cache >/dev/null; then
     fc-cache -f >/dev/null && info "font cache rebuilt"

@@ -50,7 +50,7 @@ Options: `./install.sh --yes` (no question at the start), `./install.sh --no-pac
 | Browser | Zen Browser, started through XWayland (`env MOZ_ENABLE_WAYLAND=0`) because it hangs on start under native Wayland with NVIDIA; transparency on in its prefs. Own `.desktop` override with the XWayland start | [`home/.local/share/applications/zen.desktop`](home/.local/share/applications/zen.desktop) |
 | Discord | Official Discord + Vencord (`vencord-installer-bin`), window transparency on in Vencord settings. Two themes based on refact0r's Midnight: **Glass 80** (panels 80 % black with 10 px gaps showing the blurred wallpaper) and **Glass 80 Flat** (one 80 % surface for the whole window, no boxes). Only enable one. Window buttons hidden | [`Vencord/themes/`](Vencord/themes) |
 | System info | fastfetch, small Arch logo. Plus `fetch` (rotating 3D Arch logo) with only user, OS, shell, WM, disk and RAM in white; alias in `~/.zshrc`: `fetch --rotate-y --no-color --height $(( $(tput lines) - 6 ))` | [`fastfetch/config.jsonc`](fastfetch/config.jsonc), [`fetch/config`](fetch/config) |
-| Lock screen | hyprlock, same layout as the SDDM theme: clock (Noto Sans Light), date, profile picture (rounded square, 1 px line), name (`$DESC`), password field as 80 % black pill, background = the theme's `background.jpg` blurred and 40 % darker | [`hypr/hyprlock.conf`](hypr/hyprlock.conf) |
+| Lock screen | hyprlock, same layout as the SDDM theme: clock (Noto Sans Light), date, profile picture (circle, 1 px line), name (`$DESC`), password field as 80 % black pill, background = the theme's `background.jpg` blurred and 40 % darker | [`hypr/hyprlock.conf`](hypr/hyprlock.conf) |
 | Login screen | SDDM theme **rice** (Qt 6, own QML): same layout as hyprlock, plus session (bottom left, click switches) and Restart / Shut down (bottom right) as small glass pills. Background = a frame of the snow leopard Wallpaper Engine video. Blur, darkening, profile picture and font in `theme.conf`. Install: see [SDDM theme](#sddm-theme) | [`sddm/rice/`](sddm/rice) |
 | File manager | Nautilus (`Super + E`) | uses [`gtk-4.0/`](gtk-4.0) |
 | GTK 3 / GTK 4 apps | own CSS: true black, white text, 80 % glass. GTK theme underneath: Back-In-Black (in `~/.themes`, not in this repo) | [`gtk-3.0/gtk.css`](gtk-3.0/gtk.css), [`gtk-4.0/gtk.css`](gtk-4.0/gtk.css) |
@@ -172,7 +172,7 @@ Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
 
 | Folder | What it is |
 |---|---|
-| [`etc/`](etc) | Files from outside `~/.config` (skipped by the restore loop in [Restore the configs](#restore-the-configs)) |
+| [`etc/`](etc) | Files from outside `~/.config`, installed with `sudo` by `install.sh`: `sudoers.d/pwfeedback` (stars when typing the sudo password), `sddm.conf.d/theme.conf` (SDDM theme rice). Skipped by the restore loop in [Restore the configs](#restore-the-configs) |
 | [`home/`](home) | Files that belong directly in `~` (`.zshrc`, `.local/bin` scripts, dock pinned list in `.cache` (dock not in use), Zen's `.desktop` override in `.local/share/applications`, default cursor in `.local/share/icons/default`, Quickshell settings in `.local/state`, D-Bus override in `.local/share`). Also skipped by the restore loop |
 | [`oled-bw/`](oled-bw) | Settings of the old Quickshell shell (same file as in `home/.local/state/quickshell/by-shell/oled-bw/`) |
 | [`experimental/`](experimental) | **Not in use, never installed automatically.** AI-made experiments, see [Experimental: AI extras](#experimental-ai-extras) |
@@ -279,7 +279,9 @@ Blur must also be enabled globally in `hyprland.lua` (`blur = { enabled = true }
 
 ## SDDM theme
 
-The theme lives in `sddm/rice/` (→ `~/.config/sddm/rice` with the installer). SDDM itself only reads themes from `/usr/share/sddm/themes`, so it has to be copied there once (and again after changing it):
+The theme lives in `sddm/rice/` (→ `~/.config/sddm/rice` with the installer). SDDM itself only reads themes from `/usr/share/sddm/themes` and runs as its own user `sddm`. **`install.sh` does all of this by itself** (step 4): copies the theme there, makes it readable, installs [`etc/sddm.conf.d/theme.conf`](etc/sddm.conf.d/theme.conf) (`Current=rice`), switches `Current=` in `/etc/sddm.conf` too if that file sets one (backup `.bak-rice`), and enables `sddm.service`.
+
+By hand (e.g. after changing the theme):
 
 ```bash
 # test first: opens the login screen as a normal window (logging in doesn't work in test mode)
@@ -289,14 +291,12 @@ sddm-greeter-qt6 --test-mode --theme ~/.config/sddm/rice
 sudo cp -r ~/.config/sddm/rice /usr/share/sddm/themes/
 sudo chmod -R a+rX /usr/share/sddm/themes/rice
 
-# where is the current theme set? /etc/sddm.conf wins over /etc/sddm.conf.d/
+# select it: /etc/sddm.conf wins over /etc/sddm.conf.d/ (on my PC it had Current=silent, my old theme)
 grep -rn "Current" /etc/sddm.conf /etc/sddm.conf.d/ 2>/dev/null
-# then set this there (or in a new /etc/sddm.conf.d/theme.conf if nothing is set):
-#   [Theme]
-#   Current=rice
+sudo sed -i.bak-rice 's/^Current=.*/Current=rice/' /etc/sddm.conf
 ```
 
-New wallpaper: replace `background.jpg` (I took a frame from the video: `ffmpeg -ss 1 -i video.mp4 -frames:v 1 -vf scale=2560:1440 -q:v 2 background.jpg`), copy the folder again. hyprlock uses the same file from `~/.config/sddm/rice/`.
+Password dots: own circles that pop in (scale + fade, 180 ms, OutCubic) and the row glides to the new center, like hyprlock's `inputFieldDots`. New wallpaper: replace `background.jpg` (2560×1440), copy the folder again. hyprlock uses the same file from `~/.config/sddm/rice/` and the same `avatar.png` idea (its own copy in `hypr/avatar.png`), both show the profile picture as a circle.
 
 ## System tweaks (outside `~/.config`)
 
