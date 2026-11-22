@@ -32,7 +32,7 @@ window#waybar {
     background: rgba(0, 0, 0, 0.8);
     color: #ffffff;
     transition: background-color 250ms ease;
-    border-radius: 15px;
+    border-radius: 12.25px;
 }
 
 /* VOLUME SLIDER */

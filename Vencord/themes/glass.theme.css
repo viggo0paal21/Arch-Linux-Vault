@@ -1,0 +1,135 @@
+/**
+ * @name Glass 80
+ * @description Midnight (refact0r) in Schwarz-Weiss mit 80 % wie kitty und Zen. Den Blur hinter dem Fenster macht Hyprland.
+ * @author viggo (Basis: refact0r/midnight-discord)
+ * @version 2.0.1
+ */
+
+/* Midnight kuemmert sich um Discords Klassen und Variablen (und wird gepflegt,
+   wenn Discord etwas umbenennt). Hier stehen nur meine Einstellungen. */
+@import url('https://refact0r.github.io/midnight-discord/build/midnight.css');
+
+body {
+    /* Schrift wie im Rest vom Rice */
+    --font: 'Noto Sans';
+    --code-font: 'JetBrains Mono Nerd Font';
+    font-weight: 400;
+
+    /* Abstand zwischen den Panels: 10 px wie die Hyprland-Gaps zwischen Fenstern */
+    --gap: 10px;
+    --divider-thickness: 4px;
+    --border-thickness: 1px;
+
+    --animations: on;
+    --list-item-transition: 0.2s ease;
+    --dms-icon-svg-transition: 0.4s ease;
+    --border-hover-transition: 0.2s ease;
+
+    --top-bar-height: var(--gap);
+    --top-bar-button-position: titlebar;
+    --top-bar-title-position: off;
+    --subtle-top-bar-title: off;
+
+    --custom-window-controls: off;
+    --window-control-size: 14px;
+
+    /* DM-Knopf: Discord-Standard-Icon statt Mond */
+    --custom-dms-icon: off;
+    --custom-dms-background: off;
+
+    --background-image: off;
+
+    /* ===== TRANSPARENZ =====
+       remove-bg-layer: die unterste Discord-Flaeche (--bg-3) faellt weg,
+       dahinter kommt direkt das durchsichtige Fenster und damit Hyprlands Blur. */
+    --transparency-tweaks: on;
+    --remove-bg-layer: on;
+    /* panel-blur nur damit --bg-floating greift: Menues/Popups liegen ueber Text */
+    --panel-blur: on;
+    --blur-amount: 12px;
+    --bg-floating: rgba(0, 0, 0, 0.92);
+
+    --custom-chatbar: off;
+    --chatbar-height: 47px;
+    --small-user-panel: on;
+}
+
+:root {
+    --colors: on;
+
+    /* Text: reines Weiss bis Grau, ohne Farbstich */
+    --text-0: #000000;              /* Text auf hellen (weissen) Knoepfen */
+    --text-1: hsl(0, 0%, 100%);
+    --text-2: hsl(0, 0%, 85%);
+    --text-3: hsl(0, 0%, 75%);
+    --text-4: hsl(0, 0%, 55%);
+    --text-5: hsl(0, 0%, 35%);
+
+    /* Flaechen: Panels 80 % Schwarz wie kitty, Knoepfe leicht aufgehellt */
+    --bg-1: rgba(255, 255, 255, 0.12);   /* Knoepfe beim Klicken */
+    --bg-2: rgba(255, 255, 255, 0.08);   /* Knoepfe */
+    --bg-3: rgba(255, 255, 255, 0.04);   /* Nebenflaechen */
+    --bg-4: rgba(0, 0, 0, 0.8);          /* Panels: genau wie kitty */
+    --hover: rgba(255, 255, 255, 0.06);
+    --active: rgba(255, 255, 255, 0.10);
+    --active-2: rgba(255, 255, 255, 0.16);
+    --message-hover: rgba(255, 255, 255, 0.03);
+
+    /* Akzent: Weiss statt Blau */
+    --accent-1: hsl(0, 0%, 100%);
+    --accent-2: hsl(0, 0%, 90%);
+    --accent-3: hsl(0, 0%, 100%);
+    --accent-4: hsl(0, 0%, 85%);
+    --accent-5: hsl(0, 0%, 75%);
+    --accent-new: var(--accent-2);
+    --mention: linear-gradient(to right, rgba(255, 255, 255, 0.08) 40%, transparent);
+    --mention-hover: linear-gradient(to right, rgba(255, 255, 255, 0.05) 40%, transparent);
+    --reply: linear-gradient(to right, rgba(255, 255, 255, 0.06) 40%, transparent);
+    --reply-hover: linear-gradient(to right, rgba(255, 255, 255, 0.04) 40%, transparent);
+
+    /* Status-Punkte bleiben farbig (Discord-Standard), sonst nicht unterscheidbar */
+    --online: #40a258;
+    --dnd: #d83a41;
+    --idle: #cc954c;
+    --streaming: #9147ff;
+    --offline: var(--text-4);
+
+    /* Raender: zartes Weiss wie die Hyprland-Rahmen */
+    --border-light: rgba(255, 255, 255, 0.06);
+    --border: rgba(255, 255, 255, 0.12);
+    --border-hover: rgba(255, 255, 255, 0.2);
+    --button-border: rgba(255, 255, 255, 0.1);
+
+    /* Grundfarben (fuer Midnight, kaum sichtbar) */
+    --red-1: oklch(75% 0.12 0);
+    --red-2: oklch(70% 0.12 0);
+    --red-3: oklch(65% 0.12 0);
+    --red-4: oklch(60% 0.12 0);
+    --red-5: oklch(55% 0.12 0);
+    --green-1: oklch(75% 0.11 170);
+    --green-2: oklch(70% 0.11 170);
+    --green-3: oklch(65% 0.11 170);
+    --green-4: oklch(60% 0.11 170);
+    --green-5: oklch(55% 0.11 160);
+    --blue-1: hsl(0, 0%, 100%);
+    --blue-2: hsl(0, 0%, 90%);
+    --blue-3: hsl(0, 0%, 80%);
+    --blue-4: hsl(0, 0%, 70%);
+    --blue-5: hsl(0, 0%, 60%);
+    --yellow-1: oklch(80% 0.11 90);
+    --yellow-2: oklch(75% 0.11 90);
+    --yellow-3: oklch(70% 0.11 90);
+    --yellow-4: oklch(65% 0.11 90);
+    --yellow-5: oklch(60% 0.11 90);
+    --purple-1: oklch(75% 0.11 310);
+    --purple-2: oklch(70% 0.11 310);
+    --purple-3: oklch(65% 0.11 310);
+    --purple-4: oklch(60% 0.11 310);
+    --purple-5: oklch(55% 0.11 310);
+}
+
+/* Fensterknoepfe (Minimieren/Maximieren/Schliessen) ausblenden:
+   unter Hyprland schliesst und kachelt man per Tastatur, die Knoepfe braucht es nicht */
+.winButtons_3zSH5d {
+    display: none !important;
+}

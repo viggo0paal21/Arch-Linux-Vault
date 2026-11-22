@@ -17,7 +17,7 @@ local mod = "SUPER"
 local terminal = "kitty"
 local filemanager = "nautilus"
 local menu = "rofi -show drun"
-local tempo = 0.5
+local tempo = 1.5
 
 
 
@@ -28,11 +28,10 @@ hl.monitor({ output = "DP-1", mode = "2560x1440@170", position = "auto", scale =
 
 -- ==== AUTOSTART ==== --
 hl.on("hyprland.start", function()
--- Wallpaper zuerst: waypaper setzt das zuletzt gewaehlte Wallpaper (awww-Bild oder Wallpaper Engine)
-hl.exec_cmd("awww-daemon")
-hl.exec_cmd("sleep 0.5 && waypaper --restore")
 hl.exec_cmd("waybar")
 hl.exec_cmd("swaync")
+hl.exec_cmd("awww-daemon")
+hl.exec_cmd("sleep 1 && waypaper --restore")
 hl.exec_cmd("blueman-applet")
 end)
 
@@ -109,24 +108,24 @@ end
 
 
 -- ==== ANIMATIONS ==== --
-hl.curve("snap", { type = "bezier", points = { {0.16, 1}, {0.3, 1} }})
-hl.curve("linear", {type = "bezier", points = {{0, 0}, {1, 1} } })
-hl.curve("wsglide", { type = "bezier", points = { {0.05, 0.9}, {0.1, 1} } })
+hl.curve("wind",         { type = "bezier", points = { {0.05, 0.9}, {0.1, 1} } })
+hl.curve("winIn",        { type = "bezier", points = { {0.1, 1},    {0.1, 1} } })
+hl.curve("winOut",       { type = "bezier", points = { {0.3, 0},    {0, 1}   } })
+hl.curve("liner",        { type = "bezier", points = { {1, 1},      {1, 1}   } })
+hl.curve("almostLinear", { type = "bezier", points = { {0.5, 0.5},  {0.75, 1.0} } })
 
-
-hl.animation({ leaf = "global", enabled = true, speed = 2 / tempo, bezier = "snap" })
-hl.animation({ leaf = "windows", enabled = true, speed = 2 / tempo, bezier = "snap" })
-hl.animation({ leaf = "windowsIn", enabled = true, speed = 2 / tempo, bezier = "snap", style = "popin 95%" })
-hl.animation({ leaf = "windowsOut", enabled = true, speed =1.2 / tempo, bezier = "linear", style = "popin 95%" })
-hl.animation({ leaf = "fade", enabled = true, speed = 1.5 / tempo, bezier = "snap" })
-hl.animation({ leaf = "fadeOut", enabled = true, speed = 1 / tempo, bezier = "linear" })
-hl.animation({ leaf = "layers", enabled = true, speed = 1.5 / tempo, bezier = "snap", style = "fade" })
-hl.animation({ leaf = "layersOut", enabled = true, speed = 1 / tempo, bezier = "linear", style = "fade" })
-hl.animation({ leaf = "fadeLayersOut", enabled = true, speed = 1 / tempo, bezier = "linear" })
--- Workspaces: Kurve wie "wind" aus mkhmtolzhas/mkhmtdots, aber ohne Ueberschwingen (1 statt 1.05), 350 ms (1.75 / 0.5), Stil slide
-hl.animation({ leaf = "workspaces", enabled = true, speed = 1.75 / tempo, bezier = "wsglide" })
-hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 2 / tempo, bezier = "snap", style = "slidefadevert 10%" })
-hl.animation({ leaf = "zoomFactor", enabled = true, speed = 3 / tempo, bezier = "snap" })
+hl.animation({ leaf = "windows",     enabled = true, speed = 6 / tempo,    bezier = "wind",   style = "slide" })
+hl.animation({ leaf = "windowsIn",   enabled = true, speed = 6 / tempo,    bezier = "winIn",  style = "slide" })
+hl.animation({ leaf = "windowsOut",  enabled = true, speed = 5 / tempo,    bezier = "winOut", style = "slide" })
+hl.animation({ leaf = "windowsMove", enabled = true, speed = 5 / tempo,    bezier = "wind",   style = "slide" })
+hl.animation({ leaf = "border",      enabled = true, speed = 1 / tempo,    bezier = "liner" })
+hl.animation({ leaf = "layers",      enabled = true, speed = 6 / tempo,    bezier = "wind",   style = "popin 90%" })
+hl.animation({ leaf = "layersIn",    enabled = true, speed = 6 / tempo,    bezier = "winIn",  style = "popin 90%" })
+hl.animation({ leaf = "layersOut",   enabled = true, speed = 5 / tempo,    bezier = "winOut", style = "popin 90%" })
+hl.animation({ leaf = "workspaces",  enabled = true, speed = 5 / tempo,    bezier = "wind" })
+hl.animation({ leaf = "fadeIn",      enabled = true, speed = 1.73 / tempo, bezier = "almostLinear" })
+hl.animation({ leaf = "fadeOut",     enabled = true, speed = 1.46 / tempo, bezier = "almostLinear" })
+hl.animation({ leaf = "fade",        enabled = true, speed = 3.03 / tempo, bezier = "almostLinear" })
 
 
 
@@ -191,9 +190,10 @@ hl.window_rule({ match = { float = false, workspace = "w[tv1]" }, rounding = 0,b
 hl.window_rule({ match = { float = false, workspace = "f[1]" }, rounding = 0, border_size = 0 })
 --====================================================================================--
 --====================================================================================--
+]]
+
 
 hl.window_rule({ match = { float = false, workspace = "w[tv1]" }, border_size = 0 })
 hl.window_rule({ match = { float = false, workspace = "f[1]" }, border_size = 0 })
 
 
-]]

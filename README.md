@@ -43,10 +43,11 @@ Options: `./install.sh --yes` (no question at the start), `./install.sh --no-pac
 | Part | Program | Files |
 |---|---|---|
 | Window manager | Hyprland, Lua config | [`hypr/hyprland.lua`](hypr/hyprland.lua) (my own), plus [`hypr/system.lua`](hypr/system.lua) and [`hypr/performance.lua`](hypr/performance.lua) (pulled in with `require`) |
-| Bar | Waybar as one floating bar (10 px from the edges like the windows, rounded 15 px): Arch logo (Nerd Font `\uf303`, click opens rofi), workspaces as grey dots where the active one stretches into a white pill (CSS `transition`, 300 ms), window title, clock with date, tray, Bluetooth with number of devices (left click = blueman-manager, right click = own menu from `waybar/bluetooth-menu.xml` with on/off, disconnect, devices, send files, adapters; hover = connected devices with battery), network, CPU, RAM, volume with a slider that slides out on hover (`group/volume` drawer + `pulseaudio/slider`) (Nerd Font icons) | [`waybar/config.jsonc`](waybar/config.jsonc), [`waybar/style.css`](waybar/style.css) |
+| Bar | Waybar as one floating bar (10 px from the edges like the windows, rounded 12.25 px): Arch logo (Nerd Font `\uf303`, click opens rofi), workspaces as grey dots where the active one stretches into a white pill (CSS `transition`, 300 ms), window title, clock with date, tray, Bluetooth with number of devices (left click = blueman-manager, right click = own menu from `waybar/bluetooth-menu.xml` with on/off, disconnect, devices, send files, adapters; hover = connected devices with battery), network, CPU, RAM, volume with a slider that slides out on hover (`group/volume` drawer + `pulseaudio/slider`) (Nerd Font icons) | [`waybar/config.jsonc`](waybar/config.jsonc), [`waybar/style.css`](waybar/style.css) |
 | Launcher | rofi (`Super + R`) | [`rofi/config.rasi`](rofi/config.rasi) |
 | Notifications | swaync, default layout with my colors: 80 % black, 10 px radius, no shadow | [`swaync/`](swaync) |
-| Terminal | kitty, 80 % opacity, beam cursor with a short cursor trail | [`kitty/kitty.conf`](kitty/kitty.conf) |
+| Terminal | kitty, 80 % opacity, beam cursor with a short cursor trail (`resize_debounce_time 0 0` and `sync_to_monitor no` are leftovers from testing a resize glitch, they didn't change it) | [`kitty/kitty.conf`](kitty/kitty.conf) |
+| Discord | Official Discord + Vencord (`vencord-installer-bin`), window transparency on in Vencord settings. Two themes based on refact0r's Midnight: **Glass 80** (panels 80 % black with 10 px gaps showing the blurred wallpaper) and **Glass 80 Flat** (one 80 % surface for the whole window, no boxes). Only enable one. Window buttons hidden | [`Vencord/themes/`](Vencord/themes) |
 | System info | fastfetch, small Arch logo | [`fastfetch/config.jsonc`](fastfetch/config.jsonc) |
 | Lock screen | hyprlock, minimal | [`hypr/hyprlock.conf`](hypr/hyprlock.conf) |
 | File manager | Nautilus (`Super + E`) | uses [`gtk-4.0/`](gtk-4.0) |
@@ -71,7 +72,7 @@ Options: `./install.sh --yes` (no question at the start), `./install.sh --no-pac
   - GTK 4 / libadwaita: CSS variables in `:root` (`--window-bg-color`, `--view-bg-color`, sidebar/headerbar transparent)
   - Qt: Kvantum theme MonoGlass (`reduce_window_opacity=20`, Kvantum counts the other way round: 20 % see-through = 80 % opaque). Kvantum only makes the window background transparent, lists stay opaque; OBS uses its own theme and ignores Kvantum
   - hyprtoolkit (screen-share picker): `background = 0xCC000000` (here the alpha comes **first**: `0xAARRGGBB`)
-  - Steam, Firefox, Electron apps (Discord/Vesktop) draw their own background and stay opaque
+  - Steam, Firefox and most Electron apps draw their own background and stay opaque. Discord is transparent through Vencord + the Glass 80 themes (see above)
 - **Color formats differ per program:** rofi `#RRGGBBAA`, hyprtoolkit `0xAARRGGBB`, Waybar / GTK 3 CSS only `rgba(…)` (GTK 3 does not understand 8-digit hex).
 
 ## What changed since the old vault
@@ -169,7 +170,7 @@ Scripts for `~/.local/bin` (in [`home/.local/bin/`](home/.local/bin)):
 
 ## Hyprland: how my config is split
 
-- [`hypr/hyprland.lua`](hypr/hyprland.lua): my own config. Monitor, autostart (wallpaper first: awww + `waypaper --restore`, then Waybar, swaync, blueman-applet), look (gaps, borders, rounding, light blur, shadows off), floating windows snap to the gaps (`general.snap`), window rule for the Noctis mini player (no border), keybinds, animations (curve "snap"; workspaces slide with "wsglide", 350 ms, no overshoot), `Super + V` = float at 5:3 in the center, layer rules (blur for rofi, Waybar and swaync), smart gaps.
+- [`hypr/hyprland.lua`](hypr/hyprland.lua): my own config. Monitor, autostart (Waybar, swaync, awww + `waypaper --restore`, blueman-applet), look (gaps, borders, rounding, light blur, shadows off), floating windows snap to the gaps (`general.snap`), window rule for the Noctis mini player (no border), keybinds, animations based on mkhmtolzhas/mkhmtdots (TikTok rice) without overshoot: curves `wind`, `winIn`, `winOut` capped at 0..1, windows `slide`, layers `popin 90%`, every speed is `n / tempo` so `local tempo` (now 1.5) scales everything, `Super + V` = float at 5:3 in the center, layer rules (blur for rofi, Waybar and swaync), smart gaps.
 - [`hypr/system.lua`](hypr/system.lua): background stuff so apps run and look right (cursor size, Qt through qt6ct, GTK dark + portal, hyprpolkitagent, arch-update tray, fixes). `GTK_THEME` must stay off, otherwise `gtk-4.0/gtk.css` is ignored.
 - [`hypr/performance.lua`](hypr/performance.lua): gaming and latency from the old setup (MangoHud env, tearing allowed, direct scanout, VRR fullscreen-only, cursor settings for VRR, flat mouse, rules for videos and DOOM, `Super + Home` = direct scanout check).
 
