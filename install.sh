@@ -268,7 +268,8 @@ if command -v gsettings >/dev/null; then
     gsettings set org.gnome.desktop.interface font-name 'Noto Sans 10' 2>/dev/null \
         && gsettings set org.gnome.desktop.interface document-font-name 'Noto Sans 10' 2>/dev/null \
         && gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null \
-        && info "GTK 4 font: Noto Sans, dark mode"
+        && gsettings set org.gnome.desktop.interface icon-theme 'rice' 2>/dev/null \
+        && info "GTK 4: font Noto Sans, dark mode, icon theme rice"
 fi
 if [ -d /usr/share/sddm ]; then
     # SDDM only reads themes from /usr/share/sddm/themes, and runs as its own user "sddm":
