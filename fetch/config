@@ -6,3 +6,5 @@ disk
 memory
 
 label_color=white
+# Logo immer gleich gross: feste Hoehe in Zeilen, unabhaengig von der Fenstergroesse
+height=30
