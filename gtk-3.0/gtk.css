@@ -71,3 +71,35 @@ filechooser #pathbarbox {
 menubar > menuitem {
     color: #ffffff;
 }
+/* >>> glass-header
+   Back-In-Black malt die Titelleiste (headerbar mit Abbrechen / Auswaehlen)
+   und die Spaltenkoepfe von Listen (Name / Ort / Groesse ...) deckend schwarz,
+   genauso die Such- und Ortsleiste, die oben im Datei-Dialog aufklappt.
+   Gilt fuer alle GTK3-Fenster, also auch fuer den Datei-Dialog vom Portal
+   (xdg-desktop-portal-gtk), den Upscayl, Zen und andere Programme benutzen.
+   Rueckgaengig: diesen Block loeschen oder gtk.css.bak-headerbar zurueckkopieren,
+   danach: systemctl --user restart xdg-desktop-portal-gtk */
+
+/* Alles innerhalb vom Fenster: durchsichtig, das Fensterglas liegt schon dahinter. */
+headerbar,
+.titlebar:not(headerbar),
+treeview.view header button,
+searchbar > revealer > box,
+.location-bar {
+    background-color: transparent;
+}
+
+/* Die Titelleiste selbst: GTK3 malt den Fensterhintergrund NICHT hinter die
+   Titelleiste, deshalb braucht sie ihr eigenes Glas. Gleicher Wert wie bei
+   GLASS EFFECT oben (rgba 0,0,0,0.8), bei Aenderung beide anpassen.
+   Zweite Zeile: Programme mit geteilter Titelleiste (mehrere headerbars in einer Box). */
+headerbar.titlebar,
+.titlebar:not(headerbar) headerbar {
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+/* headerbar in einer headerbar nicht doppelt abdunkeln. */
+headerbar.titlebar headerbar {
+    background-color: transparent;
+}
+/* <<< glass-header */
