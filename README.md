@@ -38,6 +38,15 @@ Options: `./install.sh --yes` (no question at the start), `./install.sh --no-pac
 
 > 🩺 **[Quickshell Stutter Guide](Quickshell%20Stutter%20Guide.md)** *(old shell, still useful knowledge)*: how Quickshell stutters and freezes happen, how to measure them and how I fixed each one (NVIDIA/Vulkan, pixel jitter, snapping animations, 60–130 ms freezes caused by zsh history in `~`).
 
+## Start over: everything back to defaults
+
+[`reset-to-default.sh`](reset-to-default.sh) puts the rice back to the programs' own defaults, so everything can be built again by hand (with the wikis). It **moves** (doesn't delete) Waybar, rofi, swaync, kitty, GTK 3/4, xsettingsd, qt6ct, Kvantum, fastfetch, fetch, waypaper, cava, the SDDM theme folder, fontconfig, MangoHud, starship, the icon theme `rice`, Back-In-Black, hyprlock.conf and my scripts into `~/rice-reset-backup-<date>/`, resets the GTK gsettings and switches SDDM back to its default theme. **`~/.config/hypr/hyprland.lua` (and the rest of `~/.config/hypr`) and `~/.zshrc` stay.** The lists are at the top of the script.
+
+```bash
+~/config-backup/reset-to-default.sh   # asks before it starts
+~/config-backup/install.sh            # the whole rice back (backs up everything it replaces)
+```
+
 ## My current rice (self-built)
 
 | Part | Program | Files |

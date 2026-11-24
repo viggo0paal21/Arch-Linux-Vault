@@ -37,16 +37,22 @@ PACKAGES=(
     blueman bluez bluez-utils pavucontrol
     # wallpaper
     waypaper awww
+    linux-wallpaperengine-git          # animated Steam Wallpaper Engine wallpapers
     # terminal tools
     fastfetch cava
+    fetch-git                          # rotating 3D logo (alias fetch in ~/.zshrc)
+    jq                                 # used by ~/.local/bin/wallpaper-restore
     # fonts
     fontconfig noto-fonts ttf-jetbrains-mono-nerd
     # GTK and Qt look
     gtk3 gtk4
+    adwaita-icon-theme                 # my icon theme rice inherits everything except folders from it
+    breeze                             # mouse cursor breeze_cursors
     xsettingsd                         # theme + font for X11 apps (Zen runs on XWayland)
     qt6ct qt6-wayland kvantum kvantum-qt5
     # apps
     nautilus
+    zen-browser-bin                    # browser (starts through XWayland, see home/.local/share/applications/zen.desktop)
     arch-update                        # update icon in the tray (started in hypr/system.lua)
     vibrantlinux                       # per-app color saturation
     # gaming
@@ -55,7 +61,10 @@ PACKAGES=(
 
 # Vault folders that are NOT ~/.config folders.
 # experimental/ = optional AI-made extras, never installed automatically (see its README)
-SKIP_DIRS=(home etc oled-bw quickshell-old-design experimental)
+# old setups kept for reference (Quickshell, HyprPanel, nwg-dock, nwg-look, KDE/Cinnamon autostart files):
+# never copied, they would only clutter ~/.config or even start old programs
+SKIP_DIRS=(home etc oled-bw quickshell-old-design experimental
+           quickshell "quickshell (opencode box)" hyprpanel nwg-dock-hyprland nwg-look autostart)
 
 # Files from home/ that must not be copied:
 #  - the D-Bus override blocks swaync from getting notifications (old Quickshell setup)
@@ -63,6 +72,14 @@ SKIP_DIRS=(home etc oled-bw quickshell-old-design experimental)
 SKIP_HOME=(
     ".local/share/dbus-1/services/org.freedesktop.Notifications.service"
     "viggo/"
+    # old Quickshell setup and its helper scripts, the old dock, the old fastfetch-in-kitty system
+    ".local/state/quickshell"
+    ".local/bin/qs"
+    ".local/bin/quickshell"
+    ".local/bin/dock"
+    ".local/bin/fastfetch-"
+    ".local/bin/kitty-shell/"
+    ".cache/nwg-dock-pinned"
 )
 
 # ---- helpers -------------------------------------------------------------
@@ -227,6 +244,11 @@ while IFS= read -r -d '' f; do
         case "$rel" in "$s"*) skip=1 ;; esac
     done
     [ "$skip" -eq 1 ] && continue
+    # ~/.zshrc I keep up to date myself: only copied when there is none yet
+    if [ "$rel" = ".zshrc" ] && [ -e "$HOME/.zshrc" ]; then
+        info "~/.zshrc exists, left as it is"
+        continue
+    fi
     put_file "$f" "$HOME/$rel"
 done < <(find "$VAULT/home" -type f -print0)
 
@@ -269,7 +291,11 @@ if command -v gsettings >/dev/null; then
         && gsettings set org.gnome.desktop.interface document-font-name 'Noto Sans 10' 2>/dev/null \
         && gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null \
         && gsettings set org.gnome.desktop.interface icon-theme 'rice' 2>/dev/null \
-        && info "GTK 4: font Noto Sans, dark mode, icon theme rice"
+        && gsettings set org.gnome.desktop.interface gtk-theme 'Back-In-Black' 2>/dev/null \
+        && gsettings set org.gnome.desktop.interface cursor-theme 'breeze_cursors' 2>/dev/null \
+        && gsettings set org.gnome.desktop.interface cursor-size 24 2>/dev/null \
+        && gsettings set org.gnome.desktop.interface font-antialiasing 'grayscale' 2>/dev/null \
+        && info "GTK: font Noto Sans (no subpixel), dark mode, theme Back-In-Black, icons rice, cursor breeze"
 fi
 if [ -d /usr/share/sddm ]; then
     # SDDM only reads themes from /usr/share/sddm/themes, and runs as its own user "sddm":
