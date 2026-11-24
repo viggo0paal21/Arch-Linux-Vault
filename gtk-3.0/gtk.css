@@ -103,3 +103,69 @@ headerbar.titlebar headerbar {
     background-color: transparent;
 }
 /* <<< glass-header */
+
+/* >>> glass-rest
+   Die letzten Stellen, an denen Back-In-Black noch deckend schwarz (@bg_main) malt.
+   Rueckgaengig (GTK 3 und GTK 4 zusammen):
+     cp ~/.config/gtk-3.0/gtk.css.bak-glassrest ~/.config/gtk-3.0/gtk.css && cp ~/.config/gtk-4.0/gtk.css.bak-glassrest ~/.config/gtk-4.0/gtk.css && systemctl --user restart xdg-desktop-portal-gtk */
+
+/* Innerhalb vom Fenster: durchsichtig, das Fensterglas liegt schon dahinter.
+   Bildlaufleisten-Spur + Ecke, Zeilen-Listen, Reiterleiste + Reiterinhalt,
+   Flaeche in mehrzeiligen Textfeldern, kleine +/- Leisten unter Listen. */
+scrollbar,
+junction,
+list,
+notebook > header,
+notebook > stack,
+textview text,
+.inline-toolbar {
+    background-color: transparent;
+}
+
+/* Eigene Fenster / Popups: eigenes Glas, gleicher Wert wie GLASS EFFECT oben.
+   messagedialog = kleine Nachfragen ("Datei ersetzen?"), heisst intern nicht window/dialog.
+   Seine Titelleiste braucht eigenes Glas (wie headerbar.titlebar im glass-header-Block).
+   popover = Aufklapp-Menues, menu = Rechtsklick-Menues (vorher deckend #000000 oben).
+   Hinweis: Hyprland blurrt Popups/Menues nicht (decoration:blur:popups), dort ist es
+   also 80 % Schwarz ohne Blur dahinter. */
+messagedialog.background,
+messagedialog .titlebar,
+popover.background,
+menu,
+.menu,
+.context-menu,
+menu > arrow,
+.menu > arrow,
+.context-menu > arrow {
+    background-color: rgba(0, 0, 0, 0.8);
+}
+/* <<< glass-rest */
+
+/* >>> white-text
+   Back-In-Black faerbt Schrift und Symbol-Icons grau (#a4a4a4). Hier alles reinweiss.
+   Gilt fuer alle GTK3-Fenster, auch fuer den Datei-Dialog vom Portal (xdg-desktop-portal-gtk).
+   Rueckgaengig:
+     cp ~/.config/gtk-3.0/gtk.css.bak-weiss ~/.config/gtk-3.0/gtk.css && systemctl --user restart xdg-desktop-portal-gtk */
+
+/* Alles weiss. Deine gtk.css hat Vorrang vor dem Theme, darum reicht der einfachste Selektor. */
+* {
+    color: #ffffff;
+}
+
+/* Ausgegraut (nicht klickbar) bleibt erkennbar ausgegraut, aber heller als vorher. */
+*:disabled {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Auf hellen Flaechen bleibt die Schrift dunkel, sonst waere sie unsichtbar:
+   gedrueckte Knoepfe, Haupt-Knopf ("Select", "Open"), Loesch-Knopf, Auswahl-Modus,
+   markierter Text in Eingabefeldern, Menue-Eintrag unter der Maus (weisser Hintergrund). */
+button:checked, button:checked *,
+button.suggested-action, button.suggested-action *,
+button.destructive-action, button.destructive-action *,
+headerbar.selection-mode, headerbar.selection-mode *,
+text:selected, entry selection,
+menuitem:hover, menuitem:hover * {
+    color: rgba(0, 0, 0, 0.87);
+}
+/* <<< white-text */

@@ -21,4 +21,14 @@
     --accent-fg-color: #000000;  /* Accent Foreground Color */
     --accent-color: #ffffff;  /* Accent Color */
 
+
+    /* >>> glass-rest (Rueckgaengig: siehe Kommentar in ~/.config/gtk-3.0/gtk.css)
+       Ansichten (Dateiliste in Nautilus): durchsichtig, sonst liegen 80 % auf 80 % (= 96 %, dunkler)
+       Karten (Gruppen-Kaesten): nur ein Hauch heller, damit man sie noch erkennt
+       Popover-Menues und Dialoge (Eigenschaften, Einstellungen): eigenes Glas wie Fenster */
+    --view-bg-color: rgba(0, 0, 0, 0.8);   /* Nautilus braucht das Glas hier, transparent = komplett durchsichtig */
+    --card-bg-color: rgba(255, 255, 255, 0.04);
+    --popover-bg-color: rgba(0, 0, 0, 0.8);
+    --dialog-bg-color: rgba(0, 0, 0, 0.8);
+    /* <<< glass-rest */
 }
