@@ -1,0 +1,148 @@
+
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+SCRIPT_NAME="${0##*/}"
+
+die() {
+    printf '%s: %s\n' "$SCRIPT_NAME" "$*" >&2
+    exit 1
+}
+
+# Send a notification and force-close its exact ID after 2 seconds.
+notify_2s() {
+    local urgency="$1"
+    local summary="$2"
+    local body="$3"
+    local notification_id
+
+    if ! notification_id="$(
+        notify-send \
+            --print-id \
+            --expire-time=2000 \
+            --urgency="$urgency" \
+            --app-name="Hyprland" \
+            "$summary" \
+            "$body"
+    )"; then
+        return 1
+    fi
+
+    if [[ ! "$notification_id" =~ ^[0-9]+$ ]]; then
+        printf '%s: Could not obtain notification ID.\n' \
+            "$SCRIPT_NAME" >&2
+        return 1
+    fi
+
+    # Wait 2 seconds, then close only this notification.
+    sleep 2
+
+    gdbus call \
+        --session \
+        --dest org.freedesktop.Notifications \
+        --object-path /org/freedesktop/Notifications \
+        --method org.freedesktop.Notifications.CloseNotification \
+        "$notification_id" >/dev/null 2>&1 || true
+}
+
+notify_error() {
+    local message="$1"
+
+    notify_2s normal \
+        "Direct Scanout check failed" \
+        "$message" || true
+
+    printf '%s: %s\n' "$SCRIPT_NAME" "$message" >&2
+}
+
+# Check dependencies.
+for cmd in hyprctl jq notify-send gdbus; do
+    command -v "$cmd" >/dev/null 2>&1 ||
+        die "Required command '$cmd' was not found."
+done
+
+# IMPORTANT: Capture the monitor state before any notification is shown.
+if ! monitors_json="$(hyprctl monitors -j 2>/dev/null)"; then
+    notify_error \
+        "Could not query Hyprland. Is this script running inside your Hyprland session?"
+    exit 1
+fi
+
+# Validate the captured JSON without querying Hyprland again.
+if ! jq -e 'type == "array"' >/dev/null 2>&1 <<<"$monitors_json"; then
+    notify_error "Hyprland returned invalid monitor JSON."
+    exit 1
+fi
+
+# Determine active outputs from the saved snapshot.
+active_names="$(
+    jq -r '
+        def pango_escape:
+            tostring
+            | gsub("&"; "&amp;")
+            | gsub("<"; "&lt;")
+            | gsub(">"; "&gt;");
+
+        [
+            .[]
+            | select(
+                ((.directScanoutTo // null) | tostring) as $to
+                | ($to != "" and $to != "null" and $to != "0")
+            )
+            | (.name // "unknown")
+            | pango_escape
+        ]
+        | unique
+        | join(", ")
+    ' <<<"$monitors_json"
+)"
+
+# Get diagnostics for the inactive case.
+inactive_detail="$(
+    jq -r '
+        def pango_escape:
+            tostring
+            | gsub("&"; "&amp;")
+            | gsub("<"; "&lt;")
+            | gsub(">"; "&gt;");
+
+        ([.[] | select(.focused == true)] | .[0]) as $focused
+        | ($focused // .[0] // null) as $m
+        | if $m == null then
+            "No monitor information was returned."
+          else
+            (($m.name // "unknown") | pango_escape) as $name
+            | (
+                ($m.directScanoutBlockedBy // [])
+                | if type == "array" then
+                    map(tostring) | join(", ")
+                  else
+                    tostring
+                  end
+                | pango_escape
+              ) as $reason
+            | if $reason == "" or $reason == "null" then
+                "\($name): no blocking reason reported"
+              else
+                "\($name): directScanoutBlockedBy = \($reason)"
+              end
+          end
+    ' <<<"$monitors_json"
+)"
+
+# Show the notification only AFTER the state has been captured and evaluated.
+if [[ -n "$active_names" ]]; then
+    body="direct_scanout = <span foreground='#a6e3a1'><b>true</b></span>
+Output monitor: ${active_names}"
+
+    if ! notify_2s low "Direct Scanout: ACTIVE" "$body"; then
+        die "Could not send the notification. Check that SwayNC is running."
+    fi
+else
+    body="direct_scanout = <span foreground='#f38ba8'><b>false</b></span>
+${inactive_detail}"
+
+    if ! notify_2s normal "Direct Scanout: INACTIVE" "$body"; then
+        die "Could not send the notification. Check that SwayNC is running."
+    fi
+fi

@@ -1,171 +1,61 @@
-@define-color theme_bg_color          #000000;
-@define-color theme_fg_color          #ffffff;
-@define-color theme_base_color        #000000;
-@define-color theme_text_color        #ffffff;
-@define-color theme_selected_bg_color #ffffff;
-@define-color theme_selected_fg_color #000000;
-
-button, entry {
-    border-radius: 6px;
-}
-
-menu, .context-menu {
-    background-color: #000000;
-    border: 1px solid #ffffff;
-    border-radius: 10px;
-    padding: 4px;
-}
-
-menuitem {
-    padding: 4px 8px;
-    border-radius: 6px;
-}
-
-menuitem:hover {
-    background-color: #ffffff;
-    color: #000000;
-}
-
-window.popup,
-.csd.popup decoration {
-    background-color: transparent;
-    border: none;
-    border-radius: 10px;
-    box shadow: none;
-}
-
-/* window not active */
-@define-color theme_unfocused_bg_color          #000000;
-@define-color theme_unfocused_fg_color          #ffffff;
-@define-color theme_unfocused_base_color        #000000;
-@define-color theme_unfocused_text_color        #ffffff;
-@define-color theme_unfocused_selected_bg_color #ffffff;
-@define-color theme_unfocused_selected_fg_color #000000;
-
-/* GLASS EFFECT
-   Alle Fenster und Dialoge. (Am 22.11. kurz auf .csd eingeschraenkt fuers Dock,
-   dadurch waren Fenster ohne eigene Titelleiste wie blueman-manager deckend.) */
-window.background,
-dialog.background {
+window.background {
     background-color: rgba(0, 0, 0, 0.8);
 }
 
-/* DATEI-DIALOG
-   Back-In-Black malt Seitenleiste und Pfadleiste deckend schwarz (@bg_main).
-   Durchsichtig machen, damit das Glas vom Fenster durchscheint.
-   Gilt nur innerhalb vom Datei-Dialog (filechooser). */
-filechooser .sidebar,
-filechooser #pathbarbox {
+
+menubar,
+menubar:backdrop,
+toolbar,
+toolbar:backdrop {
     background-color: transparent;
+    background-image: none;
 }
 
-.view, treeview, iconview, scrolledwindow, viewport, menubar, toolbar {
-    background-color: transparent;
-}
-
-.view:selected, treeview:selected {
-    background-color: rgba(255, 255, 255, 0.25);
-    color: #ffffff;
-}
-
-menubar > menuitem {
-    color: #ffffff;
-}
-/* >>> glass-header
-   Back-In-Black malt die Titelleiste (headerbar mit Abbrechen / Auswaehlen)
-   und die Spaltenkoepfe von Listen (Name / Ort / Groesse ...) deckend schwarz,
-   genauso die Such- und Ortsleiste, die oben im Datei-Dialog aufklappt.
-   Gilt fuer alle GTK3-Fenster, also auch fuer den Datei-Dialog vom Portal
-   (xdg-desktop-portal-gtk), den Upscayl, Zen und andere Programme benutzen.
-   Rueckgaengig: diesen Block loeschen oder gtk.css.bak-headerbar zurueckkopieren,
-   danach: systemctl --user restart xdg-desktop-portal-gtk */
-
-/* Alles innerhalb vom Fenster: durchsichtig, das Fensterglas liegt schon dahinter. */
-headerbar,
-.titlebar:not(headerbar),
-treeview.view header button,
-searchbar > revealer > box,
-.location-bar {
-    background-color: transparent;
-}
-
-/* Die Titelleiste selbst: GTK3 malt den Fensterhintergrund NICHT hinter die
-   Titelleiste, deshalb braucht sie ihr eigenes Glas. Gleicher Wert wie bei
-   GLASS EFFECT oben (rgba 0,0,0,0.8), bei Aenderung beide anpassen.
-   Zweite Zeile: Programme mit geteilter Titelleiste (mehrere headerbars in einer Box). */
-headerbar.titlebar,
-.titlebar:not(headerbar) headerbar {
-    background-color: rgba(0, 0, 0, 0.8);
-}
-
-/* headerbar in einer headerbar nicht doppelt abdunkeln. */
-headerbar.titlebar headerbar {
-    background-color: transparent;
-}
-/* <<< glass-header */
-
-/* >>> glass-rest
-   Die letzten Stellen, an denen Back-In-Black noch deckend schwarz (@bg_main) malt.
-   Rueckgaengig (GTK 3 und GTK 4 zusammen):
-     cp ~/.config/gtk-3.0/gtk.css.bak-glassrest ~/.config/gtk-3.0/gtk.css && cp ~/.config/gtk-4.0/gtk.css.bak-glassrest ~/.config/gtk-4.0/gtk.css && systemctl --user restart xdg-desktop-portal-gtk */
-
-/* Innerhalb vom Fenster: durchsichtig, das Fensterglas liegt schon dahinter.
-   Bildlaufleisten-Spur + Ecke, Zeilen-Listen, Reiterleiste + Reiterinhalt,
-   Flaeche in mehrzeiligen Textfeldern, kleine +/- Leisten unter Listen. */
-scrollbar,
-junction,
-list,
+notebook,
 notebook > header,
+notebook > header:backdrop,
 notebook > stack,
-textview text,
-.inline-toolbar {
+notebook > stack:backdrop {
     background-color: transparent;
 }
 
-/* Eigene Fenster / Popups: eigenes Glas, gleicher Wert wie GLASS EFFECT oben.
-   messagedialog = kleine Nachfragen ("Datei ersetzen?"), heisst intern nicht window/dialog.
-   Seine Titelleiste braucht eigenes Glas (wie headerbar.titlebar im glass-header-Block).
-   popover = Aufklapp-Menues, menu = Rechtsklick-Menues (vorher deckend #000000 oben).
-   Hinweis: Hyprland blurrt Popups/Menues nicht (decoration:blur:popups), dort ist es
-   also 80 % Schwarz ohne Blur dahinter. */
-messagedialog.background,
-messagedialog .titlebar,
-popover.background,
-menu,
-.menu,
-.context-menu,
-menu > arrow,
-.menu > arrow,
-.context-menu > arrow {
+textview text,
+textview text:backdrop {
+    background-color: transparent;
+}
+
+
+headerbar.titlebar,
+headerbar.titlebar:backdrop {
     background-color: rgba(0, 0, 0, 0.8);
-}
-/* <<< glass-rest */
-
-/* >>> white-text
-   Back-In-Black faerbt Schrift und Symbol-Icons grau (#a4a4a4). Hier alles reinweiss.
-   Gilt fuer alle GTK3-Fenster, auch fuer den Datei-Dialog vom Portal (xdg-desktop-portal-gtk).
-   Rueckgaengig:
-     cp ~/.config/gtk-3.0/gtk.css.bak-weiss ~/.config/gtk-3.0/gtk.css && systemctl --user restart xdg-desktop-portal-gtk */
-
-/* Alles weiss. Deine gtk.css hat Vorrang vor dem Theme, darum reicht der einfachste Selektor. */
-* {
-    color: #ffffff;
+    background-image: none;
 }
 
-/* Ausgegraut (nicht klickbar) bleibt erkennbar ausgegraut, aber heller als vorher. */
-*:disabled {
-    color: rgba(255, 255, 255, 0.5);
+list,
+list:backdrop {
+    background-color: transparent;
+    background-image: none;
 }
 
-/* Auf hellen Flaechen bleibt die Schrift dunkel, sonst waere sie unsichtbar:
-   gedrueckte Knoepfe, Haupt-Knopf ("Select", "Open"), Loesch-Knopf, Auswahl-Modus,
-   markierter Text in Eingabefeldern, Menue-Eintrag unter der Maus (weisser Hintergrund). */
-button:checked, button:checked *,
-button.suggested-action, button.suggested-action *,
-button.destructive-action, button.destructive-action *,
-headerbar.selection-mode, headerbar.selection-mode *,
-text:selected, entry selection,
-menuitem:hover, menuitem:hover * {
-    color: rgba(0, 0, 0, 0.87);
+.view:not(:selected),
+.view:backdrop {
+    background-color: transparent;
+    background-image: none;
 }
-/* <<< white-text */
+
+button:not(.flat),
+button:not(.flat):backdrop {
+    background-color: rgba(255, 255, 255, 0.1);
+    background-image: none;
+}
+
+button:not(.flat):hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+button:not(.flat):active,
+button:not(.flat):checked {
+    background-color: rgba(255, 255, 255, 0.25);
+}
+
+

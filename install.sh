@@ -1,11 +1,18 @@
 #!/usr/bin/env bash
 # ==========================================================================
-#  install.sh - puts this whole vault onto an Arch Linux PC
+#  install.sh - puts MY OWN rice from this vault onto an Arch Linux PC
 #
-#  1. installs every program the configs need (pacman --needed, AUR via yay)
+#  My own setup, built and understood by me (state 26.11.2026):
+#  Hyprland (Lua) + Waybar + rofi + kitty + fastfetch + starship,
+#  GTK 3 with adw-gtk3-dark + my gtk.css, GTK 4 / libadwaita with my gtk.css.
+#  The old AI-made rice is in legacy-ai/, installed by legacy-ai-help-version.sh.
+#
+#  1. installs the programs my configs need (pacman --needed, AUR via yay)
 #  2. backs up every file it is about to replace
-#  3. copies every file from the vault to its place on the PC
-#  4. small extras (bluetooth on at boot, Nautilus as file manager, fonts)
+#  3. copies my config files to their place on the PC
+#  4. small extras (bluetooth at boot, Nautilus as file manager, GTK theme)
+#
+#  Not touched: ~/.zshrc, SDDM, anything in /etc.
 #
 #  Usage (as your normal user, NOT with sudo), just this one line:
 #      bash <(curl -fsSL https://raw.githubusercontent.com/viggo0paal21/Arch-Linux-Vault/main/install.sh)
@@ -23,69 +30,43 @@ set -euo pipefail
 
 # ---- settings ------------------------------------------------------------
 
-# Every program the configs need. pacman installs what it knows, anything it
-# can't find is installed from the AUR with yay instead (so it doesn't matter
-# if a package lives in the official repos or in the AUR).
+# Every program my configs need. pacman installs what it knows, anything it
+# can't find is installed from the AUR with yay instead.
 PACKAGES=(
     # Hyprland and its tools
-    hyprland hyprlock hyprpolkitagent
+    hyprland hyprpolkitagent
     xdg-desktop-portal xdg-desktop-portal-hyprland xdg-desktop-portal-gtk
     grim slurp wl-clipboard            # screenshot bind (Super + Shift + S)
-    # bar, launcher, notifications, terminal
+    # bar, launcher, notifications, terminal (all started in hypr/hyprland.lua)
     waybar rofi swaync kitty
-    sddm                               # login screen, theme "rice" from sddm/rice
-    blueman bluez bluez-utils pavucontrol
-    # wallpaper
-    waypaper awww
-    linux-wallpaperengine-git          # animated Steam Wallpaper Engine wallpapers
-    # terminal tools
-    fastfetch cava
-    fetch-git                          # rotating 3D logo (alias fetch in ~/.zshrc)
-    jq                                 # used by ~/.local/bin/wallpaper-restore
-    # fonts
+    blueman bluez bluez-utils
+    awww                               # wallpaper daemon (awww-daemon in the autostart)
+    # terminal
+    fastfetch starship
+    # fonts (Waybar uses Noto Sans + JetBrains Mono Nerd Font for the icons)
     fontconfig noto-fonts ttf-jetbrains-mono-nerd
     # GTK and Qt look
     gtk3 gtk4
-    adwaita-icon-theme                 # my icon theme rice inherits everything except folders from it
-    breeze                             # mouse cursor breeze_cursors
-    xsettingsd                         # theme + font for X11 apps (Zen runs on XWayland)
-    qt6ct qt6-wayland kvantum kvantum-qt5
+    adw-gtk-theme                      # GTK 3 theme adw-gtk3-dark (looks like libadwaita)
+    breeze                             # mouse cursor breeze_cursors (hypr/system.lua)
+    xsettingsd                         # theme for X11 apps (Zen runs on XWayland)
+    qt6ct qt6-wayland                  # QT_QPA_PLATFORMTHEME=qt6ct (hypr/system.lua)
     # apps
     nautilus
-    zen-browser-bin                    # browser (starts through XWayland, see home/.local/share/applications/zen.desktop)
-    arch-update                        # update icon in the tray (started in hypr/system.lua)
+    zen-browser-bin                    # starts through XWayland, see home/.local/share/applications/zen.desktop
+    arch-update                        # update icon in the tray (hypr/system.lua)
     vibrantlinux                       # per-app color saturation
-    # gaming
+    # gaming (MANGOHUD=1 in hypr/performance.lua)
     mangohud lib32-mangohud
 )
 
-# Vault folders that are NOT ~/.config folders.
-# experimental/ = optional AI-made extras, never installed automatically (see its README)
-# old setups kept for reference (Quickshell, HyprPanel, nwg-dock, nwg-look, KDE/Cinnamon autostart files):
-# never copied, they would only clutter ~/.config or even start old programs
-SKIP_DIRS=(home etc oled-bw quickshell-old-design experimental
-           quickshell "quickshell (opencode box)" hyprpanel nwg-dock-hyprland nwg-look autostart)
-
-# Files from home/ that must not be copied:
-#  - the D-Bus override blocks swaync from getting notifications (old Quickshell setup)
-#  - home/viggo/ is a broken leftover path from the old vault
-SKIP_HOME=(
-    ".local/share/dbus-1/services/org.freedesktop.Notifications.service"
-    "viggo/"
-    # old Quickshell setup and its helper scripts, the old dock, the old fastfetch-in-kitty system
-    ".local/state/quickshell"
-    ".local/bin/qs"
-    ".local/bin/quickshell"
-    ".local/bin/dock"
-    ".local/bin/fastfetch-"
-    ".local/bin/kitty-shell/"
-    ".cache/nwg-dock-pinned"
-)
+# Vault folders that are NOT ~/.config folders
+SKIP_DIRS=(home legacy-ai)
 
 # ---- helpers -------------------------------------------------------------
 
 REPO_URL="${VAULT_REPO:-https://github.com/viggo0paal21/Arch-Linux-Vault.git}"
-CLONE_DIR="$HOME/config-backup"   # my backup scripts expect this name
+CLONE_DIR="$HOME/config-backup"
 SCRIPT="${BASH_SOURCE[0]:-}"
 VAULT="$(cd "$(dirname "$(readlink -f "${SCRIPT:-.}")")" 2>/dev/null && pwd || true)"   # empty if started via curl
 BACKUP="$HOME/.config-backup-before-install-$(date +%Y%m%d-%H%M%S)"
@@ -96,7 +77,7 @@ for arg in "$@"; do
     case "$arg" in
         --yes|-y)      ASSUME_YES=1 ;;
         --no-packages) DO_PACKAGES=0 ;;
-        -h|--help)     sed -n '2,20p' "$SCRIPT" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help)     sed -n '2,27p' "$SCRIPT" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *)             echo "unknown option: $arg (see --help)"; exit 1 ;;
     esac
 done
@@ -145,7 +126,7 @@ fi
 
 # Started on its own (e.g. with curl) instead of from inside the vault?
 # Then download the vault first and start the install.sh in there.
-if [ ! -f "$SCRIPT" ] || [ ! -d "$VAULT/hypr" ] || [ ! -f "$VAULT/README.md" ]; then
+if [ ! -f "$SCRIPT" ] || [ -z "$VAULT" ] || [ ! -d "$VAULT/hypr" ] || [ ! -d "$VAULT/legacy-ai" ]; then
     say "Getting the vault"
     if ! command -v git >/dev/null; then
         info "git is missing, installing it"
@@ -153,6 +134,13 @@ if [ ! -f "$SCRIPT" ] || [ ! -d "$VAULT/hypr" ] || [ ! -f "$VAULT/README.md" ]; 
         sudo pacman -Syu --needed git < "$TTY"
     fi
     if [ -d "$CLONE_DIR/.git" ]; then
+        # ~/config-backup must be a copy of THIS repo, not of an old/archived one
+        origin="$(git -C "$CLONE_DIR" remote get-url origin 2>/dev/null || true)"
+        if ! [[ "$origin" =~ [/:]viggo0paal21/Arch-Linux-Vault(\.git)?/?$ ]]; then
+            warn "$CLONE_DIR is a copy of another repo: ${origin:-unknown}"
+            warn "Move it away first (mv ~/config-backup ~/config-backup-old) and start again."
+            exit 1
+        fi
         info "updating $CLONE_DIR"
         git -C "$CLONE_DIR" pull --ff-only || warn "could not update, using the copy that is already there"
     else
@@ -163,13 +151,14 @@ if [ ! -f "$SCRIPT" ] || [ ! -d "$VAULT/hypr" ] || [ ! -f "$VAULT/README.md" ]; 
     exec bash "$CLONE_DIR/install.sh" "$@" < "$TTY"
 fi
 
-say "Arch-Linux-Vault installer"
+say "Arch-Linux-Vault: my own rice"
 info "Vault:   $VAULT"
 info "Home:    $HOME"
 [ "$DO_PACKAGES" -eq 1 ] && info "1. install programs (pacman --needed, AUR via yay)"
 info "2. back up files that get replaced to: $BACKUP"
-info "3. copy all config files from the vault (existing ones are replaced)"
-info "4. extras: bluetooth at boot, Nautilus as file manager, SDDM theme, font cache"
+info "3. copy my config files from the vault (existing ones are replaced)"
+info "4. extras: bluetooth at boot, Nautilus as file manager, GTK theme adw-gtk3-dark, font cache"
+info "not touched: ~/.zshrc, SDDM, /etc"
 
 if [ "$ASSUME_YES" -eq 0 ]; then
     printf '\nContinue? [y/N] '
@@ -193,7 +182,7 @@ if [ "$DO_PACKAGES" -eq 1 ]; then
         if pacman -Si "$p" >/dev/null 2>&1; then
             official+=("$p")
         elif [[ "$p" == lib32-* ]]; then
-            warn "$p skipped: needs the [multilib] repo (see README, Install the programs)"
+            warn "$p skipped: needs the [multilib] repo (enable it in /etc/pacman.conf)"
         else
             aur+=("$p")
         fi
@@ -232,43 +221,17 @@ for dir in "$VAULT"/*/; do
     done < <(find "$dir" -type f -print0)
 done
 
-# single files -> ~/.config (starship prompt, default apps like Nautilus for folders)
+# single files -> ~/.config (starship prompt, Zen as default browser)
 put_file "$VAULT/starship.toml" "$HOME/.config/starship.toml"
 put_file "$VAULT/mimeapps.list" "$HOME/.config/mimeapps.list"
 
-# home/ -> ~ (scripts in ~/.local/bin, Quickshell settings, ~/.zshrc)
+# home/ -> ~ (script in ~/.local/bin, Zen starter in ~/.local/share/applications)
 while IFS= read -r -d '' f; do
-    rel="${f#"$VAULT"/home/}"
-    skip=0
-    for s in "${SKIP_HOME[@]}"; do
-        case "$rel" in "$s"*) skip=1 ;; esac
-    done
-    [ "$skip" -eq 1 ] && continue
-    # ~/.zshrc I keep up to date myself: only copied when there is none yet
-    if [ "$rel" = ".zshrc" ] && [ -e "$HOME/.zshrc" ]; then
-        info "~/.zshrc exists, left as it is"
-        continue
-    fi
-    put_file "$f" "$HOME/$rel"
+    put_file "$f" "$HOME/${f#"$VAULT"/home/}"
 done < <(find "$VAULT/home" -type f -print0)
-
-# scripts must be executable
-chmod +x "$HOME"/.local/bin/* "$HOME"/.local/bin/kitty-shell/zsh 2>/dev/null || true
 
 info "$COPIED files copied, $BACKED_UP old versions backed up"
 [ "$BACKED_UP" -gt 0 ] && info "backup: $BACKUP"
-
-# files outside the home folder (need sudo)
-for f in "$VAULT"/etc/sudoers.d/*; do
-    target="/etc/sudoers.d/$(basename "$f")"
-    # visudo checks the file first: a broken sudoers file would lock you out of sudo
-    if sudo visudo -cf "$f" >/dev/null; then
-        sudo install -m 0440 -o root -g root "$f" "$target"
-        info "installed $target"
-    else
-        warn "$target skipped: visudo found an error"
-    fi
-done
 
 # ---- 4. extras -----------------------------------------------------------
 
@@ -281,47 +244,13 @@ if command -v xdg-mime >/dev/null; then
     xdg-mime default org.gnome.Nautilus.desktop inode/directory && info "Nautilus is the default file manager"
 fi
 if command -v gsettings >/dev/null; then
-    # no blueman icon in the tray (Waybar has its own bluetooth module)
-    gsettings set org.blueman.general plugin-list "['!StatusNotifierItem']" 2>/dev/null \
-        && info "blueman tray icon off"
-fi
-if command -v gsettings >/dev/null; then
-    # GTK 4 / libadwaita apps (Nautilus) take their font from here, not from settings.ini
-    gsettings set org.gnome.desktop.interface font-name 'Noto Sans 10' 2>/dev/null \
-        && gsettings set org.gnome.desktop.interface document-font-name 'Noto Sans 10' 2>/dev/null \
+    # Wayland GTK apps read the theme from here; the same values are in
+    # gtk-3.0/settings.ini (fallback) and xsettingsd/xsettingsd.conf (X11 apps)
+    gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark' 2>/dev/null \
         && gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null \
-        && gsettings set org.gnome.desktop.interface icon-theme 'rice' 2>/dev/null \
-        && gsettings set org.gnome.desktop.interface gtk-theme 'Back-In-Black' 2>/dev/null \
         && gsettings set org.gnome.desktop.interface cursor-theme 'breeze_cursors' 2>/dev/null \
         && gsettings set org.gnome.desktop.interface cursor-size 24 2>/dev/null \
-        && gsettings set org.gnome.desktop.interface font-antialiasing 'grayscale' 2>/dev/null \
-        && info "GTK: font Noto Sans (no subpixel), dark mode, theme Back-In-Black, icons rice, cursor breeze"
-fi
-if [ -d /usr/share/sddm ]; then
-    # SDDM only reads themes from /usr/share/sddm/themes, and runs as its own user "sddm":
-    # copy the theme there and make it readable for everyone (a+rX)
-    sudo mkdir -p /usr/share/sddm/themes/rice
-    sudo cp -r "$VAULT"/sddm/rice/. /usr/share/sddm/themes/rice/
-    sudo chmod -R a+rX /usr/share/sddm/themes/rice
-    sudo install -Dm644 "$VAULT/etc/sddm.conf.d/theme.conf" /etc/sddm.conf.d/theme.conf
-    # /etc/sddm.conf wins over sddm.conf.d. Other themes write into it (backup .bak-rice):
-    #  - Current=<other theme>      -> Current=rice
-    #  - InputMethod=... and GreeterEnvironment=...QT_IM_MODULE=qtvirtualkeyboard (e.g. theme "silent")
-    #    put a huge virtual keyboard over every theme -> empty / commented out
-    if [ -f /etc/sddm.conf ]; then
-        sudo sed -i.bak-rice \
-            -e 's/^Current=.*/Current=rice/' \
-            -e 's/^InputMethod=.*/InputMethod=/' \
-            -e 's/^GreeterEnvironment=/#GreeterEnvironment=/' \
-            /etc/sddm.conf
-    fi
-    info "SDDM theme rice installed and selected"
-    # start SDDM at boot (fails harmlessly if another display manager is already enabled)
-    if sudo systemctl enable sddm.service 2>/dev/null; then
-        info "SDDM starts at boot"
-    else
-        warn "SDDM not enabled: another display manager is active (disable it first)"
-    fi
+        && info "GTK: theme adw-gtk3-dark, dark mode, cursor breeze_cursors 24"
 fi
 if command -v fc-cache >/dev/null; then
     fc-cache -f >/dev/null && info "font cache rebuilt"
@@ -329,4 +258,3 @@ fi
 
 say "Done"
 info "Log out and back in (or reboot) so Hyprland, Waybar and the environment variables load."
-info "Bluetooth headphones: mark them as Trusted once in blueman, then they connect by themselves."

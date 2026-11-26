@@ -9,7 +9,7 @@
 # Moved away:      everything in the lists below
 # Reset:           gsettings for theme, icons, cursor, font; SDDM back to its default theme
 #
-# Back to my rice afterwards:  ./install.sh   (copies everything from the vault, backs up what it replaces)
+# Old AI rice back afterwards: ~/config-backup/legacy-ai-help-version.sh  (my own rice: ~/config-backup/install.sh)
 # Or only this backup back:    cp -a ~/rice-reset-backup-<date>/. ~/
 #
 # Run:  ./reset-to-default.sh          (asks before it starts)
@@ -101,4 +101,4 @@ info "the theme files in /usr/share/sddm/themes/rice stay (unused)"
 say "Done"
 info "Log out and back in (or reboot): apps only read their configs at start."
 info "Backup: $BACKUP"
-info "Rice back: ./install.sh"
+info "Old AI rice back: ~/config-backup/legacy-ai-help-version.sh   (my own rice: ~/config-backup/install.sh)"

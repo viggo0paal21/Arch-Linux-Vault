@@ -1,34 +1,24 @@
 :root {
-    --window-bg-color: rgba(0, 0, 0, 0.8);  /* Window Background Color */
-    --window-fg-color: #ffffff;  /* Window Foreground Color */
-    --view-bg-color: rgba(0, 0, 0, 0.8);  /* View Background Color */
-    --view-fg-color: #ffffff;  /* View Foreground Color */
+    --window-bg-color: rgba(0, 0, 0, 0.8);
+    --view-bg-color: rgba(0, 0, 0, 0.8);
 
-    --window-radius: 10px;
+    --accent-bg-color: #ffffff;
+    --accent-fg-color: #000000;
+    --accent-color: #ffffff;
 
-    --headerbar-bg-color: transparent;  /* Headerbar Background Color */
-    --headerbar-fg-color: #ffffff;  /* Headerbar Foreground Color */
-    --headerbar-backdrop-color: transparent;  /* Headerbar Backdrop Color */
+    --sidebar-bg-color: transparent;
+    --sidebar-backdrop-color: transparent;
+    --secondary-sidebar-bg-color: transparent;
+    --secondary-sidebar-backdrop-color: transparent;
 
-    --sidebar-bg-color: transparent;  /* Sidebar Background Color */
-    --sidebar-fg-color: #ffffff;  /* Sidebar Foreground Color */
-    --sidebar-backdrop-color: transparent;  /* Sidebar Backdrop Color */
+    --headerbar-bg-color: transparent;
+    --headerbar-backdrop-color: transparent;
 
-    --card-bg-color: #000000;  /* Card Background Color */
-    --popover-bg-color: #000000;  /* Popover Background Color */
-
-    --accent-bg-color: #ffffff;  /* Accent Background Color */
-    --accent-fg-color: #000000;  /* Accent Foreground Color */
-    --accent-color: #ffffff;  /* Accent Color */
-
-
-    /* >>> glass-rest (Rueckgaengig: siehe Kommentar in ~/.config/gtk-3.0/gtk.css)
-       Ansichten (Dateiliste in Nautilus): durchsichtig, sonst liegen 80 % auf 80 % (= 96 %, dunkler)
-       Karten (Gruppen-Kaesten): nur ein Hauch heller, damit man sie noch erkennt
-       Popover-Menues und Dialoge (Eigenschaften, Einstellungen): eigenes Glas wie Fenster */
-    --view-bg-color: rgba(0, 0, 0, 0.8);   /* Nautilus braucht das Glas hier, transparent = komplett durchsichtig */
-    --card-bg-color: rgba(255, 255, 255, 0.04);
     --popover-bg-color: rgba(0, 0, 0, 0.8);
     --dialog-bg-color: rgba(0, 0, 0, 0.8);
-    /* <<< glass-rest */
+    --card-bg-color: rgba(255, 255, 255, 0.04);
+}
+
+switch:checked slider {
+    background-color: rgba(0, 0, 0, 0.8);
 }

@@ -1,0 +1,106 @@
+{
+    // TOP BAR
+    "position": "top",
+    "layer": "top",
+    "height": 30,
+    "margin-top": 10,
+    "margin-left": 10,
+    "margin-right": 10,
+
+
+    // MODULES
+    "modules-left": ["custom/cat", "hyprland/workspaces", "hyprland/window"],
+    "modules-center": ["clock"],
+    "modules-right": ["tray", "bluetooth", "network", "cpu", "memory", "group/volume"],
+
+
+    // SETTINGS PER MODULE
+    "clock": {
+        "format": "{:%a %d.%m.  %H:%M}"
+    },
+    "cpu": {
+        "format": "\uf4bc {usage}%"
+    },
+
+    "bluetooth": {
+        "format": "\udb80\udcaf",
+        "format-off": "\udb80\udcb2",
+        "format-disabled": "",
+        "format-connected": "\udb80\udcb1 {num_connections}",
+        "on-click": "blueman-manager",
+
+        // Rechtsklick: eigenes Menue (bluetooth-menu.xml), ersetzt das Tray-Menue von blueman
+        "menu": "on-click-right",
+        "menu-file": "~/.config/waybar/bluetooth-menu.xml",
+        "menu-actions": {
+            "off": "bluetoothctl power off",
+            "on": "bluetoothctl power on",
+            "disconnect": "bluetoothctl disconnect",
+            "devices": "blueman-manager",
+            "sendto": "blueman-sendto",
+            "adapters": "blueman-adapters"
+        },
+
+        // Hover-Text
+        "tooltip-format": "Bluetooth an",
+        "tooltip-format-off": "Bluetooth aus",
+        "tooltip-format-connected": "Bluetooth aktiv\n{device_enumerate}",
+        "tooltip-format-enumerate-connected": "{device_alias}",
+        "tooltip-format-enumerate-connected-battery": "{device_alias}  {device_battery_percentage}%"
+    },
+
+    "custom/cat": {
+        "format": "\uf303",
+        "exec": "~/.config/waybar/scripts/cat.sh",
+        "return-type": "json",
+        "signal": 8,
+        "on-click": "~/.config/waybar/scripts/cat-rofi.sh"
+    },
+
+    "memory": {
+        "format": "\uefc5 {percentage}%"
+    },
+
+
+
+
+        "group/volume": {
+        "orientation": "horizontal",
+        "drawer": {
+            "transition-duration": 300,
+            "transition-left-to-right": false
+        },
+        "modules": ["pulseaudio", "pulseaudio/slider"]
+    },
+    "pulseaudio/slider": {
+        "min": 0,
+        "max": 100,
+        "orientation": "horizontal"
+    },
+
+
+
+
+
+
+    "pulseaudio": {
+        "format": "\ue638 {volume}%"
+    },
+        "hyprland/workspaces": {
+        "format": ""
+    },
+    "hyprland/window": {
+        "format": "{title}"
+    },
+    "tray": {
+        "icon-size": 15,
+        "spacing": 10
+    },
+    "network": {
+    "format-ethernet": "\udb80\ude00",
+    "format-wifi": "\uf1eb",
+    "format-disconnected": "\udb81\uddaa",
+    "tooltip-format": "{ifname}: {ipaddr}"
+    },
+
+}
