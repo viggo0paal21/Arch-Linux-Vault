@@ -19,8 +19,8 @@
     "tray",
     "cpu",
     "memory",
-    "network",
-    "pulseaudio"
+    "pulseaudio",
+    "network"
   ],
 
   "hyprland/workspaces": {

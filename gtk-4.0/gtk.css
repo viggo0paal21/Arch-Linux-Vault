@@ -22,3 +22,14 @@
 switch:checked slider {
     background-color: rgba(0, 0, 0, 0.8);
 }
+
+popover.menu > contents {
+    border: 1px solid #ffffff;
+    border-radius: 10px;
+}
+
+tooltip {
+    background-color: rgba(0, 0, 0, 0.8);
+    border: 1px solid #ffffff;
+    border-radius: 10px;
+}

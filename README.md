@@ -37,8 +37,8 @@ Options: `--yes` (no question at the start), `--no-packages` (only copy the file
 | `kitty/` | `~/.config/kitty/` | terminal |
 | `fastfetch/` | `~/.config/fastfetch/` | `config.jsonc` (big), `ff.jsonc` (small) |
 | `starship.toml` | `~/.config/` | prompt |
-| `gtk-3.0/` | `~/.config/gtk-3.0/` | `gtk.css` (glass look for GTK 3), `settings.ini` (theme `adw-gtk3-dark`), `bookmarks` |
-| `gtk-4.0/` | `~/.config/gtk-4.0/` | `gtk.css` (libadwaita variables: glass, white accent), `settings.ini` |
+| `gtk-3.0/` | `~/.config/gtk-3.0/` | `gtk.css` (glass look for GTK 3 and Waybar, menus + tooltips 10px round with 1px white border), `settings.ini` (theme `adw-gtk3-dark`), `bookmarks` |
+| `gtk-4.0/` | `~/.config/gtk-4.0/` | `gtk.css` (libadwaita variables: glass, white accent; menus + tooltips 10px round with 1px white border), `settings.ini` |
 | `xsettingsd/` | `~/.config/xsettingsd/` | theme name for X11 apps (Zen, file dialog) |
 | `qt6ct/` | `~/.config/qt6ct/` | `qt6tc.conf` |
 | `systemd/` | `~/.config/systemd/` | arch-update timer: weekly |

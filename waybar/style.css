@@ -37,7 +37,7 @@ window#waybar {
 /* ITEMS PADDING */
 #tray, #clock, #cpu, #memory, #pulseaudio, #network {
     
-    margin-right: 8px;
+    margin-right: 10px;
 }
 
 

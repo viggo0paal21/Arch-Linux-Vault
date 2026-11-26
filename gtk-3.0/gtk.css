@@ -2,6 +2,29 @@ window.background {
     background-color: rgba(0, 0, 0, 0.8);
 }
 
+window.popup,
+window.popup.background,
+.csd.popup decoration {
+    background-color: transparent;
+    box-shadow: none;
+    border-radius: 10px;
+}
+
+menu,
+.menu,
+.context-menu {
+    background-color: rgba(0, 0, 0, 0.8);
+    border: 1px solid #ffffff;
+    border-radius: 10px;
+}
+
+tooltip,
+tooltip.background {
+    background-color: rgba(0, 0, 0, 0.8);
+    border: 1px solid #ffffff;
+    border-radius: 10px;
+}
+
 
 menubar,
 menubar:backdrop,
