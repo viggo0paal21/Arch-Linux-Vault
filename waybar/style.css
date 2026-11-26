@@ -10,6 +10,13 @@
 @define-color black #000000;
 @define-color bg-transparent #000000cc;
 
+.modules-left {
+  padding-left: 5px;
+}
+
+.modules-right {
+  padding-right: 5px;
+}
 
 window#waybar {
   background-color: @bg-transparent;
@@ -24,9 +31,17 @@ window#waybar {
 #workspaces button {
     font-size: 16px;
     padding: 0 8px;
-    color: @white;
+    color: @middle;
 }
 
+#workspaces button.active {
+  color: @white;
+}
+
+#bluetooth {
+  color: #ffffff;
+  font-size: 16px;
+}
 
 
 #window {
@@ -35,7 +50,7 @@ window#waybar {
 }
 
 /* ITEMS PADDING */
-#tray, #clock, #cpu, #memory, #pulseaudio, #network {
+#bluetooth, #tray, #clock, #cpu, #memory, #pulseaudio, #network {
     
     margin-right: 10px;
 }

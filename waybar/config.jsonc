@@ -20,26 +20,38 @@
     "cpu",
     "memory",
     "pulseaudio",
+    "bluetooth",
     "network"
   ],
 
   "hyprland/workspaces": {
     "format": "{icon}",
     "on-click": "activate",
+    "tooltip": false,
     "format-icons": {
         "active": "●", 
-        "default": "○", 
-        "empty": "○"
+        "default": "●", 
+        "empty": "●"
     }
   },
 
   "custom/logo": {
-    "format": "\udb82\udcc7"
+    "format": "\udb82\udcc7",
+    "on-click": "rofi -show drun",
+    "tooltip": false
   },
 
   "hyprland/window": {
     "format": "{}",
     "max-length": 50
+  },
+
+  "bluetooth": {
+    "format": "\udb80\udcaf",
+    "format-off": "\udb80\udcb2",
+    "format-disabled": "",
+    "format-connected": "\udb80\udcb1 {num_connections}",
+    "on-click": "blueman-manager"
   },
 
   "cpu": {
@@ -54,8 +66,9 @@
 
   "network": {
     "format-wifi": "\uf1eb",
-    "format-ethernet": "Ethernet",
-    "format-disconnected": "Offline"
+    "format-ethernet": "\udb80\ude00",
+    "format-disconnected": "\udb81\uddaa",
+    "on-click": "nm-wifi-gui"
   },
 
   "pulseaudio": {

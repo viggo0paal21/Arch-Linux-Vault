@@ -21,7 +21,7 @@ What it does:
 1. **Programs:** `pacman -Syu`, then everything my configs need with `pacman -S --needed`; anything pacman doesn't know comes from the AUR with yay (yay gets installed if missing). `lib32-mangohud` needs the [multilib] repo.
 2. **Backup:** every file that is about to be replaced and differs is copied to `~/.config-backup-before-install-<date>` first.
 3. **Files:** every folder → `~/.config/<folder>`, `starship.toml` and `mimeapps.list` → `~/.config/`, `home/` → `~`.
-4. **Extras:** bluetooth at boot, Nautilus as file manager, gsettings: GTK theme `adw-gtk3-dark`, dark mode, cursor `breeze_cursors` 24, font cache.
+4. **Extras:** bluetooth at boot, Nautilus as file manager, gsettings: GTK theme `adw-gtk3-dark`, dark mode, cursor `breeze_cursors` 24, blueman tray icon off (Waybar has its own bluetooth module), font cache.
 
 **Not touched:** `~/.zshrc`, SDDM, anything in `/etc`.
 
@@ -32,7 +32,7 @@ Options: `--yes` (no question at the start), `--no-packages` (only copy the file
 | Folder / file | → on the PC | What |
 |---|---|---|
 | `hypr/` | `~/.config/hypr/` | Hyprland (Lua): `hyprland.lua`, `system.lua`, `performance.lua`, `hyprtoolkit.conf` (screen share picker), avatars |
-| `waybar/` | `~/.config/waybar/` | bar: `config.jsonc`, `style.css` |
+| `waybar/` | `~/.config/waybar/` | bar: `config.jsonc`, `style.css` (logo click = rofi, grey inactive workspaces, bluetooth with connection count → blueman-manager, Wi-Fi click → nm-wifi-gui) |
 | `rofi/` | `~/.config/rofi/` | launcher: `config.rasi` + my theme `Modern-Theme.rasi` (`config-beispiel.rasi` = the dumped default as reference) |
 | `kitty/` | `~/.config/kitty/` | terminal |
 | `fastfetch/` | `~/.config/fastfetch/` | `config.jsonc` (big), `ff.jsonc` (small) |

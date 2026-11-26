@@ -39,7 +39,8 @@ PACKAGES=(
     grim slurp wl-clipboard            # screenshot bind (Super + Shift + S)
     # bar, launcher, notifications, terminal (all started in hypr/hyprland.lua)
     waybar rofi swaync kitty
-    blueman bluez bluez-utils
+    blueman bluez bluez-utils          # Waybar bluetooth module, click opens blueman-manager
+    nm-wifi-gui                        # Wi-Fi GUI (libadwaita), click on the Waybar network module
     awww                               # wallpaper daemon (awww-daemon in the autostart)
     # terminal
     fastfetch starship
@@ -157,7 +158,7 @@ info "Home:    $HOME"
 [ "$DO_PACKAGES" -eq 1 ] && info "1. install programs (pacman --needed, AUR via yay)"
 info "2. back up files that get replaced to: $BACKUP"
 info "3. copy my config files from the vault (existing ones are replaced)"
-info "4. extras: bluetooth at boot, Nautilus as file manager, GTK theme adw-gtk3-dark, font cache"
+info "4. extras: bluetooth at boot, Nautilus as file manager, GTK theme adw-gtk3-dark, blueman tray icon off, font cache"
 info "not touched: ~/.zshrc, SDDM, /etc"
 
 if [ "$ASSUME_YES" -eq 0 ]; then
@@ -251,6 +252,9 @@ if command -v gsettings >/dev/null; then
         && gsettings set org.gnome.desktop.interface cursor-theme 'breeze_cursors' 2>/dev/null \
         && gsettings set org.gnome.desktop.interface cursor-size 24 2>/dev/null \
         && info "GTK: theme adw-gtk3-dark, dark mode, cursor breeze_cursors 24"
+    # no blueman icon in the tray (Waybar has its own bluetooth module); blueman-applet keeps running
+    gsettings set org.blueman.general plugin-list '["!StatusNotifierItem"]' 2>/dev/null \
+        && info "blueman tray icon off"
 fi
 if command -v fc-cache >/dev/null; then
     fc-cache -f >/dev/null && info "font cache rebuilt"
