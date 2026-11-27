@@ -58,7 +58,7 @@ PACKAGES=(
     zen-browser-bin                    # starts through XWayland, see home/.local/share/applications/zen.desktop
     arch-update                        # update icon in the tray (hypr/system.lua)
     vibrantlinux                       # per-app color saturation
-    # gaming (MANGOHUD=1 in hypr/performance.lua)
+    # gaming (MANGOHUD=1 in hypr/performance.lua, settings in MangoHud/)
     mangohud lib32-mangohud
 )
 

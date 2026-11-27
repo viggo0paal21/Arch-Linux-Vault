@@ -41,7 +41,7 @@ Options: `--yes` (no question at the start), `--no-packages` (only copy the file
 | `gtk-4.0/` | `~/.config/gtk-4.0/` | `gtk.css` (libadwaita variables: glass, white accent; menus + tooltips 10px round with 1px white border), `settings.ini` |
 | `xsettingsd/` | `~/.config/xsettingsd/` | GTK theme + icon theme for X11 apps (Zen, file dialog) |
 | `xdg-desktop-portal/` | `~/.config/xdg-desktop-portal/` | `hyprland-portals.conf`: file dialogs come from the GTK portal (own program, so `gtk-3.0/gtk.css` glass works); without it Zen draws its own opaque dialog |
-| `qt6ct/` | `~/.config/qt6ct/` | `qt6tc.conf` |
+| `MangoHud/` | `~/.config/MangoHud/` | `MangoHud.conf`: FPS limit 162 (`late`), overlay hidden (`no_display`, Shift+F12), vsync settings; per game: `cs2.conf`, `lichii.conf`, `UnleashedRecomp.conf` |
 | `systemd/` | `~/.config/systemd/` | arch-update timer: weekly |
 | `vibrantLinux/` | `~/.config/vibrantLinux/` | per-app saturation |
 | `mimeapps.list` | `~/.config/` | Zen as default browser |
