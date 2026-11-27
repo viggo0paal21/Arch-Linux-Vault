@@ -78,7 +78,7 @@ element alternate.active {
 element-text {
     background-color: transparent;
     cursor:           inherit;
-    highlight:        inherit;
+    highlight:        bold;
     text-color:       inherit;
 }
 element-icon {

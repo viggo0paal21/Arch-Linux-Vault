@@ -1,5 +1,12 @@
-window.background {
+window.background,
+dialog.background,
+messagedialog.background {
     background-color: rgba(0, 0, 0, 0.8);
+}
+
+decoration {
+    box-shadow: none;
+    margin: 0;
 }
 
 window.popup,
@@ -16,6 +23,12 @@ menu,
     background-color: rgba(0, 0, 0, 0.8);
     border: 1px solid #ffffff;
     border-radius: 10px;
+}
+
+.sidebar,
+.sidebar:backdrop {
+    background-color: transparent;
+    background-image: none;
 }
 
 tooltip,

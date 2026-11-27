@@ -21,7 +21,7 @@ What it does:
 1. **Programs:** `pacman -Syu`, then everything my configs need with `pacman -S --needed`; anything pacman doesn't know comes from the AUR with yay (yay gets installed if missing). `lib32-mangohud` needs the [multilib] repo.
 2. **Backup:** every file that is about to be replaced and differs is copied to `~/.config-backup-before-install-<date>` first.
 3. **Files:** every folder → `~/.config/<folder>`, `starship.toml` and `mimeapps.list` → `~/.config/`, `home/` → `~`.
-4. **Extras:** bluetooth at boot, Nautilus as file manager, gsettings: GTK theme `adw-gtk3-dark`, dark mode, cursor `breeze_cursors` 24, blueman tray icon off (Waybar has its own bluetooth module), font cache.
+4. **Extras:** bluetooth at boot, Nautilus as file manager, gsettings: GTK theme `adw-gtk3-dark`, dark mode, cursor `breeze_cursors` 24, icon theme `rice`, blueman tray icon off (Waybar has its own bluetooth module), font cache.
 
 **Not touched:** `~/.zshrc`, SDDM, anything in `/etc`.
 
@@ -33,19 +33,21 @@ Options: `--yes` (no question at the start), `--no-packages` (only copy the file
 |---|---|---|
 | `hypr/` | `~/.config/hypr/` | Hyprland (Lua): `hyprland.lua`, `system.lua`, `performance.lua`, `hyprtoolkit.conf` (screen share picker), avatars |
 | `waybar/` | `~/.config/waybar/` | bar: `config.jsonc`, `style.css` (logo click = rofi, grey inactive workspaces, bluetooth with connection count → blueman-manager, Wi-Fi click → nm-wifi-gui) |
-| `rofi/` | `~/.config/rofi/` | launcher: `config.rasi` + my theme `Modern-Theme.rasi` (`config-beispiel.rasi` = the dumped default as reference) |
-| `kitty/` | `~/.config/kitty/` | terminal |
+| `rofi/` | `~/.config/rofi/` | launcher: `config.rasi` (only app names) + my theme `Modern-Theme.rasi` (matches bold, no underline; `config-beispiel.rasi` = the dumped default as reference) |
+| `kitty/` | `~/.config/kitty/` | terminal: 0.8 opacity, beam cursor with trail, `sync_to_monitor no` |
 | `fastfetch/` | `~/.config/fastfetch/` | `config.jsonc` (big), `ff.jsonc` (small) |
 | `starship.toml` | `~/.config/` | prompt |
-| `gtk-3.0/` | `~/.config/gtk-3.0/` | `gtk.css` (glass look for GTK 3 and Waybar, menus + tooltips 10px round with 1px white border), `settings.ini` (theme `adw-gtk3-dark`), `bookmarks` |
+| `gtk-3.0/` | `~/.config/gtk-3.0/` | `gtk.css` (glass look for GTK 3, dialogs and Waybar, transparent sidebars, no CSD shadow, menus + tooltips 10px round with 1px white border), `settings.ini` (theme `adw-gtk3-dark`), `bookmarks` |
 | `gtk-4.0/` | `~/.config/gtk-4.0/` | `gtk.css` (libadwaita variables: glass, white accent; menus + tooltips 10px round with 1px white border), `settings.ini` |
-| `xsettingsd/` | `~/.config/xsettingsd/` | theme name for X11 apps (Zen, file dialog) |
+| `xsettingsd/` | `~/.config/xsettingsd/` | GTK theme + icon theme for X11 apps (Zen, file dialog) |
+| `xdg-desktop-portal/` | `~/.config/xdg-desktop-portal/` | `hyprland-portals.conf`: file dialogs come from the GTK portal (own program, so `gtk-3.0/gtk.css` glass works); without it Zen draws its own opaque dialog |
 | `qt6ct/` | `~/.config/qt6ct/` | `qt6tc.conf` |
 | `systemd/` | `~/.config/systemd/` | arch-update timer: weekly |
 | `vibrantLinux/` | `~/.config/vibrantLinux/` | per-app saturation |
 | `mimeapps.list` | `~/.config/` | Zen as default browser |
 | `home/.local/bin/check-direct-scanout` | `~/.local/bin/` | Super + Home (bind in `performance.lua`) |
 | `home/.local/share/applications/zen.desktop` | `~/.local/share/applications/` | starts Zen through XWayland |
+| `home/.local/share/icons/rice/` | `~/.local/share/icons/rice/` | icon theme: Adwaita, only the folders white and filled (`Inherits=Adwaita,hicolor`, app icons stay default) |
 
 Notes:
 

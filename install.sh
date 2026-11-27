@@ -49,6 +49,7 @@ PACKAGES=(
     # GTK and Qt look
     gtk3 gtk4
     adw-gtk-theme                      # GTK 3 theme adw-gtk3-dark (looks like libadwaita)
+    adwaita-icon-theme                 # my icon theme "rice" takes everything except the folders from it
     breeze                             # mouse cursor breeze_cursors (hypr/system.lua)
     xsettingsd                         # theme for X11 apps (Zen runs on XWayland)
     qt6ct qt6-wayland                  # QT_QPA_PLATFORMTHEME=qt6ct (hypr/system.lua)
@@ -158,7 +159,7 @@ info "Home:    $HOME"
 [ "$DO_PACKAGES" -eq 1 ] && info "1. install programs (pacman --needed, AUR via yay)"
 info "2. back up files that get replaced to: $BACKUP"
 info "3. copy my config files from the vault (existing ones are replaced)"
-info "4. extras: bluetooth at boot, Nautilus as file manager, GTK theme adw-gtk3-dark, blueman tray icon off, font cache"
+info "4. extras: bluetooth at boot, Nautilus as file manager, GTK theme adw-gtk3-dark, icons rice, blueman tray icon off, font cache"
 info "not touched: ~/.zshrc, SDDM, /etc"
 
 if [ "$ASSUME_YES" -eq 0 ]; then
@@ -226,7 +227,8 @@ done
 put_file "$VAULT/starship.toml" "$HOME/.config/starship.toml"
 put_file "$VAULT/mimeapps.list" "$HOME/.config/mimeapps.list"
 
-# home/ -> ~ (script in ~/.local/bin, Zen starter in ~/.local/share/applications)
+# home/ -> ~ (script in ~/.local/bin, Zen starter in ~/.local/share/applications,
+#            icon theme rice in ~/.local/share/icons)
 while IFS= read -r -d '' f; do
     put_file "$f" "$HOME/${f#"$VAULT"/home/}"
 done < <(find "$VAULT/home" -type f -print0)
@@ -251,7 +253,8 @@ if command -v gsettings >/dev/null; then
         && gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null \
         && gsettings set org.gnome.desktop.interface cursor-theme 'breeze_cursors' 2>/dev/null \
         && gsettings set org.gnome.desktop.interface cursor-size 24 2>/dev/null \
-        && info "GTK: theme adw-gtk3-dark, dark mode, cursor breeze_cursors 24"
+        && gsettings set org.gnome.desktop.interface icon-theme 'rice' 2>/dev/null \
+        && info "GTK: theme adw-gtk3-dark, dark mode, cursor breeze_cursors 24, icons rice (white folders)"
     # no blueman icon in the tray (Waybar has its own bluetooth module); blueman-applet keeps running
     gsettings set org.blueman.general plugin-list '["!StatusNotifierItem"]' 2>/dev/null \
         && info "blueman tray icon off"
